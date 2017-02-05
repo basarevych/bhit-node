@@ -1,0 +1,7 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const App = require('arpen').WebServer;
+
+const app = new App(path.join(__dirname, '..'));
+app.run();
