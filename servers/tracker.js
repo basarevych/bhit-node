@@ -92,6 +92,14 @@ class Tracker {
                         this.InitConfirm = this.proto.lookup('tracker.InitConfirm');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
+
+                        this.CLIENT_ALIVE = 0;
+                        this.CLIENT_INIT_REQUEST = 1;
+                        this.CLIENT_INIT_CONFIRM = 2;
+
+                        this.SERVER_ALIVE = 0;
+                        this.SERVER_INIT_RESPONSE = 1;
+
                         resolve();
                     } catch (error) {
                         reject(new WError(error, 'Tracker.bootstrap()'));
@@ -305,7 +313,7 @@ class Tracker {
 
         try {
             let message = this.ClientMessage.decode(data);
-            if (message.type === 0)
+            if (message.type === this.CLIENT_ALIVE)
                 return true;
 
             debug(`Client message ${message.type}`);
@@ -391,7 +399,7 @@ class Tracker {
         if (!data) {
             try {
                 let message = this.ServerMessage.create({
-                    type: 0,
+                    type: this.SERVER_ALIVE,
                 });
                 data = this.ServerMessage.encode(message).finish();
             } catch (error) {
