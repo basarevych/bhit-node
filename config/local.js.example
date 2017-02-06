@@ -13,7 +13,7 @@ module.exports = {
 
     // Loaded modules
     modules: [
-        'index',
+        'tracker',
     ],
 
     // Servers

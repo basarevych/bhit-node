@@ -8,13 +8,14 @@ const tls = require('tls');
 const dgram = require('dgram');
 const uuid = require('uuid');
 const protobuf = require('protobufjs');
+const EventEmitter = require('events');
 const WError = require('verror').WError;
 const SocketWrapper = require('socket-wrapper');
 
 /**
  * Server class
  */
-class Tracker {
+class Tracker extends EventEmitter {
     /**
      * Create the service
      * @param {App} app                     Application
@@ -23,7 +24,9 @@ class Tracker {
      * @param {Logger} logger               Logger service
      */
     constructor(app, config, filer, logger) {
-        this.name = null;
+        super();
+
+        this._name = null;
         this._app = app;
         this._config = config;
         this._filer = filer;
@@ -77,7 +80,7 @@ class Tracker {
      * @return {Promise}
      */
     bootstrap(name) {
-        this.name = name;
+        this._name = name;
 
         return new Promise((resolve, reject) => {
                 debug('Loading protocol');
@@ -144,28 +147,48 @@ class Tracker {
 
     /**
      * Start the server
+     * @param {string} name                     Config section name
      * @return {Promise}
      */
-    start() {
-        return new Promise((resolve, reject) => {
-            debug('Starting the server');
-            let port = this._normalizePort(this._config.get(`servers.${this.name}.port`));
-            let host = (typeof port == 'string' ? undefined : this._config.get(`servers.${this.name}.host`));
-            let udpServer = this._app.get('udp');
-            let tcpServer = this._app.get('tcp');
+    start(name) {
+        if (name !== this._name)
+            return Promise.reject(new Error(`Server ${name} was not properly bootstrapped`));
+
+        return Array.from(this._app.get('modules')).reduce(
+                (prev, [ curName, curModule ]) => {
+                    return prev.then(() => {
+                        if (!curModule.messages)
+                            return;
+
+                        let result = curModule.messages();
+                        if (result === null || typeof result != 'object' || typeof result.then != 'function')
+                            throw new Error(`Module '${curName}' messages() did not return a Promise`);
+                        return result;
+                    });
+                },
+                Promise.resolve()
+            )
+            .then(() => {
+                return new Promise((resolve, reject) => {
+                    debug('Starting the server');
+                    let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
+                    let host = (typeof port == 'string' ? undefined : this._config.get(`servers.${this._name}.host`));
+                    let udpServer = this._app.get('udp');
+                    let tcpServer = this._app.get('tcp');
 
 
-            debug('Initiating tracker sockets');
-            try {
-                this._timeoutTimer = setInterval(() => { this._checkTimeout(); }, 500);
+                    debug('Initiating tracker sockets');
+                    try {
+                        this._timeoutTimer = setInterval(() => { this._checkTimeout(); }, 500);
 
-                udpServer.bind(port, host);
-                tcpServer.listen(port, host);
-                resolve();
-            } catch (error) {
-                reject(new WError(error, 'Tracker.start()'));
-            }
-        });
+                        udpServer.bind(port, host);
+                        tcpServer.listen(port, host);
+                        resolve();
+                    } catch (error) {
+                        reject(new WError(error, 'Tracker.start()'));
+                    }
+                });
+            });
     }
 
     /**
@@ -214,12 +237,12 @@ class Tracker {
      * UDP listening event handler
      */
     onUdpListening() {
-        let port = this._normalizePort(this._config.get(`servers.${this.name}.port`));
+        let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
         this._logger.info(
             'Tracker UDP server listening on ' +
             (typeof port == 'string' ?
                 port :
-                this._config.get(`servers.${this.name}.host`) + ':' + port)
+                this._config.get(`servers.${this._name}.host`) + ':' + port)
         );
     }
 
@@ -227,12 +250,12 @@ class Tracker {
      * TCP listening event handler
      */
     onTcpListening() {
-        let port = this._normalizePort(this._config.get(`servers.${this.name}.port`));
+        let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
         this._logger.info(
             'Tracker TCP server listening on ' +
             (typeof port == 'string' ?
                 port :
-                this._config.get(`servers.${this.name}.host`) + ':' + port)
+                this._config.get(`servers.${this._name}.host`) + ':' + port)
         );
     }
 
@@ -287,6 +310,8 @@ class Tracker {
 
         socket.on('error', error => { this.onError(id, error); });
         socket.on('close', () => { this.onClose(id); });
+
+        this.emit('connection', id);
     }
 
     /**
@@ -309,6 +334,14 @@ class Tracker {
                 return true;
 
             debug(`Client message ${message.type}`);
+            switch(message.type) {
+                case this.ClientMessage.Type.INIT_REQUEST:
+                    this.emit('init_request', id, message);
+                    break;
+                case this.ClientMessage.Type.INIT_CONFIRM:
+                    this.emit('init_confirm', id, message);
+                    break;
+            }
         } catch (error) {
             this._logger.error(`Client protocol error (TCP): ${error.message}`);
         }
