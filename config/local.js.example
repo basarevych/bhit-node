@@ -16,44 +16,8 @@ module.exports = {
         'index',
     ],
 
-    // Server
+    // Servers
     servers: {
-        web: {
-            class: 'servers.express',
-            host: "0.0.0.0",
-            port: 3000,
-            ssl: {
-                enable: false,
-                key: '/etc/letsencrypt/live/server1.example.com/privkey.pem',
-                cert: '/etc/letsencrypt/live/server1.example.com/cert.pem',
-                ca: '/etc/letsencrypt/live/server1.example.com/fullchain.pem',
-            },
-            express: {
-                view_engine: 'pug',
-                case_sensitive_routing: true,
-                strict_routing: false,
-                trust_proxy: false,
-            },
-            options: {
-                body_limit: "500mb",
-            },
-            access_log: {
-                path: path.join(__dirname, '..', 'logs'),
-                interval: '1d',
-                mode: 0o640,
-            },
-            middleware: [ // Middleware, in this order, service names
-                'middleware.favicon',
-                'middleware.requestLogger',
-                'middleware.requestParser',
-                'middleware.staticFiles',
-                'middleware.routes',
-                'middleware.errorHandler',              // should be the last one
-            ],
-            subscribers: [ // PUBSUB subscribers, service names
-                'subscribers.invalidateCache',
-            ],
-        },
         tracker: {
             class: 'servers.tracker',
             host: "0.0.0.0",
