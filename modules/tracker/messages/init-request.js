@@ -2,6 +2,7 @@
  * Init Request message
  * @module tracker/messages/init-request
  */
+const debug = require('debug')('bhit:message');
 
 /**
  * Init Request message class
@@ -9,9 +10,11 @@
 class InitRequest {
     /**
      * Create service
+     * @param {Tracker} tracker     Tracker server
      * @param {ErrorHelper} error   Error helper service
      */
-    constructor(error) {
+    constructor(tracker, error) {
+        this._tracker = tracker;
         this._error = error;
     }
 
@@ -28,7 +31,7 @@ class InitRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'error' ];
+        return [ 'servers.tracker', 'error' ];
     }
 
     /**
@@ -37,7 +40,13 @@ class InitRequest {
      * @param {object} message      The message
      */
     onMessage(id, message) {
+        let client = this._tracker.clients.get(id);
+        if (!client)
+            return;
 
+        debug(`Got INIT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        let email = message.initRequest.email;
+        let daemonName = message.initRequest.daemonName;
     }
 }
 

@@ -10,8 +10,7 @@ message InitResponse {
     enum Result {
         ACCEPTED = 0;
         REJECTED = 1;
-        VERIFY_EMAIL = 2;
-        NAME_TAKEN = 3;
+        NAME_TAKEN = 2;
     }
     required Result response = 1;
     optional string token = 2;

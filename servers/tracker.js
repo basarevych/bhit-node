@@ -26,6 +26,8 @@ class Tracker extends EventEmitter {
     constructor(app, config, filer, logger) {
         super();
 
+        this.clients = new Map();
+
         this._name = null;
         this._app = app;
         this._config = config;
@@ -141,7 +143,7 @@ class Tracker extends EventEmitter {
                 tcpServer.on('listening', this.onTcpListening.bind(this));
                 this._app.registerInstance(tcpServer, 'tcp');
 
-                this._app.registerInstance(new Map(), 'clients');
+                this._app.registerInstance(this.clients, 'clients');
             });
     }
 
@@ -272,7 +274,7 @@ class Tracker extends EventEmitter {
             socket: socket,
             wrapper: new SocketWrapper(socket),
         };
-        this._app.get('clients').set(id, client);
+        this.clients.set(id, client);
 
         this._timeouts.set(
             id,
@@ -299,7 +301,7 @@ class Tracker extends EventEmitter {
                     timeout.receive = Date.now() + this.constructor.pongTimeout;
             }
         );
-        client.messenger.on(
+        client.wrapper.on(
             'flush',
             data => {
                 let timeout = this._timeouts.get(id);
@@ -321,7 +323,7 @@ class Tracker extends EventEmitter {
      * @return {boolean}                Destroy socket on false
      */
     onMessage(id, data) {
-        let client = this._app.get('clients').get(id);
+        let client = this.clients.get(id);
         if (!client)
             return false;
 
@@ -333,7 +335,7 @@ class Tracker extends EventEmitter {
             if (message.type === this.ClientMessage.Type.ALIVE)
                 return true;
 
-            debug(`Client message ${message.type}`);
+            debug(`Client message ${message.type} from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
             switch(message.type) {
                 case this.ClientMessage.Type.INIT_REQUEST:
                     this.emit('init_request', id, message);
@@ -364,7 +366,7 @@ class Tracker extends EventEmitter {
      * @param {string} id                   Client ID
      */
     onClose(id) {
-        let client = this._app.get('clients').get(id);
+        let client = this.clients.get(id);
         if (client) {
             debug(`Client disconnected`);
             if (client.socket) {
@@ -374,7 +376,7 @@ class Tracker extends EventEmitter {
                 client.wrapper.destroy();
                 client.wrapper = null;
             }
-            this._app.get('clients').delete(id);
+            this.clients.delete(id);
         }
 
         this._timeouts.delete(id);
@@ -386,7 +388,7 @@ class Tracker extends EventEmitter {
      */
     onTimeout(id) {
         debug(`Client timeout`);
-        let client = this._app.get('clients').get(id);
+        let client = this.clients.get(id);
         if (client && client.socket) {
             client.socket.destroy();
             client.wrapper.detach();
@@ -417,7 +419,7 @@ class Tracker extends EventEmitter {
      * @param {Buffer|null} data            Data to send
      */
     _send(id, data) {
-        let client = this._app.get('clients').get(id);
+        let client = this.clients.get(id);
         if (!client || !client.socket || !client.wrapper)
             return;
 
