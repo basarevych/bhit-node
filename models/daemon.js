@@ -1,13 +1,13 @@
 /**
- * User model
- * @module models/user
+ * Daemon model
+ * @module models/daemon
  */
 const Model = require('./base');
 
 /**
- * User model class
+ * Daemon model class
  */
-class UserModel extends Model {
+class DaemonModel extends Model {
     /**
      * Create model
      */
@@ -15,26 +15,28 @@ class UserModel extends Model {
         super();
 
         this.id = undefined;
+        this.userId = undefined;
         this.name = undefined;
-        this.email = undefined;
-        this.password = undefined;
+        this.token = undefined;
+        this.confirm = undefined;
         this.createdAt = undefined;
+        this.confirmedAt = undefined;
         this.blockedAt = undefined;
     }
 
     /**
-     * Service name is 'models.user'
+     * Service name is 'models.daemon'
      * @type {string}
      */
     static get provides() {
-        return 'models.user';
+        return 'models.daemon';
     }
 
     /**
-     * Minimum password length
+     * Token length
      */
-    static get minPasswordLength() {
-        return 6;
+    static get tokenLength() {
+        return 64;
     }
 
     /**
@@ -54,6 +56,22 @@ class UserModel extends Model {
     }
 
     /**
+     * User ID setter
+     * @type {undefined|number}
+     */
+    set userId(id) {
+        this._setField('user_id', id);
+    }
+
+    /**
+     * User ID getter
+     * @type {undefined|number}
+     */
+    get userId() {
+        return this._getField('user_id');
+    }
+
+    /**
      * Name setter
      * @type {undefined|string|null}
      */
@@ -70,35 +88,35 @@ class UserModel extends Model {
     }
 
     /**
-     * Email setter
+     * Token setter
      * @type {undefined|string}
      */
-    set email(email) {
-        this._setField('email', email);
+    set token(token) {
+        this._setField('token', token);
     }
 
     /**
-     * Email getter
+     * Token getter
      * @type {undefined|string}
      */
-    get email() {
-        return this._getField('email');
+    get token() {
+        return this._getField('token');
     }
 
     /**
-     * Password setter
-     * @type {undefined|string}
+     * Confirm token setter
+     * @type {undefined|string|null}
      */
-    set password(password) {
-        this._setField('password', password);
+    set confirm(confirm) {
+        this._setField('confirm', confirm);
     }
 
     /**
-     * Password getter
-     * @type {undefined|string}
+     * Confirm token getter
+     * @type {undefined|string|null}
      */
-    get password() {
-        return this._getField('password');
+    get confirm() {
+        return this._getField('confirm');
     }
 
     /**
@@ -118,6 +136,22 @@ class UserModel extends Model {
     }
 
     /**
+     * Confirm time setter
+     * @type {undefined|object|null}
+     */
+    set confirmedAt(confirmedAt) {
+        this._setField('confirmed_at', confirmedAt);
+    }
+
+    /**
+     * Confirm time getter
+     * @type {undefined|object|null}
+     */
+    get confirmedAt() {
+        return this._getField('confirmed_at');
+    }
+
+    /**
      * Block time setter
      * @type {undefined|object|null}
      */
@@ -134,4 +168,4 @@ class UserModel extends Model {
     }
 }
 
-module.exports = UserModel;
+module.exports = DaemonModel;

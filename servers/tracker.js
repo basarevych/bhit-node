@@ -194,6 +194,31 @@ class Tracker extends EventEmitter {
     }
 
     /**
+     * Send message
+     * @param {string} id                   Client ID
+     * @param {Buffer|null} data            Data to send
+     */
+    send(id, data) {
+        let client = this.clients.get(id);
+        if (!client || !client.socket || !client.wrapper)
+            return;
+
+        if (!data) {
+            try {
+                let message = this.ServerMessage.create({
+                    type: this.ServerMessage.Type.ALIVE,
+                });
+                data = this.ServerMessage.encode(message).finish();
+            } catch (error) {
+                this._logger.error(new WError(error, `Tracker.send()`));
+                return;
+            }
+        }
+
+        client.wrapper.send(data);
+    }
+
+    /**
      * UDP Error handler
      * @param {object} error            The error
      */
@@ -414,31 +439,6 @@ class Tracker extends EventEmitter {
     }
 
     /**
-     * Send message
-     * @param {string} id                   Client ID
-     * @param {Buffer|null} data            Data to send
-     */
-    _send(id, data) {
-        let client = this.clients.get(id);
-        if (!client || !client.socket || !client.wrapper)
-            return;
-
-        if (!data) {
-            try {
-                let message = this.ServerMessage.create({
-                    type: this.ServerMessage.Type.ALIVE,
-                });
-                data = this.ServerMessage.encode(message).finish();
-            } catch (error) {
-                this._logger.error(new WError(error, `Tracker._send()`));
-                return;
-            }
-        }
-
-        client.wrapper.send(data);
-    }
-
-    /**
      * Check socket timeout
      */
     _checkTimeout() {
@@ -453,7 +453,7 @@ class Tracker extends EventEmitter {
                 this.onTimeout(id);
             } else if (timestamp.send !== 0 && now >= timestamp.send) {
                 timestamp.send = 0;
-                this._send(id, null);
+                this.send(id, null);
             }
         }
     }

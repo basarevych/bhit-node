@@ -5,6 +5,7 @@
 DROP TABLE IF EXISTS jobs CASCADE;
 DROP TABLE IF EXISTS sessions CASCADE;
 DROP TABLE IF EXISTS user_roles CASCADE;
+DROP TABLE IF EXISTS daemons CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS permissions CASCADE;
 DROP TABLE IF EXISTS roles CASCADE;
@@ -34,7 +35,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE roles (
     id bigserial NOT NULL,
     parent_id bigint NULL,
-    name character varying(255) NOT NULL,
+    name varchar(255) NOT NULL,
     CONSTRAINT roles_pk PRIMARY KEY(id),
     CONSTRAINT roles_unique_name UNIQUE (name),
     CONSTRAINT roles_parent_fk FOREIGN KEY(parent_id)
@@ -83,8 +84,8 @@ CREATE TRIGGER invalidate_cache
 CREATE TABLE permissions (
     id bigserial NOT NULL,
     role_id bigint NOT NULL,
-    resource character varying(255) NULL,
-    action character varying(255) NULL,
+    resource varchar(255) NULL,
+    action varchar(255) NULL,
     CONSTRAINT permissions_pk PRIMARY KEY(id),
     CONSTRAINT permissions_role_fk FOREIGN KEY(role_id)
         REFERENCES roles(id)
@@ -133,9 +134,9 @@ CREATE TRIGGER invalidate_cache
 
 CREATE TABLE users (
     id bigserial NOT NULL,
-    name character varying(255) NULL,
-    email character varying(255) NOT NULL,
-    password character varying(255) NOT NULL,
+    name varchar(255) NULL,
+    email varchar(255) NOT NULL,
+    password varchar(255) NOT NULL,
     created_at timestamp NOT NULL,
     blocked_at timestamp NULL,
     CONSTRAINT users_pk PRIMARY KEY (id),
@@ -224,6 +225,63 @@ CREATE TRIGGER invalidate_cache
 
 
 --
+-- Daemons
+--
+
+CREATE TABLE daemons (
+    id bigserial NOT NULL,
+    user_id bigserial NOT NULL,
+    name varchar(255) NULL,
+    token varchar(255) NOT NULL,
+    confirm varchar(255) NULL,
+    created_at timestamp NOT NULL,
+    confirmed_at timestamp NULL,
+    blocked_at timestamp NULL,
+    CONSTRAINT daemons_pk PRIMARY KEY (id),
+    CONSTRAINT users_unique_name UNIQUE (user_id, name),
+    CONSTRAINT users_unique_token UNIQUE (token),
+    CONSTRAINT daemons_user_fk FOREIGN KEY(user_id)
+        REFERENCES users(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE OR REPLACE FUNCTION invalidate_daemons_cache() RETURNS trigger AS $$
+DECLARE
+    cache_keys text[] := array[]::text[];
+BEGIN
+    IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+        cache_keys = array_cat(
+            cache_keys,
+            array[
+                'daemons-by-id:' || NEW.id,
+                'daemons-by-token:' || NEW.token
+            ]
+        );
+    END IF;
+    IF TG_OP = 'DELETE' OR TG_OP = 'UPDATE' THEN
+        cache_keys = array_cat(
+            cache_keys,
+            array[
+                'daemons-by-id:' || OLD.id,
+                'daemons-by-token:' || OLD.token
+            ]
+        );
+    END IF;
+
+    PERFORM invalidate_cache(cache_keys);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER invalidate_cache
+    AFTER INSERT OR UPDATE OR DELETE
+    ON daemons
+    FOR EACH ROW
+    EXECUTE PROCEDURE invalidate_daemons_cache();
+
+
+--
 -- Sessions
 --
 
@@ -283,17 +341,17 @@ CREATE TYPE job_status AS ENUM ('pending', 'running', 'expired', 'failure', 'suc
 CREATE TABLE jobs (
     id bigserial NOT NULL,
     status job_status NOT NULL,
-    queue character varying(255) NULL,
-    script character varying(255) NOT NULL,
+    queue varchar(255) NULL,
+    script varchar(255) NOT NULL,
     input jsonb NOT NULL,
     output jsonb NOT NULL,
-    target character varying(255) NULL,
+    target varchar(255) NULL,
     schedule_start timestamp NULL,
     schedule_end timestamp NULL,
     created_at timestamp NOT NULL,
-    created_by character varying(255) NOT NULL,
+    created_by varchar(255) NOT NULL,
     started_at timestamp NULL,
-    started_by character varying(255) NULL,
+    started_by varchar(255) NULL,
     finished_at timestamp NULL,
     CONSTRAINT jobs_pk PRIMARY KEY(id)
 );

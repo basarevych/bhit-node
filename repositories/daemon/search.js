@@ -1,14 +1,14 @@
 /**
- * UserRepository.search()
+ * DaemonRepository.search()
  */
 'use strict';
 
 const moment = require('moment-timezone');
 
 /**
- * Find users by query
+ * Find daemons by query
  * @method search
- * @memberOf module:repositories/user~UserRepository
+ * @memberOf module:repositories/daemon~DaemonRepository
  * @param {object} [options]                Base Repository.search() options
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
@@ -17,12 +17,14 @@ const moment = require('moment-timezone');
  */
 module.exports = function (options, pg) {
     return super.search(
-            'users',
+            'daemons',
             [
                 'id',
                 'name',
-                'email',
+                'token',
+                'confirm',
                 'created_at',
+                'confirmed_at',
                 'blocked_at',
             ],
             options,
