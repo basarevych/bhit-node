@@ -1,5 +1,5 @@
 /**
- * DaemonRepository.findByUserIdAndName()
+ * DaemonRepository.findByUserAndName()
  */
 'use strict';
 
@@ -7,7 +7,7 @@ const WError = require('verror').WError;
 
 /**
  * Find daemons by user and name
- * @method findByUserIdAndName
+ * @method findByUserAndName
  * @memberOf module:repositories/daemon~DaemonRepository
  * @param {UserModel} user                  User model or ID
  * @param {string} name                     Daemon name to search by
@@ -57,6 +57,6 @@ module.exports = function (user, name, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.findByUserIdAndName()');
+            throw new WError(error, 'DaemonRepository.findByUserAndName()');
         });
 };

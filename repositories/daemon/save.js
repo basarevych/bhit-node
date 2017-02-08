@@ -41,7 +41,7 @@ module.exports = function (daemon, pg) {
                             })
                             .join(', ');
                         params.push(data.id);
-                        query += ` WHERE id = ${params.length}`;
+                        query += ` WHERE id = $${params.length}`;
                     } else {
                         query = 'INSERT INTO daemons(';
                         query += fields.join(', ');
@@ -52,19 +52,20 @@ module.exports = function (daemon, pg) {
                                 return `$${params.length}`;
                             })
                             .join(', ');
-                        query += ')';
+                        query += ') RETURNING id';
                     }
-                    query += ' RETURNING id';
-                    return client(query, params);
+                    return client.query(query, params);
                 })
                 .then(result => {
-                    let id = (result.rowCount && result.rows[0].id) || null;
-                    if (!id)
-                        throw new Error('Unexpected error: no ID');
+                    if (result.rowCount !== 1)
+                        throw new Error('Failed to ' + (daemon.id ? 'UPDATE' : 'INSERT') + ' row');
 
-                    daemon.id = id;
-                    daemon._dirty = false;
-                    return id;
+                    if (!daemon.id) {
+                        daemon.id = result.rows[0].id;
+                        daemon._dirty = false;
+                    }
+
+                    return daemon.id;
                 })
                 .then(
                     value => {

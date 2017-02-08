@@ -3,6 +3,8 @@
  * @module tracker/messages/init-request
  */
 const debug = require('debug')('bhit:message');
+const moment = require('moment-timezone');
+const WError = require('verror').WError;
 
 /**
  * Init Request message class
@@ -11,13 +13,19 @@ class InitRequest {
     /**
      * Create service
      * @param {Tracker} tracker                 Tracker server
+     * @param {object} config                   Configuration
      * @param {Logger} logger                   Logger
+     * @param {Emailer} emailer                 Emailer
+     * @param {Util} util                       Util
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(tracker, logger, userRepo, daemonRepo) {
+    constructor(tracker, config, logger, emailer, util, userRepo, daemonRepo) {
         this._tracker = tracker;
+        this._config = config;
         this._logger = logger;
+        this._emailer = emailer;
+        this._util = util;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
     }
@@ -35,7 +43,7 @@ class InitRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'servers.tracker', 'logger', 'repositories.user', 'repositories.daemon' ];
+        return [ 'servers.tracker', 'config', 'logger', 'emailer', 'util', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -55,6 +63,12 @@ class InitRequest {
                     return users[0];
 
                 let user = this._userRepo.create();
+                user.name = null;
+                user.email = message.initRequest.email;
+                user.password = this._util.encryptPassword(this._util.generatePassword());
+                user.createdAt = moment();
+                user.blockedAt = null;
+
                 return this._userRepo.save(user)
                     .then(userId => {
                         if (!userId)
@@ -67,34 +81,78 @@ class InitRequest {
                 return this._daemonRepo.findByUserAndName(user, message.initRequest.daemonName)
                     .then(daemons => {
                         if (daemons.length) {
-                            let response = this._tracker.InitResponse.create({
-                                response: this._tracker.InitResponse.Result.NAME_TAKEN,
-                            });
-                            let message = this.ServerMessage.create({
-                                type: this.ServerMessage.Type.INIT_RESPONSE,
-                                initResponse: response,
-                            });
-                            data = this.ServerMessage.encode(message).finish();
-                            this._tracker.send(id, data);
-                            return;
+                            let daemon = daemons[0];
+                            daemon.confirm = this._tracker.generateToken();
+
+                            return this._daemonRepo.save(daemon)
+                                .then(daemonId => {
+                                    if (!daemonId)
+                                        throw new Error('Could not save daemon');
+
+                                    let emailText = 'Breedhub Interconnect\n\n' +
+                                        'Someone has requested a new token for daemon ' +
+                                        message.initRequest.daemonName + ' of ' + user.email + '.\n\n' +
+                                        'If this was you then please run the following command on this daemon:\n\n' +
+                                        'bhid confirm ' + daemon.confirm;
+
+                                    return this._emailer.send({
+                                            to: user.email,
+                                            from: this._config.get('email.from'),
+                                            subject: 'Please confirm new token',
+                                            text: emailText,
+                                        })
+                                        .then(() => {
+                                            let response = this._tracker.InitResponse.create({
+                                                response: this._tracker.InitResponse.Result.ACCEPTED,
+                                            });
+                                            let message = this._tracker.ServerMessage.create({
+                                                type: this._tracker.ServerMessage.Type.INIT_RESPONSE,
+                                                initResponse: response,
+                                            });
+                                            let data = this._tracker.ServerMessage.encode(message).finish();
+                                            this._tracker.send(id, data);
+                                        });
+                                });
                         }
 
                         let daemon = this._daemonRepo.create();
-                        daemon.token = daemon.constructor.generateToken();
+                        daemon.userId = user.id;
+                        daemon.name = message.initRequest.daemonName;
+                        daemon.token = this._tracker.generateToken();
+                        daemon.confirm = this._tracker.generateToken();
+                        daemon.createdAt = moment();
+                        daemon.confirmedAt = null;
+                        daemon.blockedAt = null;
+
                         return this._daemonRepo.save(daemon)
                             .then(daemonId => {
                                 if (!daemonId)
                                     throw new Error('Could not create daemon');
 
-                                let response = this._tracker.InitResponse.create({
-                                    response: this._tracker.InitResponse.Result.VERIFY,
-                                });
-                                let message = this.ServerMessage.create({
-                                    type: this.ServerMessage.Type.INIT_RESPONSE,
-                                    initResponse: response,
-                                });
-                                data = this.ServerMessage.encode(message).finish();
-                                this._tracker.send(id, data);
+                                let emailText = 'Breedhub Interconnect\n\n' +
+                                    'Someone has requested creation of a new daemon named ' +
+                                    message.initRequest.daemonName + ' of ' +
+                                    user.email + '.\n\n' +
+                                    'If this was you then please run the following command on this daemon:\n\n' +
+                                    'bhid confirm ' + daemon.confirm;
+
+                                return this._emailer.send({
+                                        to: user.email,
+                                        from: this._config.get('email.from'),
+                                        subject: 'Please confirm new daemon',
+                                        text: emailText,
+                                    })
+                                    .then(() => {
+                                        let response = this._tracker.InitResponse.create({
+                                            response: this._tracker.InitResponse.Result.ACCEPTED,
+                                        });
+                                        let message = this._tracker.ServerMessage.create({
+                                            type: this._tracker.ServerMessage.Type.INIT_RESPONSE,
+                                            initResponse: response,
+                                        });
+                                        let data = this._tracker.ServerMessage.encode(message).finish();
+                                        this._tracker.send(id, data);
+                                    });
                             });
                     });
             })

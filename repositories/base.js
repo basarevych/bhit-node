@@ -29,9 +29,8 @@ class Repository {
      * @return {Object}
      */
     create() {
-        let model = Object.create(Object.getPrototypeOf(this._model));
-        this._model.constructor.call(model);
-        return model;
+        let className = this._model.constructor;
+        return new className();
     }
 
     /**

@@ -10,33 +10,41 @@ message InitResponse {
     enum Result {
         ACCEPTED = 0;
         REJECTED = 1;
-        NAME_TAKEN = 2;
-        VERIFY = 3;
     }
     required Result response = 1;
-    optional string token = 2; // when ACCEPTED
 }
 
-message InitConfirm {
+message ConfirmRequest {
     required string token = 1;
+}
+
+message ConfirmResponse {
+    enum Result {
+        ACCEPTED = 0;
+        REJECTED = 1;
+    }
+    required Result response = 1;
+    optional string token = 2;
 }
 
 message ClientMessage {
     enum Type {
         ALIVE = 0;
         INIT_REQUEST = 1;
-        INIT_CONFIRM = 2;
+        CONFIRM_REQUEST = 2;
     }
     required Type type = 1;
     optional InitRequest init_request = 2;
-    optional InitConfirm init_confirm = 3;
+    optional ConfirmRequest confirm_request = 3;
 }
 
 message ServerMessage {
     enum Type {
         ALIVE = 0;
         INIT_RESPONSE = 1;
+        CONFIRM_RESPONSE = 2;
     }
     required Type type = 1;
     optional InitResponse init_response = 2;
+    optional ConfirmResponse confirm_response = 3;
 }

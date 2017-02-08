@@ -41,7 +41,7 @@ module.exports = function (user, pg) {
                             })
                             .join(', ');
                         params.push(data.id);
-                        query += ` WHERE id = ${params.length}`;
+                        query += ` WHERE id = $${params.length}`;
                     } else {
                         query = 'INSERT INTO users(';
                         query += fields.join(', ');
@@ -52,19 +52,20 @@ module.exports = function (user, pg) {
                                 return `$${params.length}`;
                             })
                             .join(', ');
-                        query += ')';
+                        query += ') RETURNING id';
                     }
-                    query += ' RETURNING id';
-                    return client(query, params);
+                    return client.query(query, params);
                 })
                 .then(result => {
-                    let id = (result.rowCount && result.rows[0].id) || null;
-                    if (!id)
-                        throw new Error('Unexpected error: no ID');
+                    if (result.rowCount !== 1)
+                        throw new Error('Failed to ' + (user.id ? 'UPDATE' : 'INSERT') + ' row');
 
-                    user.id = id;
-                    user._dirty = false;
-                    return id;
+                    if (!user.id) {
+                        user.id = result.rows[0].id;
+                        user._dirty = false;
+                    }
+
+                    return user.id;
                 })
                 .then(
                     value => {

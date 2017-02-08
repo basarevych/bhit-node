@@ -56,8 +56,8 @@ class Index {
         let initRequest = this._app.get('modules.tracker.messages.initRequest');
         server.on('init_request', initRequest.onMessage.bind(initRequest));
 
-        let initConfirm = this._app.get('modules.tracker.messages.initConfirm');
-        server.on('init_confirm', initConfirm.onMessage.bind(initConfirm));
+        let confirmRequest = this._app.get('modules.tracker.messages.confirmRequest');
+        server.on('confirm_request', confirmRequest.onMessage.bind(confirmRequest));
 
         return Promise.resolve();
     }

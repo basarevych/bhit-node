@@ -1,12 +1,15 @@
 /**
- * Init Confirm message
- * @module tracker/messages/init-confirm
+ * Confirm Request message
+ * @module tracker/messages/confirm-request
  */
+const debug = require('debug')('bhit:message');
+const moment = require('moment-timezone');
+const WError = require('verror').WError;
 
 /**
- * Init Confirm message class
+ * Confirm Request message class
  */
-class InitConfirm {
+class ConfirmRequest {
     /**
      * Create service
      * @param {ErrorHelper} error   Error helper service
@@ -16,11 +19,11 @@ class InitConfirm {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.initConfirm'
+     * Service name is 'modules.tracker.messages.confirmRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.initConfirm';
+        return 'modules.tracker.messages.confirmRequest';
     }
 
     /**
@@ -41,4 +44,4 @@ class InitConfirm {
     }
 }
 
-module.exports = InitConfirm;
+module.exports = ConfirmRequest;

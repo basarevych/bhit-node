@@ -22,8 +22,9 @@ class Tracker extends EventEmitter {
      * @param {object} config               Configuration
      * @param {Filer} filer                 Filer service
      * @param {Logger} logger               Logger service
+     * @param {Util} util                   Util service
      */
-    constructor(app, config, filer, logger) {
+    constructor(app, config, filer, logger, util) {
         super();
 
         this.clients = new Map();
@@ -33,6 +34,7 @@ class Tracker extends EventEmitter {
         this._config = config;
         this._filer = filer;
         this._logger = logger;
+        this._util = util;
         this._timeouts = new Map();
     }
 
@@ -49,7 +51,7 @@ class Tracker extends EventEmitter {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'filer', 'logger' ];
+        return [ 'app', 'config', 'filer', 'logger', 'util' ];
     }
 
     /**
@@ -94,7 +96,8 @@ class Tracker extends EventEmitter {
                         this.proto = root;
                         this.InitRequest = this.proto.lookup('tracker.InitRequest');
                         this.InitResponse = this.proto.lookup('tracker.InitResponse');
-                        this.InitConfirm = this.proto.lookup('tracker.InitConfirm');
+                        this.ConfirmRequest = this.proto.lookup('tracker.ConfirmRequest');
+                        this.ConfirmResponse = this.proto.lookup('tracker.ConfirmResponse');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -188,6 +191,14 @@ class Tracker extends EventEmitter {
                     throw new WError(error, 'Tracker.start()');
                 }
             });
+    }
+
+    /**
+     * Generate daemon token
+     * @return {string}
+     */
+    generateToken() {
+        return this._util.getRandomString(32, { lower: true, upper: true, digits: true });
     }
 
     /**
@@ -362,8 +373,8 @@ class Tracker extends EventEmitter {
                 case this.ClientMessage.Type.INIT_REQUEST:
                     this.emit('init_request', id, message);
                     break;
-                case this.ClientMessage.Type.INIT_CONFIRM:
-                    this.emit('init_confirm', id, message);
+                case this.ClientMessage.Type.CONFIRM_REQUEST:
+                    this.emit('confirm_request', id, message);
                     break;
             }
         } catch (error) {
