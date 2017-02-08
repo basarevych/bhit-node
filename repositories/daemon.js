@@ -43,4 +43,4 @@ class DaemonRepository extends Repository {
     }
 }
 
-module.exports = UserRepository;
+module.exports = DaemonRepository;

@@ -43,10 +43,14 @@ class Index {
     }
 
     /**
-     * Register message handlers
+     * Register with the server
+     * @param {string} name                     Server name as in config
      * @return {Promise}
      */
-    messages() {
+    register(name) {
+        if (this._config.get(`servers.${name}.class`) != 'servers.tracker')
+            return Promise.resolve();
+
         let server = this._app.get('servers.tracker');
 
         let initRequest = this._app.get('modules.tracker.messages.initRequest');

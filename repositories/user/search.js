@@ -16,7 +16,7 @@ const moment = require('moment-timezone');
  *                                          to a number of milliseconds since Epoch)
  */
 module.exports = function (options, pg) {
-    return super.search(
+    return this.prototype.search(
             'users',
             [
                 'id',

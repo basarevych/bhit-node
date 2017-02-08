@@ -159,37 +159,34 @@ class Tracker extends EventEmitter {
         return Array.from(this._app.get('modules')).reduce(
                 (prev, [ curName, curModule ]) => {
                     return prev.then(() => {
-                        if (!curModule.messages)
+                        if (!curModule.register)
                             return;
 
-                        let result = curModule.messages();
+                        let result = curModule.register(name);
                         if (result === null || typeof result != 'object' || typeof result.then != 'function')
-                            throw new Error(`Module '${curName}' messages() did not return a Promise`);
+                            throw new Error(`Module '${curName}' register() did not return a Promise`);
                         return result;
                     });
                 },
                 Promise.resolve()
             )
             .then(() => {
-                return new Promise((resolve, reject) => {
-                    debug('Starting the server');
-                    let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
-                    let host = (typeof port == 'string' ? undefined : this._config.get(`servers.${this._name}.host`));
-                    let udpServer = this._app.get('udp');
-                    let tcpServer = this._app.get('tcp');
+                debug('Starting the server');
+                let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
+                let host = (typeof port == 'string' ? undefined : this._config.get(`servers.${this._name}.host`));
+                let udpServer = this._app.get('udp');
+                let tcpServer = this._app.get('tcp');
 
 
-                    debug('Initiating tracker sockets');
-                    try {
-                        this._timeoutTimer = setInterval(() => { this._checkTimeout(); }, 500);
+                debug('Initiating tracker sockets');
+                try {
+                    this._timeoutTimer = setInterval(() => { this._checkTimeout(); }, 500);
 
-                        udpServer.bind(port, host);
-                        tcpServer.listen(port, host);
-                        resolve();
-                    } catch (error) {
-                        reject(new WError(error, 'Tracker.start()'));
-                    }
-                });
+                    udpServer.bind(port, host);
+                    tcpServer.listen(port, host);
+                } catch (error) {
+                    throw new WError(error, 'Tracker.start()');
+                }
             });
     }
 
