@@ -8,8 +8,7 @@ module.exports = {
     instance: 'server1',
 
     // Environment
-    //env: process.env.NODE_ENV || 'production',
-    env: process.env.NODE_ENV || 'development',
+    env: process.env.NODE_ENV || 'production',
 
     // Loaded modules
     modules: [
@@ -27,11 +26,13 @@ module.exports = {
                 cert: '/etc/letsencrypt/live/server1.example.com/cert.pem',
                 ca: '/etc/letsencrypt/live/server1.example.com/fullchain.pem',
             },
-            subscribers: [ // PUBSUB subscribers, service names
-                'subscribers.invalidateCache',
-            ],
         },
     },
+
+    // PUBSUB
+    subscribers: [ // service names
+        'subscribers.invalidateCache',
+    ],
 
     // SMTP servers
     smtp: {

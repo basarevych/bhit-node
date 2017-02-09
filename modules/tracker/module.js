@@ -1,5 +1,5 @@
 /**
- * Index module
+ * Tracker module
  * @module tracker/module
  */
 
@@ -7,7 +7,7 @@
 /**
  * Module main class
  */
-class Index {
+class Tracker {
     /**
      * Create the module
      * @param {App} app             The application
@@ -51,7 +51,7 @@ class Index {
         if (this._config.get(`servers.${name}.class`) != 'servers.tracker')
             return Promise.resolve();
 
-        let server = this._app.get('servers.tracker');
+        let server = this._app.get('servers').get('tracker');
 
         let initRequest = this._app.get('modules.tracker.messages.initRequest');
         server.on('init_request', initRequest.onMessage.bind(initRequest));
@@ -63,4 +63,4 @@ class Index {
     }
 }
 
-module.exports = Index;
+module.exports = Tracker;

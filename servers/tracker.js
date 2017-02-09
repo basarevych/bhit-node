@@ -4,6 +4,7 @@
  */
 const debug = require('debug')('bhit:tracker');
 const path = require('path');
+const fs = require('fs');
 const tls = require('tls');
 const dgram = require('dgram');
 const uuid = require('uuid');
@@ -20,11 +21,10 @@ class Tracker extends EventEmitter {
      * Create the service
      * @param {App} app                     Application
      * @param {object} config               Configuration
-     * @param {Filer} filer                 Filer service
      * @param {Logger} logger               Logger service
      * @param {Util} util                   Util service
      */
-    constructor(app, config, filer, logger, util) {
+    constructor(app, config, logger, util) {
         super();
 
         this.clients = new Map();
@@ -32,7 +32,6 @@ class Tracker extends EventEmitter {
         this._name = null;
         this._app = app;
         this._config = config;
-        this._filer = filer;
         this._logger = logger;
         this._util = util;
         this._timeouts = new Map();
@@ -51,15 +50,7 @@ class Tracker extends EventEmitter {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'filer', 'logger', 'util' ];
-    }
-
-    /**
-     * This service is a singleton
-     * @type {string}
-     */
-    static get lifecycle() {
-        return 'singleton';
+        return [ 'app', 'config', 'logger', 'util' ];
     }
 
     /**
@@ -83,14 +74,13 @@ class Tracker extends EventEmitter {
      * @param {string} name                     Config section name
      * @return {Promise}
      */
-    bootstrap(name) {
+    init(name) {
         this._name = name;
-
         return new Promise((resolve, reject) => {
                 debug('Loading protocol');
                 protobuf.load(path.join(this._config.base_path, 'proto', 'tracker.proto'), (error, root) => {
                     if (error)
-                        return reject(new WError(error, 'Tracker.bootstrap()'));
+                        return reject(new WError(error, 'Tracker.init()'));
 
                     try {
                         this.proto = root;
@@ -117,24 +107,14 @@ class Tracker extends EventEmitter {
                 if (ca && ca[0] != '/')
                     ca = path.join(this._config.base_path, ca);
 
-                let promises = [
-                    this._filer.lockReadBuffer(key),
-                    this._filer.lockReadBuffer(cert),
-                ];
+                let options = {
+                    key: fs.readFileSync(key),
+                    cert: fs.readFileSync(cert),
+                };
                 if (ca)
-                    promises.push(this._filer.lockReadBuffer(ca));
+                    options.ca = fs.readFileSync(ca);
 
-                return Promise.all(promises)
-                    .then(([key, cert, ca]) => {
-                        let options = {
-                            key: key,
-                            cert: cert,
-                        };
-                        if (ca)
-                            options.ca = ca;
-
-                        return [ dgram.createSocket('udp4'), tls.createServer(options, this.onConnection.bind(this)) ];
-                    });
+                return [ dgram.createSocket('udp4'), tls.createServer(options, this.onConnection.bind(this)) ];
             })
             .then(([ udpServer, tcpServer ]) => {
                 udpServer.on('error', this.onUdpError.bind(this));

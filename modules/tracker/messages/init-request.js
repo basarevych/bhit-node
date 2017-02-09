@@ -12,7 +12,7 @@ const WError = require('verror').WError;
 class InitRequest {
     /**
      * Create service
-     * @param {Tracker} tracker                 Tracker server
+     * @param {App} app                         The application
      * @param {object} config                   Configuration
      * @param {Logger} logger                   Logger
      * @param {Emailer} emailer                 Emailer
@@ -20,8 +20,8 @@ class InitRequest {
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(tracker, config, logger, emailer, util, userRepo, daemonRepo) {
-        this._tracker = tracker;
+    constructor(app, config, logger, emailer, util, userRepo, daemonRepo) {
+        this._app = app;
         this._config = config;
         this._logger = logger;
         this._emailer = emailer;
@@ -43,7 +43,7 @@ class InitRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'servers.tracker', 'config', 'logger', 'emailer', 'util', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'emailer', 'util', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -52,7 +52,7 @@ class InitRequest {
      * @param {object} message      The message
      */
     onMessage(id, message) {
-        let client = this._tracker.clients.get(id);
+        let client = this.tracker.clients.get(id);
         if (!client)
             return;
 
@@ -82,7 +82,7 @@ class InitRequest {
                     .then(daemons => {
                         if (daemons.length) {
                             let daemon = daemons[0];
-                            daemon.confirm = this._tracker.generateToken();
+                            daemon.confirm = this.tracker.generateToken();
 
                             return this._daemonRepo.save(daemon)
                                 .then(daemonId => {
@@ -102,15 +102,15 @@ class InitRequest {
                                             text: emailText,
                                         })
                                         .then(() => {
-                                            let response = this._tracker.InitResponse.create({
-                                                response: this._tracker.InitResponse.Result.ACCEPTED,
+                                            let response = this.tracker.InitResponse.create({
+                                                response: this.tracker.InitResponse.Result.ACCEPTED,
                                             });
-                                            let message = this._tracker.ServerMessage.create({
-                                                type: this._tracker.ServerMessage.Type.INIT_RESPONSE,
+                                            let message = this.tracker.ServerMessage.create({
+                                                type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
                                                 initResponse: response,
                                             });
-                                            let data = this._tracker.ServerMessage.encode(message).finish();
-                                            this._tracker.send(id, data);
+                                            let data = this.tracker.ServerMessage.encode(message).finish();
+                                            this.tracker.send(id, data);
                                         });
                                 });
                         }
@@ -118,8 +118,8 @@ class InitRequest {
                         let daemon = this._daemonRepo.create();
                         daemon.userId = user.id;
                         daemon.name = message.initRequest.daemonName;
-                        daemon.token = this._tracker.generateToken();
-                        daemon.confirm = this._tracker.generateToken();
+                        daemon.token = this.tracker.generateToken();
+                        daemon.confirm = this.tracker.generateToken();
                         daemon.createdAt = moment();
                         daemon.confirmedAt = null;
                         daemon.blockedAt = null;
@@ -143,15 +143,15 @@ class InitRequest {
                                         text: emailText,
                                     })
                                     .then(() => {
-                                        let response = this._tracker.InitResponse.create({
-                                            response: this._tracker.InitResponse.Result.ACCEPTED,
+                                        let response = this.tracker.InitResponse.create({
+                                            response: this.tracker.InitResponse.Result.ACCEPTED,
                                         });
-                                        let message = this._tracker.ServerMessage.create({
-                                            type: this._tracker.ServerMessage.Type.INIT_RESPONSE,
+                                        let message = this.tracker.ServerMessage.create({
+                                            type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
                                             initResponse: response,
                                         });
-                                        let data = this._tracker.ServerMessage.encode(message).finish();
-                                        this._tracker.send(id, data);
+                                        let data = this.tracker.ServerMessage.encode(message).finish();
+                                        this.tracker.send(id, data);
                                     });
                             });
                     });
@@ -159,6 +159,17 @@ class InitRequest {
             .catch(error => {
                 this._logger.error(new WError(error, 'InitRequest.onMessage()'));
             });
+    }
+
+    /**
+     * Retrieve server
+     * @return {Tracker}
+     */
+    get tracker() {
+        if (this._tracker)
+            return this._tracker;
+        this._tracker = this._app.get('servers').get('tracker');
+        return this._tracker;
     }
 }
 

@@ -12,14 +12,14 @@ const WError = require('verror').WError;
 class ConfirmRequest {
     /**
      * Create service
-     * @param {Tracker} tracker                 Tracker server
+     * @param {App} app                         The application
      * @param {object} config                   Configuration
      * @param {Logger} logger                   Logger
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(tracker, config, logger, userRepo, daemonRepo) {
-        this._tracker = tracker;
+    constructor(app, config, logger, userRepo, daemonRepo) {
+        this._app = app;
         this._config = config;
         this._logger = logger;
         this._userRepo = userRepo;
@@ -39,7 +39,7 @@ class ConfirmRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'servers.tracker', 'config', 'logger', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -48,7 +48,7 @@ class ConfirmRequest {
      * @param {object} message      The message
      */
     onMessage(id, message) {
-        let client = this._tracker.clients.get(id);
+        let client = this.tracker.clients.get(id);
         if (!client)
             return;
 
@@ -57,18 +57,18 @@ class ConfirmRequest {
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (!daemon) {
-                    let response = this._tracker.ConfirmResponse.create({
-                        response: this._tracker.ConfirmResponse.Result.REJECTED,
+                    let response = this.tracker.ConfirmResponse.create({
+                        response: this.tracker.ConfirmResponse.Result.REJECTED,
                     });
-                    let message = this._tracker.ServerMessage.create({
-                        type: this._tracker.ServerMessage.Type.CONFIRM_RESPONSE,
+                    let message = this.tracker.ServerMessage.create({
+                        type: this.tracker.ServerMessage.Type.CONFIRM_RESPONSE,
                         confirmResponse: response,
                     });
-                    let data = this._tracker.ServerMessage.encode(message).finish();
-                    return this._tracker.send(id, data);
+                    let data = this.tracker.ServerMessage.encode(message).finish();
+                    return this.tracker.send(id, data);
                 }
 
-                daemon.token = this._tracker.generateToken();
+                daemon.token = this.tracker.generateToken();
                 daemon.confirm = null;
                 daemon.confirmedAt = moment();
 
@@ -77,21 +77,32 @@ class ConfirmRequest {
                         if (!daemonId)
                             throw new Error('Could not save daemon');
 
-                        let response = this._tracker.ConfirmResponse.create({
-                            response: this._tracker.ConfirmResponse.Result.ACCEPTED,
+                        let response = this.tracker.ConfirmResponse.create({
+                            response: this.tracker.ConfirmResponse.Result.ACCEPTED,
                             token: daemon.token,
                         });
-                        let message = this._tracker.ServerMessage.create({
+                        let message = this.tracker.ServerMessage.create({
                             type: this._tracker.ServerMessage.Type.CONFIRM_RESPONSE,
                             confirmResponse: response,
                         });
-                        let data = this._tracker.ServerMessage.encode(message).finish();
+                        let data = this.tracker.ServerMessage.encode(message).finish();
                         this._tracker.send(id, data);
                     });
             })
             .catch(error => {
                 this._logger.error(new WError(error, 'ConfirmRequest.onMessage()'));
             });
+    }
+
+    /**
+     * Retrieve server
+     * @return {Tracker}
+     */
+    get tracker() {
+        if (this._tracker)
+            return this._tracker;
+        this._tracker = this._app.get('servers').get('tracker');
+        return this._tracker;
     }
 }
 
