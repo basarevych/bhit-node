@@ -2,6 +2,9 @@
 -- Prepare
 --
 
+DROP TABLE IF EXISTS daemon_connections CASCADE;
+DROP TABLE IF EXISTS connections CASCADE;
+DROP TABLE IF EXISTS paths CASCADE;
 DROP TABLE IF EXISTS daemons CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
@@ -204,6 +207,7 @@ CREATE TABLE connections (
     id bigserial NOT NULL,
     user_id bigint NOT NULL,
     path_id bigint NOT NULL,
+    token varchar(255) NOT NULL,
     connect_addr varchar(255) NOT NULL,
     connect_port int NOT NULL,
     listen_addr varchar(255) NOT NULL,
