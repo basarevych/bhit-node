@@ -59,6 +59,9 @@ class Tracker {
         let confirmRequest = this._app.get('modules.tracker.messages.confirmRequest');
         server.on('confirm_request', confirmRequest.onMessage.bind(confirmRequest));
 
+        let createRequest = this._app.get('modules.tracker.messages.createRequest');
+        server.on('create_request', createRequest.onMessage.bind(createRequest));
+
         return Promise.resolve();
     }
 }
