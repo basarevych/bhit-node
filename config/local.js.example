@@ -26,6 +26,11 @@ module.exports = {
                 cert: '/etc/letsencrypt/live/server1.example.com/cert.pem',
                 ca: '/etc/letsencrypt/live/server1.example.com/fullchain.pem',
             },
+            log: {
+                path: path.join(__dirname, '..', 'logs'),
+                interval: '1d',
+                mode: 0o640,
+            },
         },
     },
 
