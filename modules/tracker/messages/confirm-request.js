@@ -58,11 +58,12 @@ class ConfirmRequest {
                     let response = this.tracker.ConfirmResponse.create({
                         response: this.tracker.ConfirmResponse.Result.REJECTED,
                     });
-                    let message = this.tracker.ServerMessage.create({
+                    let reply = this.tracker.ServerMessage.create({
                         type: this.tracker.ServerMessage.Type.CONFIRM_RESPONSE,
+                        messageId: message.messageId,
                         confirmResponse: response,
                     });
-                    let data = this.tracker.ServerMessage.encode(message).finish();
+                    let data = this.tracker.ServerMessage.encode(reply).finish();
                     return this.tracker.send(id, data);
                 }
 
@@ -79,11 +80,12 @@ class ConfirmRequest {
                             response: this.tracker.ConfirmResponse.Result.ACCEPTED,
                             token: daemon.token,
                         });
-                        let message = this.tracker.ServerMessage.create({
+                        let reply = this.tracker.ServerMessage.create({
                             type: this._tracker.ServerMessage.Type.CONFIRM_RESPONSE,
+                            messageId: message.messageId,
                             confirmResponse: response,
                         });
-                        let data = this.tracker.ServerMessage.encode(message).finish();
+                        let data = this.tracker.ServerMessage.encode(reply).finish();
                         this._tracker.send(id, data);
                     });
             })
