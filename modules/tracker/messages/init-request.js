@@ -2,7 +2,7 @@
  * Init Request message
  * @module tracker/messages/init-request
  */
-const debug = require('debug')('bhit:message');
+const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 

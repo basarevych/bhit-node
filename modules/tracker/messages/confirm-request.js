@@ -2,7 +2,7 @@
  * Confirm Request message
  * @module tracker/messages/confirm-request
  */
-const debug = require('debug')('bhit:message');
+const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
