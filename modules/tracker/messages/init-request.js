@@ -103,11 +103,12 @@ class InitRequest {
                                             let response = this.tracker.InitResponse.create({
                                                 response: this.tracker.InitResponse.Result.ACCEPTED,
                                             });
-                                            let message = this.tracker.ServerMessage.create({
+                                            let reply = this.tracker.ServerMessage.create({
                                                 type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
+                                                messageId: message.messageId,
                                                 initResponse: response,
                                             });
-                                            let data = this.tracker.ServerMessage.encode(message).finish();
+                                            let data = this.tracker.ServerMessage.encode(reply).finish();
                                             this.tracker.send(id, data);
                                         });
                                 });
@@ -144,11 +145,12 @@ class InitRequest {
                                         let response = this.tracker.InitResponse.create({
                                             response: this.tracker.InitResponse.Result.ACCEPTED,
                                         });
-                                        let message = this.tracker.ServerMessage.create({
+                                        let reply = this.tracker.ServerMessage.create({
                                             type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
+                                            messageId: message.messageId,
                                             initResponse: response,
                                         });
-                                        let data = this.tracker.ServerMessage.encode(message).finish();
+                                        let data = this.tracker.ServerMessage.encode(reply).finish();
                                         this.tracker.send(id, data);
                                     });
                             });
