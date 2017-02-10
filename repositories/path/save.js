@@ -1,20 +1,20 @@
 /**
- * DaemonRepository.save()
+ * PathRepository.save()
  */
 'use strict';
 
 const WError = require('verror').WError;
 
 /**
- * Save daemon
+ * Save path
  * @method save
- * @memberOf module:repositories/daemon~DaemonRepository
- * @param {DaemonModel} daemon              Daemon model
+ * @memberOf module:repositories/path~PathRepository
+ * @param {PathModel} path                  Path model
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
  * @return {Promise}                        Resolves to record ID
  */
-module.exports = function (daemon, pg) {
+module.exports = function (path, pg) {
     return Promise.resolve()
         .then(() => {
             if (typeof pg == 'object')
@@ -25,15 +25,15 @@ module.exports = function (daemon, pg) {
         .then(client => {
             return Promise.resolve()
                 .then(() => {
-                    let data = this._postgres.constructor.serializeModel(daemon);
+                    let data = this._postgres.constructor.serializeModel(path);
                     let fields = Object.keys(data)
                         .filter(field => {
-                            return field != 'id' && field != 'acting_as';
+                            return field != 'id';
                         });
 
                     let query, params = [];
-                    if (daemon.id) {
-                        query = 'UPDATE daemons SET ';
+                    if (path.id) {
+                        query = 'UPDATE paths SET ';
                         query += fields
                             .map(field => {
                                 params.push(data[field]);
@@ -43,7 +43,7 @@ module.exports = function (daemon, pg) {
                         params.push(data.id);
                         query += ` WHERE id = $${params.length}`;
                     } else {
-                        query = 'INSERT INTO daemons(';
+                        query = 'INSERT INTO paths(';
                         query += fields.join(', ');
                         query += ') VALUES (';
                         query += fields
@@ -58,14 +58,14 @@ module.exports = function (daemon, pg) {
                 })
                 .then(result => {
                     if (result.rowCount !== 1)
-                        throw new Error('Failed to ' + (daemon.id ? 'UPDATE' : 'INSERT') + ' row');
+                        throw new Error('Failed to ' + (path.id ? 'UPDATE' : 'INSERT') + ' row');
 
-                    if (!daemon.id) {
-                        daemon.id = result.rows[0].id;
-                        daemon._dirty = false;
+                    if (!path.id) {
+                        path.id = result.rows[0].id;
+                        path._dirty = false;
                     }
 
-                    return daemon.id;
+                    return path.id;
                 })
                 .then(
                     value => {
@@ -81,6 +81,6 @@ module.exports = function (daemon, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.save()');
+            throw new WError(error, 'PathRepository.save()');
         });
 };

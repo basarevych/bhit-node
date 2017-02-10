@@ -1,21 +1,21 @@
 /**
- * UserRepository.findByEmail()
+ * PathRepository.findByPath()
  */
 'use strict';
 
 const WError = require('verror').WError;
 
 /**
- * Find users by email
- * @method findByEmail
- * @memberOf module:repositories/user~UserRepository
- * @param {string} email                    Email to search by
+ * Find paths by path
+ * @method findByPath
+ * @memberOf module:repositories/path~PathRepository
+ * @param {string} path                     Path to search by
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
-module.exports = function (email, pg) {
-    let key = `sql:users-by-email:${email}`;
+module.exports = function (path, pg) {
+    let key = `sql:paths-by-path:${path}`;
 
     return this._cacher.get(key)
         .then(value => {
@@ -32,9 +32,9 @@ module.exports = function (email, pg) {
                 .then(client => {
                     return client.query(
                             'SELECT * ' +
-                            '  FROM users ' +
-                            ' WHERE email = $1 ',
-                            [ email ]
+                            '  FROM paths ' +
+                            ' WHERE path = $1 ',
+                            [ path ]
                         )
                         .then(result => {
                             return result.rowCount ? result.rows : [];
@@ -64,6 +64,6 @@ module.exports = function (email, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'UserRepository.findByEmail()');
+            throw new WError(error, 'PathRepository.findByPath()');
         });
 };

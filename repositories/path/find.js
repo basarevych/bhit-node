@@ -1,21 +1,21 @@
 /**
- * UserRepository.findByEmail()
+ * PathRepository.find()
  */
 'use strict';
 
 const WError = require('verror').WError;
 
 /**
- * Find users by email
- * @method findByEmail
- * @memberOf module:repositories/user~UserRepository
- * @param {string} email                    Email to search by
+ * Find a path by ID
+ * @method find
+ * @memberOf module:repositories/path~PathRepository
+ * @param {number} id                       ID to search by
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
-module.exports = function (email, pg) {
-    let key = `sql:users-by-email:${email}`;
+module.exports = function (id, pg) {
+    let key = `sql:paths-by-id:${id}`;
 
     return this._cacher.get(key)
         .then(value => {
@@ -32,12 +32,19 @@ module.exports = function (email, pg) {
                 .then(client => {
                     return client.query(
                             'SELECT * ' +
-                            '  FROM users ' +
-                            ' WHERE email = $1 ',
-                            [ email ]
+                            '  FROM paths ' +
+                            ' WHERE id = $1 ',
+                            [ id ]
                         )
                         .then(result => {
-                            return result.rowCount ? result.rows : [];
+                            let rows = result.rowCount ? result.rows : [];
+                            if (!rows.length)
+                                return rows;
+
+                            return this._cacher.set(key, rows)
+                                .then(() => {
+                                    return rows;
+                                });
                         })
                         .then(
                             value => {
@@ -64,6 +71,6 @@ module.exports = function (email, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'UserRepository.findByEmail()');
+            throw new WError(error, 'PathRepository.find()');
         });
 };

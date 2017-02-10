@@ -17,6 +17,7 @@ class DaemonModel extends Model {
         this.id = undefined;
         this.userId = undefined;
         this.name = undefined;
+        this.actingAs = undefined;
         this.token = undefined;
         this.confirm = undefined;
         this.createdAt = undefined;
@@ -85,6 +86,22 @@ class DaemonModel extends Model {
      */
     get name() {
         return this._getField('name');
+    }
+
+    /**
+     * Acting type setter
+     * @type {undefined|string}
+     */
+    set actingAs(type) {
+        this._setField('acting_as', type);
+    }
+
+    /**
+     * Acting type getter
+     * @type {undefined|string}
+     */
+    get actingAs() {
+        return this._getField('acting_as');
     }
 
     /**
