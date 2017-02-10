@@ -209,9 +209,9 @@ CREATE TABLE connections (
     path_id bigint NOT NULL,
     token varchar(255) NOT NULL,
     connect_address varchar(255) NOT NULL,
-    connect_port int NOT NULL,
+    connect_port varchar(255) NOT NULL,
     listen_address varchar(255) NOT NULL,
-    listen_port int NOT NULL,
+    listen_port varchar(255) NOT NULL,
     CONSTRAINT connections_pk PRIMARY KEY (id),
     CONSTRAINT connections_unique_path UNIQUE (user_id, path_id),
     CONSTRAINT connections_user_fk FOREIGN KEY(user_id)

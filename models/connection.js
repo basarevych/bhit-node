@@ -131,7 +131,7 @@ class ConnectionModel extends Model {
 
     /**
      * Connect port setter
-     * @type {undefined|number}
+     * @type {undefined|string}
      */
     set connectPort(port) {
         this._setField('connect_port', port);
@@ -139,7 +139,7 @@ class ConnectionModel extends Model {
 
     /**
      * Connect port getter
-     * @type {undefined|number}
+     * @type {undefined|string}
      */
     get connectPort() {
         return this._getField('connect_port');
@@ -163,7 +163,7 @@ class ConnectionModel extends Model {
 
     /**
      * Listen port setter
-     * @type {undefined|number}
+     * @type {undefined|string}
      */
     set listenPort(port) {
         this._setField('listen_port', port);
@@ -171,7 +171,7 @@ class ConnectionModel extends Model {
 
     /**
      * Listen port getter
-     * @type {undefined|number}
+     * @type {undefined|string}
      */
     get listenPort() {
         return this._getField('listen_port');
