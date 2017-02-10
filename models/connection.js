@@ -17,6 +17,7 @@ class ConnectionModel extends Model {
         this.id = undefined;
         this.userId = undefined;
         this.pathId = undefined;
+        this.actingAs = undefined;
         this.token = undefined;
         this.connectAddress = undefined;
         this.connectPort = undefined;
@@ -78,6 +79,22 @@ class ConnectionModel extends Model {
      */
     get pathId() {
         return this._getField('path_id');
+    }
+
+    /**
+     * Acting type setter
+     * @type {undefined|string}
+     */
+    set actingAs(type) {
+        this._setField('acting_as', type);
+    }
+
+    /**
+     * Acting type getter
+     * @type {undefined|string}
+     */
+    get actingAs() {
+        return this._getField('acting_as');
     }
 
     /**

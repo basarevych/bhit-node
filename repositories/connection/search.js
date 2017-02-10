@@ -1,14 +1,14 @@
 /**
- * PathRepository.search()
+ * ConnectionRepository.search()
  */
 'use strict';
 
 const moment = require('moment-timezone');
 
 /**
- * Find paths by query
+ * Find connections by query
  * @method search
- * @memberOf module:repositories/path~PathRepository
+ * @memberOf module:repositories/connection~ConnectionRepository
  * @param {object} [options]                Base Repository.search() options
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
@@ -17,13 +17,16 @@ const moment = require('moment-timezone');
  */
 module.exports = function (options, pg) {
     return this.prototype.search(
-            'paths',
+            'connections',
             [
                 'id',
-                'parent_id',
-                'name',
-                'path',
+                'user_id',
+                'path_id',
                 'token',
+                'connect_address',
+                'connect_port',
+                'listen_address',
+                'listen_port',
             ],
             options,
             pg
