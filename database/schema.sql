@@ -149,7 +149,7 @@ CREATE TRIGGER invalidate_cache
 
 CREATE TABLE paths (
     id bigserial NOT NULL,
-    parent_id bigint NOT NULL,
+    parent_id bigint NULL,
     name varchar(255) NOT NULL,
     path text NOT NULL,
     token varchar(255) NOT NULL,

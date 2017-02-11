@@ -41,6 +41,14 @@ class ConnectionRepository extends Repository {
     static get requires() {
         return [ 'app', 'config', 'postgres', 'cacher', 'util', 'models.connection' ];
     }
+
+    /**
+     * Generate connection token
+     * @return {string}
+     */
+    generateToken() {
+        return this._util.getRandomString(32, { lower: true, upper: true, digits: true });
+    }
 }
 
 module.exports = ConnectionRepository;

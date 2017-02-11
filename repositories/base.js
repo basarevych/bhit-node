@@ -25,6 +25,15 @@ class Repository {
     }
 
     /**
+     * Get repository
+     * @param {string} name                         Repository service name
+     * @return {object}
+     */
+    getRepository(name) {
+        return this._app.get(name);
+    }
+
+    /**
      * Create new instance of the model
      * @return {Object}
      */

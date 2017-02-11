@@ -23,14 +23,20 @@ module.exports = function (connection, pg) {
             return this._postgres.connect(pg);
         })
         .then(client => {
-            return client.query(
-                    'DELETE ' +
-                    '  FROM connections ' +
-                    ' WHERE id = $1 ',
-                    [ typeof connection == 'object' ? connection.id : connection ]
-                )
-                .then(result => {
-                    return result.rowCount;
+            let pathRepo = this.getRepository('repositories.path');
+            return client.transaction({ name: 'connection_delete' }, rollback => {
+                    return client.query(
+                            'DELETE ' +
+                            '  FROM connections ' +
+                            ' WHERE id = $1 ',
+                            [ typeof connection == 'object' ? connection.id : connection ]
+                        )
+                        .then(result => {
+                            return pathRepo.delete(connection.pathId, client)
+                                .then(() => {
+                                    return result.rowCount;
+                                });
+                        });
                 })
                 .then(
                     value => {

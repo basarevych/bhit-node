@@ -54,6 +54,17 @@ class CreateRequest {
         return this._daemonRepo.findByToken(message.createRequest.token)
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
+                if (!daemon)
+                    return null;
+                if (!message.createRequest.daemonName)
+                    return daemon;
+
+                return this._daemonRepo.findByUserAndName(daemon.userId, message.createRequest.daemonName)
+                    .then(daemons => {
+                        return daemons.length && daemons[0];
+                    });
+            })
+            .then(daemon => {
                 if (!daemon) {
                     let response = this.tracker.CreateResponse.create({
                         response: this.tracker.CreateResponse.Result.REJECTED,
@@ -66,7 +77,7 @@ class CreateRequest {
                     let data = this.tracker.ServerMessage.encode(reply).finish();
                     return this.tracker.send(id, data);
                 }
-                if (!this.checkPath(message.createRequest.path)) {
+                if (!this.tracker.validatePath(message.createRequest.path)) {
                     let response = this.tracker.CreateResponse.create({
                         response: this.tracker.CreateResponse.Result.INVALID_PATH,
                     });
@@ -79,16 +90,16 @@ class CreateRequest {
                     return this.tracker.send(id, data);
                 }
 
-                return this._connectionRepo.createByPath(
-                        message.createRequest.path,
-                        message.createRequest.type == this.tracker.CreateRequest.Type.SERVER ? 'server' : 'client',
-                        message.createRequest.connectAddress,
-                        message.createRequest.connectPort,
-                        message.createRequest.listenAddress,
-                        message.createRequest.listenPort,
-                    )
-                    .then(([ connection, path ]) => {
-                        if (!path) {
+                let connection = this._connectionRepo.create();
+                connection.userId = daemon.userId;
+                connection.token = this._connectionRepo.generateToken();
+                connection.connectAddress = message.createRequest.connectAddress;
+                connection.connectPort = message.createRequest.connectPort;
+                connection.listenAddress = message.createRequest.listenAddress;
+                connection.listenPort = message.createRequest.listenPort;
+                return this._connectionRepo.createByPath(message.createRequest.path, connection)
+                    .then(result => {
+                        if (!result.path || !result.connection) {
                             let response = this.tracker.CreateResponse.create({
                                 response: this.tracker.CreateResponse.Result.PATH_EXISTS,
                             });
@@ -101,18 +112,21 @@ class CreateRequest {
                             return this.tracker.send(id, data);
                         }
 
-                        let response = this.tracker.CreateResponse.create({
-                            response: this.tracker.CreateResponse.Result.ACCEPTED,
-                            serverToken: connection.token,
-                            clientToken: path.token,
-                        });
-                        let reply = this.tracker.ServerMessage.create({
-                            type: this._tracker.ServerMessage.Type.CREATE_RESPONSE,
-                            messageId: message.messageId,
-                            createResponse: response,
-                        });
-                        let data = this.tracker.ServerMessage.encode(reply).finish();
-                        this._tracker.send(id, data);
+                        return this._daemonRepo.connect(daemon, connection, this.tracker.CreateRequest.Type.SERVER ? 'server' : 'client')
+                            .then(() => {
+                                let response = this.tracker.CreateResponse.create({
+                                    response: this.tracker.CreateResponse.Result.ACCEPTED,
+                                    serverToken: result.connection.token,
+                                    clientToken: result.path.token,
+                                });
+                                let reply = this.tracker.ServerMessage.create({
+                                    type: this._tracker.ServerMessage.Type.CREATE_RESPONSE,
+                                    messageId: message.messageId,
+                                    createResponse: response,
+                                });
+                                let data = this.tracker.ServerMessage.encode(reply).finish();
+                                this._tracker.send(id, data);
+                            });
                     });
             })
             .catch(error => {

@@ -23,14 +23,48 @@ module.exports = function (path, pg) {
             return this._postgres.connect(pg);
         })
         .then(client => {
-            return client.query(
-                    'DELETE ' +
-                    '  FROM paths ' +
-                    ' WHERE id = $1 ',
-                    [ typeof path == 'object' ? path.id : path ]
-                )
-                .then(result => {
-                    return result.rowCount;
+            let connectionRepo = this.getRepository('repositories.connection');
+            return client.transaction({ name: 'path_delete' }, rollback => {
+                    return connectionRepo.findByPath(path, client)
+                        .then(paths => {
+                            if (paths.length)
+                                return 0;
+
+                            return Promise.resolve()
+                                .then(() => {
+                                    if (typeof path == 'object')
+                                        return [ path ];
+
+                                    return this.find(path, client);
+                                })
+                                .then(paths => {
+                                    path = paths.length && paths[0];
+                                    if (!path)
+                                        return rollback(0);
+
+                                    return client.query(
+                                            'DELETE ' +
+                                            '  FROM paths ' +
+                                            ' WHERE id = $1 ',
+                                            [ path.id ]
+                                        )
+                                        .then(result => {
+                                            if (!path.parentId)
+                                                return result.rowCount;
+
+                                            return this.findByParent(path.parentId, client)
+                                                .then(paths => {
+                                                    if (!paths.length)
+                                                        return this.delete(path.parentId, client);
+
+                                                    return 0;
+                                                })
+                                                .then(count => {
+                                                    return result.rowCount + count;
+                                                });
+                                        });
+                                })
+                        });
                 })
                 .then(
                     value => {

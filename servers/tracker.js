@@ -186,6 +186,24 @@ class Tracker extends EventEmitter {
     }
 
     /**
+     * Validate path
+     * @param {string} path                 Path to check
+     * @return {boolean}
+     */
+    validatePath(path) {
+        if (!path.length || path[0] != '/')
+            return false;
+
+        let parts = path.split('/');
+        parts.shift();
+        for (let node of parts) {
+            if (!node.length)
+                return false;
+        }
+        return true;
+    }
+
+    /**
      * Send message
      * @param {string} id                   Client ID
      * @param {Buffer|null} data            Data to send
