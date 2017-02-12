@@ -93,6 +93,7 @@ class CreateRequest {
                 let connection = this._connectionRepo.create();
                 connection.userId = daemon.userId;
                 connection.token = this._connectionRepo.generateToken();
+                connection.encrypted = message.createRequest.encrypted;
                 connection.connectAddress = message.createRequest.connectAddress;
                 connection.connectPort = message.createRequest.connectPort;
                 connection.listenAddress = message.createRequest.listenAddress;

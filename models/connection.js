@@ -19,6 +19,7 @@ class ConnectionModel extends Model {
         this.pathId = undefined;
         this.actingAs = undefined;
         this.token = undefined;
+        this.encrypted = undefined;
         this.connectAddress = undefined;
         this.connectPort = undefined;
         this.listenAddress = undefined;
@@ -111,6 +112,22 @@ class ConnectionModel extends Model {
      */
     get token() {
         return this._getField('token');
+    }
+
+    /**
+     * Encrypted setter
+     * @type {undefined|boolean}
+     */
+    set encrypted(encrypted) {
+        this._setField('encrypted', encrypted);
+    }
+
+    /**
+     * Encrypted getter
+     * @type {undefined|boolean}
+     */
+    get encrypted() {
+        return this._getField('encrypted');
     }
 
     /**

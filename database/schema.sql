@@ -208,6 +208,7 @@ CREATE TABLE connections (
     user_id bigint NOT NULL,
     path_id bigint NOT NULL,
     token varchar(255) NOT NULL,
+    encrypted boolean NOT NULL,
     connect_address varchar(255) NOT NULL,
     connect_port varchar(255) NOT NULL,
     listen_address varchar(255) NOT NULL,
