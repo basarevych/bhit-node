@@ -1,21 +1,22 @@
 /**
- * PathRepository.findByPath()
+ * PathRepository.findByUserAndPath()
  */
 'use strict';
 
 const WError = require('verror').WError;
 
 /**
- * Find paths by path
- * @method findByPath
+ * Find paths by user and path
+ * @method findByUserAndPath
  * @memberOf module:repositories/path~PathRepository
+ * @param {UserModel|number} user           User model
  * @param {string} path                     Path to search by
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
-module.exports = function (path, pg) {
-    let key = `sql:paths-by-path:${path}`;
+module.exports = function (user, path, pg) {
+    let key = `sql:paths-by-user-id-and-path:${typeof user == 'object' ? user.id : user}:${path}`;
 
     return this._cacher.get(key)
         .then(value => {
@@ -33,8 +34,11 @@ module.exports = function (path, pg) {
                     return client.query(
                             'SELECT * ' +
                             '  FROM paths ' +
-                            ' WHERE path = $1 ',
-                            [ path ]
+                            ' WHERE user_id = $1 AND path = $2 ',
+                            [
+                                typeof user == 'object' ? user.id : user,
+                                path
+                            ]
                         )
                         .then(result => {
                             return result.rowCount ? result.rows : [];
@@ -64,6 +68,6 @@ module.exports = function (path, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.findByPath()');
+            throw new WError(error, 'PathRepository.findByUserAndPath()');
         });
 };

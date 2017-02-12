@@ -150,14 +150,18 @@ CREATE TRIGGER invalidate_cache
 CREATE TABLE paths (
     id bigserial NOT NULL,
     parent_id bigint NULL,
+    user_id bigint NOT NULL,
     name varchar(255) NOT NULL,
     path text NOT NULL,
     token varchar(255) NOT NULL,
     CONSTRAINT paths_pk PRIMARY KEY (id),
-    CONSTRAINT paths_unique_path UNIQUE (path),
+    CONSTRAINT paths_unique_path UNIQUE (user_id, path),
     CONSTRAINT paths_unique_token UNIQUE (token),
     CONSTRAINT paths_parent_fk FOREIGN KEY(parent_id)
         REFERENCES paths(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT paths_user_fk FOREIGN KEY(user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -170,8 +174,8 @@ BEGIN
             cache_keys,
             array[
                 'paths-by-id:' || NEW.id,
-                'paths-by-path:' || NEW.path,
-                'paths-by-token:' || NEW.token
+                'paths-by-token:' || NEW.token,
+                'paths-by-user-id-and-path:' || NEW.user_id || ':' || NEW.path
             ]
         );
     END IF;
@@ -180,8 +184,8 @@ BEGIN
             cache_keys,
             array[
                 'paths-by-id:' || OLD.id,
-                'paths-by-path:' || OLD.path,
-                'paths-by-token:' || OLD.token
+                'paths-by-token:' || OLD.token,
+                'paths-by-user-id-and-path:' || OLD.user_id || ':' || OLD.path
             ]
         );
     END IF;

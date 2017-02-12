@@ -79,7 +79,7 @@ class DeleteRequest {
                     return this.tracker.send(id, data);
                 }
 
-                return this._pathRepo.findByPath(message.deleteRequest.path)
+                return this._pathRepo.findByUserAndPath(daemon.userId, message.deleteRequest.path)
                     .then(paths => {
                         let path = paths.length && paths[0];
                         if (!path) {

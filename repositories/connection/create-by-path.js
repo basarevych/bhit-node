@@ -26,7 +26,7 @@ module.exports = function (path, connection, pg) {
         .then(client => {
             let pathRepo = this.getRepository('repositories.path');
             let createPath = path => {
-                return pathRepo.findByPath(path, client)
+                return pathRepo.findByUserAndPath(connection.userId, path, client)
                     .then(paths => {
                         if (paths.length)
                             return paths[0];
@@ -57,7 +57,7 @@ module.exports = function (path, connection, pg) {
                     });
             };
             return client.transaction({ name: 'create_connection_by_path' }, rollback => {
-                    return pathRepo.findByPath(path, client)
+                    return pathRepo.findByUserAndPath(connection.userId, path, client)
                         .then(paths => {
                             if (paths.length)
                                 return rollback({ connection: null, path: null });

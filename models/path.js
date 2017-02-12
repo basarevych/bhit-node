@@ -16,6 +16,7 @@ class PathModel extends Model {
 
         this.id = undefined;
         this.parentId = undefined;
+        this.userId = undefined;
         this.name = undefined;
         this.path = undefined;
         this.token = undefined;
@@ -59,6 +60,22 @@ class PathModel extends Model {
      */
     get parentId() {
         return this._getField('parent_id');
+    }
+
+    /**
+     * User ID setter
+     * @type {undefined|number}
+     */
+    set userId(id) {
+        this._setField('user_id', id);
+    }
+
+    /**
+     * User ID getter
+     * @type {undefined|number}
+     */
+    get userId() {
+        return this._getField('user_id');
     }
 
     /**
