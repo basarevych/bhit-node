@@ -94,6 +94,10 @@ class Tracker extends EventEmitter {
                         this.CreateResponse = this.proto.lookup('tracker.CreateResponse');
                         this.DeleteRequest = this.proto.lookup('tracker.DeleteRequest');
                         this.DeleteResponse = this.proto.lookup('tracker.DeleteResponse');
+                        this.ConnectRequest = this.proto.lookup('tracker.ConnectRequest');
+                        this.ConnectResponse = this.proto.lookup('tracker.ConnectResponse');
+                        this.DisconnectRequest = this.proto.lookup('tracker.DisconnectRequest');
+                        this.DisconnectResponse = this.proto.lookup('tracker.DisconnectResponse');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -385,6 +389,12 @@ class Tracker extends EventEmitter {
                     break;
                 case this.ClientMessage.Type.DELETE_REQUEST:
                     this.emit('delete_request', id, message);
+                    break;
+                case this.ClientMessage.Type.CONNECT_REQUEST:
+                    this.emit('connect_request', id, message);
+                    break;
+                case this.ClientMessage.Type.DISCONNECT_REQUEST:
+                    this.emit('disconnect_request', id, message);
                     break;
             }
         } catch (error) {
