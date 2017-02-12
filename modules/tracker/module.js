@@ -62,6 +62,9 @@ class Tracker {
         let createRequest = this._app.get('modules.tracker.messages.createRequest');
         server.on('create_request', createRequest.onMessage.bind(createRequest));
 
+        let deleteRequest = this._app.get('modules.tracker.messages.deleteRequest');
+        server.on('delete_request', createRequest.onMessage.bind(deleteRequest));
+
         return Promise.resolve();
     }
 }

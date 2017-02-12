@@ -92,6 +92,8 @@ class Tracker extends EventEmitter {
                         this.ConfirmResponse = this.proto.lookup('tracker.ConfirmResponse');
                         this.CreateRequest = this.proto.lookup('tracker.CreateRequest');
                         this.CreateResponse = this.proto.lookup('tracker.CreateResponse');
+                        this.DeleteRequest = this.proto.lookup('tracker.DeleteRequest');
+                        this.DeleteResponse = this.proto.lookup('tracker.DeleteResponse');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -380,6 +382,9 @@ class Tracker extends EventEmitter {
                     break;
                 case this.ClientMessage.Type.CREATE_REQUEST:
                     this.emit('create_request', id, message);
+                    break;
+                case this.ClientMessage.Type.DELETE_REQUEST:
+                    this.emit('delete_request', id, message);
                     break;
             }
         } catch (error) {
