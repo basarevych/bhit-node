@@ -108,26 +108,44 @@ class DisconnectRequest {
                             return this.tracker.send(id, data);
                         }
 
-                        return this._connectionRepo.findByPath(path)
-                            .then(connections => {
-                                let connection = connections.length && connections[0];
-                                if (!connection) {
-                                    let response = this.tracker.DisconnectResponse.create({
-                                        response: this.tracker.DisconnectResponse.Result.NOT_CONNECTED,
-                                    });
-                                    let reply = this.tracker.ServerMessage.create({
-                                        type: this.tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
-                                        messageId: message.messageId,
-                                        disconnectResponse: response,
-                                    });
-                                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    return this.tracker.send(id, data);
-                                }
+                        let loadConnections = path => {
+                            let result = [];
+                            return this._connectionRepo.findByPath(path)
+                                .then(connections => {
+                                    let connection = connections.length && connections[0];
+                                    if (connection)
+                                        result.push(connection);
 
-                                return this._daemonRepo.disconnect(daemon, connection)
-                                    .then(() => {
+                                    return this._pathRepo.findByParent(path)
+                                        .then(paths => {
+                                            let promises = [];
+                                            for (let subPath of paths)
+                                                promises.push(loadConnections(subPath));
+
+                                            return Promise.all(promises)
+                                                .then(loaded => {
+                                                    for (let subConnections of loaded)
+                                                        result = result.concat(subConnections);
+
+                                                    return result;
+                                                });
+                                        })
+                                });
+                        };
+
+                        return loadConnections(path)
+                            .then(connections => {
+                                let promises = [];
+                                for (let connection of connections)
+                                    promises.push(this._daemonRepo.disconnect(daemon, connection));
+
+                                return Promise.all(promises)
+                                    .then(result => {
+                                        let count = result.reduce((prev, cur) => prev + cur, 0);
                                         let response = this.tracker.DisconnectResponse.create({
-                                            response: this.tracker.DisconnectResponse.Result.ACCEPTED,
+                                            response: (count > 0 ?
+                                                this.tracker.DisconnectResponse.Result.ACCEPTED :
+                                                this.tracker.DisconnectResponse.Result.NOT_CONNECTED),
                                         });
                                         let reply = this.tracker.ServerMessage.create({
                                             type: this._tracker.ServerMessage.Type.DISCONNECT_RESPONSE,

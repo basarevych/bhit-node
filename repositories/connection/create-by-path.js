@@ -43,6 +43,7 @@ module.exports = function (path, connection, pg) {
                             .then(parent => {
                                 let node = pathRepo.create();
                                 node.parentId = parent ? parent.id : null;
+                                node.userId = connection.userId;
                                 node.name = name;
                                 node.path = path;
                                 node.token = this.generateToken();

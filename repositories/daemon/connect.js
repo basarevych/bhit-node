@@ -49,13 +49,14 @@ module.exports = function (daemon, connection, actingAs, pg) {
                                             'SELECT * ' +
                                             '  FROM daemon_connections ' +
                                             ' WHERE connection_id = $1 ' +
-                                            '   AND acting_as = "server" ',
+                                            '   AND acting_as = $2 ',
                                             [
                                                 typeof connection == 'object' ? connection.id : connection,
+                                                'server',
                                             ]
                                         )
                                         .then(result => {
-                                            return result.length === 0;
+                                            return result.rowCount === 0;
                                         });
                                 })
                                 .then(valid => {
