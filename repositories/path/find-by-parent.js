@@ -24,9 +24,10 @@ module.exports = function (path, pg) {
         })
         .then(client => {
             return client.query(
-                    'SELECT * ' +
-                    '  FROM paths ' +
-                    ' WHERE parent_id = $1 ',
+                    '  SELECT * ' +
+                    '    FROM paths ' +
+                    '   WHERE parent_id = $1 ' +
+                    'ORDER BY name ASC ',
                     [ typeof path == 'object' ? path.id : path ]
                 )
                 .then(result => {

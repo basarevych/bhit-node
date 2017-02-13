@@ -109,6 +109,7 @@ class InitRequest {
                                                 initResponse: response,
                                             });
                                             let data = this.tracker.ServerMessage.encode(reply).finish();
+                                            debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                             this.tracker.send(id, data);
                                         });
                                 });
@@ -151,6 +152,7 @@ class InitRequest {
                                             initResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
+                                        debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this.tracker.send(id, data);
                                     });
                             });

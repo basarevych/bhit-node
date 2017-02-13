@@ -77,6 +77,7 @@ class DisconnectRequest {
                         disconnectResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (!this.tracker.validatePath(message.disconnectRequest.path)) {
@@ -89,6 +90,7 @@ class DisconnectRequest {
                         disconnectResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -105,6 +107,7 @@ class DisconnectRequest {
                                 disconnectResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
+                            debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -153,6 +156,7 @@ class DisconnectRequest {
                                             disconnectResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
+                                        debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this._tracker.send(id, data);
                                     });
                             });

@@ -37,7 +37,14 @@ module.exports = function (token, pg) {
                             [ token ]
                         )
                         .then(result => {
-                            return result.rowCount ? result.rows : [];
+                            let rows = result.rowCount ? result.rows : [];
+                            if (!rows.length)
+                                return rows;
+
+                            return this._cacher.set(key, rows)
+                                .then(() => {
+                                    return rows;
+                                });
                         })
                         .then(
                             value => {

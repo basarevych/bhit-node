@@ -64,6 +64,7 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (!this.tracker.validatePath(message.deleteRequest.path)) {
@@ -76,6 +77,7 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -92,6 +94,7 @@ class DeleteRequest {
                                 deleteResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
+                            debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -106,6 +109,7 @@ class DeleteRequest {
                                     deleteResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
+                                debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                 this._tracker.send(id, data);
                             });
                     });

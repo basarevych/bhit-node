@@ -71,6 +71,9 @@ class Tracker {
         let disconnectRequest = this._app.get('modules.tracker.messages.disconnectRequest');
         server.on('disconnect_request', disconnectRequest.onMessage.bind(disconnectRequest));
 
+        let treeRequest = this._app.get('modules.tracker.messages.treeRequest');
+        server.on('tree_request', treeRequest.onMessage.bind(treeRequest));
+
         return Promise.resolve();
     }
 }
