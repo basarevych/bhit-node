@@ -20,6 +20,7 @@ class ConnectionModel extends Model {
         this.actingAs = undefined;
         this.token = undefined;
         this.encrypted = undefined;
+        this.fixed = undefined;
         this.connectAddress = undefined;
         this.connectPort = undefined;
         this.listenAddress = undefined;
@@ -128,6 +129,22 @@ class ConnectionModel extends Model {
      */
     get encrypted() {
         return this._getField('encrypted');
+    }
+
+    /**
+     * Fixed setter
+     * @type {undefined|boolean}
+     */
+    set fixed(fixed) {
+        this._setField('fixed', fixed);
+    }
+
+    /**
+     * Fixed getter
+     * @type {undefined|boolean}
+     */
+    get fixed() {
+        return this._getField('fixed');
     }
 
     /**

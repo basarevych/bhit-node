@@ -96,6 +96,7 @@ class CreateRequest {
                 connection.userId = daemon.userId;
                 connection.token = this._connectionRepo.generateToken();
                 connection.encrypted = message.createRequest.encrypted;
+                connection.fixed = message.createRequest.fixed;
                 connection.connectAddress = message.createRequest.connectAddress;
                 connection.connectPort = message.createRequest.connectPort;
                 connection.listenAddress = message.createRequest.listenAddress;
@@ -116,7 +117,19 @@ class CreateRequest {
                             return this.tracker.send(id, data);
                         }
 
-                        return this._daemonRepo.connect(daemon, connection, this.tracker.CreateRequest.Type.SERVER ? 'server' : 'client')
+                        return Promise.resolve()
+                            .then(() => {
+                                if (message.createRequest.type == this.tracker.CreateRequest.Type.NOT_CONNECTED)
+                                    return;
+
+                                return this._daemonRepo.connect(
+                                    daemon,
+                                    connection,
+                                    message.createRequest.type == this.tracker.CreateRequest.Type.SERVER ?
+                                        'server' :
+                                        'client'
+                                );
+                            })
                             .then(() => {
                                 let response = this.tracker.CreateResponse.create({
                                     response: this.tracker.CreateResponse.Result.ACCEPTED,
