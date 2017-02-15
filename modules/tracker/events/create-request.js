@@ -1,13 +1,13 @@
 /**
- * Create Request message
- * @module tracker/messages/create-request
+ * Create Request event
+ * @module tracker/events/create-request
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
 /**
- * Create Request message class
+ * Create Request event class
  */
 class CreateRequest {
     /**
@@ -25,11 +25,11 @@ class CreateRequest {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.createRequest'
+     * Service name is 'modules.tracker.events.createRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.createRequest';
+        return 'modules.tracker.events.createRequest';
     }
 
     /**
@@ -41,11 +41,11 @@ class CreateRequest {
     }
 
     /**
-     * Message handler
+     * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
      */
-    onMessage(id, message) {
+    handle(id, message) {
         let client = this.tracker.clients.get(id);
         if (!client)
             return;
@@ -148,7 +148,7 @@ class CreateRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'CreateRequest.onMessage()'));
+                this._tracker._logger.error(new WError(error, 'CreateRequest.handle()'));
             });
     }
 

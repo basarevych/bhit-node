@@ -101,6 +101,11 @@ class Tracker extends EventEmitter {
                         this.Tree = this.proto.lookup('tracker.Tree');
                         this.TreeRequest = this.proto.lookup('tracker.TreeRequest');
                         this.TreeResponse = this.proto.lookup('tracker.TreeResponse');
+                        this.ServerConnection = this.proto.lookup('tracker.ServerConnection');
+                        this.ClientConnection = this.proto.lookup('tracker.ClientConnection');
+                        this.ConnectionsList = this.proto.lookup('tracker.ConnectionsList');
+                        this.ConnectionsListRequest = this.proto.lookup('tracker.ConnectionsListRequest');
+                        this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -401,6 +406,9 @@ class Tracker extends EventEmitter {
                     break;
                 case this.ClientMessage.Type.TREE_REQUEST:
                     this.emit('tree_request', id, message);
+                    break;
+                case this.ClientMessage.Type.CONNECTIONS_LIST_REQUEST:
+                    this.emit('connections_list_request', id, message);
                     break;
             }
         } catch (error) {

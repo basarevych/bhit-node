@@ -1,13 +1,13 @@
 /**
- * Init Request message
- * @module tracker/messages/init-request
+ * Init Request event
+ * @module tracker/events/init-request
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
 /**
- * Init Request message class
+ * Init Request event class
  */
 class InitRequest {
     /**
@@ -29,11 +29,11 @@ class InitRequest {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.initRequest'
+     * Service name is 'modules.tracker.events.initRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.initRequest';
+        return 'modules.tracker.events.initRequest';
     }
 
     /**
@@ -45,11 +45,11 @@ class InitRequest {
     }
 
     /**
-     * Message handler
+     * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
      */
-    onMessage(id, message) {
+    handle(id, message) {
         let client = this.tracker.clients.get(id);
         if (!client)
             return;
@@ -159,7 +159,7 @@ class InitRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'InitRequest.onMessage()'));
+                this._tracker._logger.error(new WError(error, 'InitRequest.handle()'));
             });
     }
 

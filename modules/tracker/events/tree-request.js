@@ -1,13 +1,13 @@
 /**
- * Tree Request message
- * @module tracker/messages/tree
+ * Tree Request event
+ * @module tracker/events/tree
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
 /**
- * Tree Request message class
+ * Tree Request event class
  */
 class TreeRequest {
     /**
@@ -27,11 +27,11 @@ class TreeRequest {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.treeRequest'
+     * Service name is 'modules.tracker.events.treeRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.treeRequest';
+        return 'modules.tracker.events.treeRequest';
     }
 
     /**
@@ -43,11 +43,11 @@ class TreeRequest {
     }
 
     /**
-     * Message handler
+     * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
      */
-    onMessage(id, message) {
+    handle(id, message) {
         let client = this.tracker.clients.get(id);
         if (!client)
             return;
@@ -186,7 +186,7 @@ class TreeRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'TreeRequest.onMessage()'));
+                this._tracker._logger.error(new WError(error, 'TreeRequest.handle()'));
             });
     }
 

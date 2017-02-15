@@ -1,13 +1,13 @@
 /**
- * Confirm Request message
- * @module tracker/messages/confirm-request
+ * Confirm Request event
+ * @module tracker/events/confirm-request
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
 /**
- * Confirm Request message class
+ * Confirm Request event class
  */
 class ConfirmRequest {
     /**
@@ -25,11 +25,11 @@ class ConfirmRequest {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.confirmRequest'
+     * Service name is 'modules.tracker.events.confirmRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.confirmRequest';
+        return 'modules.tracker.events.confirmRequest';
     }
 
     /**
@@ -41,11 +41,11 @@ class ConfirmRequest {
     }
 
     /**
-     * Message handler
+     * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
      */
-    onMessage(id, message) {
+    handle(id, message) {
         let client = this.tracker.clients.get(id);
         if (!client)
             return;
@@ -92,7 +92,7 @@ class ConfirmRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'ConfirmRequest.onMessage()'));
+                this._tracker._logger.error(new WError(error, 'ConfirmRequest.handle()'));
             });
     }
 

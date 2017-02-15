@@ -1,13 +1,13 @@
 /**
- * Delete Request message
- * @module tracker/messages/delete-request
+ * Delete Request event
+ * @module tracker/events/delete-request
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
 /**
- * Delete Request message class
+ * Delete Request event class
  */
 class DeleteRequest {
     /**
@@ -25,11 +25,11 @@ class DeleteRequest {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.deleteRequest'
+     * Service name is 'modules.tracker.events.deleteRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.deleteRequest';
+        return 'modules.tracker.events.deleteRequest';
     }
 
     /**
@@ -41,11 +41,11 @@ class DeleteRequest {
     }
 
     /**
-     * Message handler
+     * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
      */
-    onMessage(id, message) {
+    handle(id, message) {
         let client = this.tracker.clients.get(id);
         if (!client)
             return;
@@ -115,7 +115,7 @@ class DeleteRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'DeleteRequest.onMessage()'));
+                this._tracker._logger.error(new WError(error, 'DeleteRequest.handle()'));
             });
     }
 

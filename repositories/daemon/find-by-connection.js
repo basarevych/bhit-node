@@ -32,8 +32,8 @@ module.exports = function (connection, pg) {
                 .then(client => {
                     return client.query(
                             '    SELECT d.*, dc.acting_as ' +
-                            '      FROM daemons d' +
-                            'INNER JOIN daemon_connections dc' +
+                            '      FROM daemons d ' +
+                            'INNER JOIN daemon_connections dc ' +
                             '        ON d.id = dc.daemon_id ' +
                             '     WHERE dc.connection_id = $1 ',
                             [ typeof connection == 'object' ? connection.id : connection ]

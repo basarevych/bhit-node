@@ -1,15 +1,15 @@
 /**
- * Disconnect Request message
- * @module tracker/messages/disconnect-request
+ * Connect Request event
+ * @module tracker/events/connect-request
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
 /**
- * Disconnect Request message class
+ * Connect Request event class
  */
-class DisconnectRequest {
+class ConnectRequest {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -27,11 +27,11 @@ class DisconnectRequest {
     }
 
     /**
-     * Service name is 'modules.tracker.messages.disconnectRequest'
+     * Service name is 'modules.tracker.events.connectRequest'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.messages.disconnectRequest';
+        return 'modules.tracker.events.connectRequest';
     }
 
     /**
@@ -43,71 +43,68 @@ class DisconnectRequest {
     }
 
     /**
-     * Message handler
+     * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
      */
-    onMessage(id, message) {
+    handle(id, message) {
         let client = this.tracker.clients.get(id);
         if (!client)
             return;
 
-        debug(`Got DISCONNECT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-        return this._daemonRepo.findByToken(message.disconnectRequest.token)
+        debug(`Got CONNECT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        return this._daemonRepo.findByToken(message.connectRequest.token)
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (!daemon)
                     return null;
-                if (!message.disconnectRequest.daemonName)
+                if (!message.connectRequest.daemonName)
                     return daemon;
 
-                return this._daemonRepo.findByUserAndName(daemon.userId, message.disconnectRequest.daemonName)
+                return this._daemonRepo.findByUserAndName(daemon.userId, message.connectRequest.daemonName)
                     .then(daemons => {
                         return daemons.length && daemons[0];
                     });
             })
             .then(daemon => {
                 if (!daemon) {
-                    let response = this.tracker.DisconnectResponse.create({
-                        response: this.tracker.DisconnectResponse.Result.REJECTED,
+                    let response = this.tracker.ConnectResponse.create({
+                        response: this.tracker.ConnectResponse.Result.REJECTED,
                     });
                     let reply = this.tracker.ServerMessage.create({
-                        type: this.tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
+                        type: this.tracker.ServerMessage.Type.CONNECT_RESPONSE,
                         messageId: message.messageId,
-                        disconnectResponse: response,
+                        connectResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                    return this.tracker.send(id, data);
-                }
-                if (!this.tracker.validatePath(message.disconnectRequest.path)) {
-                    let response = this.tracker.DisconnectResponse.create({
-                        response: this.tracker.DisconnectResponse.Result.INVALID_PATH,
-                    });
-                    let reply = this.tracker.ServerMessage.create({
-                        type: this.tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
-                        messageId: message.messageId,
-                        disconnectResponse: response,
-                    });
-                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    debug(`Sending CONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
-                return this._pathRepo.findByUserAndPath(daemon.userId, message.disconnectRequest.path)
-                    .then(paths => {
+                return Promise.all([
+                        this._pathRepo.findByToken(message.connectRequest.connectToken),
+                        this._connectionRepo.findByToken(message.connectRequest.connectToken)
+                    ])
+                    .then(([ paths, connections ]) => {
                         let path = paths.length && paths[0];
-                        if (!path) {
-                            let response = this.tracker.DisconnectResponse.create({
-                                response: this.tracker.DisconnectResponse.Result.PATH_NOT_FOUND,
+                        let connection = connections.length && connections[0];
+
+                        let actingAs;
+                        if (path) {
+                            actingAs = 'client';
+                        } else if (connection) {
+                            actingAs = 'server';
+                        } else {
+                            let response = this.tracker.ConnectResponse.create({
+                                response: this.tracker.ConnectResponse.Result.REJECTED,
                             });
                             let reply = this.tracker.ServerMessage.create({
-                                type: this.tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
+                                type: this.tracker.ServerMessage.Type.CONNECT_RESPONSE,
                                 messageId: message.messageId,
-                                disconnectResponse: response,
+                                connectResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            debug(`Sending CONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -136,34 +133,41 @@ class DisconnectRequest {
                                 });
                         };
 
-                        return loadConnections(path)
+                        return Promise.resolve()
+                            .then(() => {
+                                if (actingAs == 'server')
+                                    return [ connection ];
+
+                                return loadConnections(path);
+                            })
                             .then(connections => {
                                 let promises = [];
                                 for (let connection of connections)
-                                    promises.push(this._daemonRepo.disconnect(daemon, connection));
+                                    promises.push(this._daemonRepo.connect(daemon, connection, actingAs));
 
                                 return Promise.all(promises)
                                     .then(result => {
+                                        console.log(result);
                                         let count = result.reduce((prev, cur) => prev + cur, 0);
-                                        let response = this.tracker.DisconnectResponse.create({
+                                        let response = this.tracker.ConnectResponse.create({
                                             response: (count > 0 ?
-                                                this.tracker.DisconnectResponse.Result.ACCEPTED :
-                                                this.tracker.DisconnectResponse.Result.NOT_CONNECTED),
+                                                this.tracker.ConnectResponse.Result.ACCEPTED :
+                                                this.tracker.ConnectResponse.Result.ALREADY_CONNECTED),
                                         });
                                         let reply = this.tracker.ServerMessage.create({
-                                            type: this._tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
+                                            type: this._tracker.ServerMessage.Type.CONNECT_RESPONSE,
                                             messageId: message.messageId,
-                                            disconnectResponse: response,
+                                            connectResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        debug(`Sending CONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this._tracker.send(id, data);
                                     });
                             });
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'DisconnectRequest.onMessage()'));
+                this._tracker._logger.error(new WError(error, 'ConnectRequest.handle()'));
             });
     }
 
@@ -179,4 +183,4 @@ class DisconnectRequest {
     }
 }
 
-module.exports = DisconnectRequest;
+module.exports = ConnectRequest;
