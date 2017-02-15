@@ -86,7 +86,7 @@ class TreeRequest {
                 let treeRoots = [];
                 let loadTree = (tree, path) => {
                     let nodes = [];
-                    let isConnection, type;
+                    let isConnection, type, numServers = 0, numClients = 0;
                     return this._connectionRepo.findByPath(path)
                         .then(connections => {
                             let connection = connections.length && connections[0];
@@ -106,6 +106,16 @@ class TreeRequest {
                                                 type = this.tracker.Tree.Type.NOT_CONNECTED;
                                             else
                                                 type = (actingAs == 'server' ? this.tracker.Tree.Type.SERVER : this.tracker.Tree.Type.CLIENT);
+                                        })
+                                        .then(() => {
+                                            return Promise.all([
+                                                this._daemonRepo.countServers(connection),
+                                                this._daemonRepo.countClients(connection),
+                                            ]);
+                                        })
+                                        .then(([ countedServers, countedClients ]) => {
+                                            numServers = countedServers;
+                                            numClients = countedClients;
                                         });
                                 })
                                 .then(() => {
@@ -129,7 +139,9 @@ class TreeRequest {
                                         name: path.name,
                                         path: path.path,
                                         serverToken: connection ? connection.token : '',
+                                        serversNumber: parseInt(numServers),
                                         clientToken: path.token,
+                                        clientsNumber: parseInt(numClients),
                                     }));
                                 });
                         });
