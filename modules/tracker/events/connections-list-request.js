@@ -141,15 +141,8 @@ class ConnectionsListRequest {
                                     this._daemonRepo.findServerByConnection(connection)
                                         .then(servers => {
                                             let server = servers.length && servers[0];
-                                            if (!server) {
-                                                list.clientConnections.push(this.tracker.ClientConnection.create({
-                                                    id: connection.id,
-                                                    listenAddress: connection.listenAddress,
-                                                    listenPort: connection.listenPort,
-                                                    server: '',
-                                                }));
+                                            if (!server)
                                                 return;
-                                            }
 
                                             return getFullName(server)
                                                 .then(name => {
