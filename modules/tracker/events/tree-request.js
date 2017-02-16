@@ -1,6 +1,6 @@
 /**
  * Tree Request event
- * @module tracker/events/tree
+ * @module tracker/events/tree-request
  */
 const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
