@@ -59,6 +59,9 @@ class Tracker {
         let confirmRequest = this._app.get('modules.tracker.events.confirmRequest');
         server.on('confirm_request', confirmRequest.handle.bind(confirmRequest));
 
+        let registerDaemonRequest = this._app.get('modules.tracker.events.registerDaemonRequest');
+        server.on('register_daemon_request', registerDaemonRequest.handle.bind(registerDaemonRequest));
+
         let createRequest = this._app.get('modules.tracker.events.createRequest');
         server.on('create_request', createRequest.handle.bind(createRequest));
 

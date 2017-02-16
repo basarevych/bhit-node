@@ -51,7 +51,13 @@ class ConnectionsListRequest {
             return;
 
         debug(`Got CONNECTIONS LIST REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-        return this._daemonRepo.findByToken(message.connectionsListRequest.token)
+        return Promise.resolve()
+            .then(() => {
+                if (!client.daemonId)
+                    return [];
+
+                return this._daemonRepo.find(client.daemonId);
+            })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (!daemon) {
@@ -99,7 +105,7 @@ class ConnectionsListRequest {
                     })
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'ConnectionsListRequest.handle()'));
+                this.tracker._logger.error(new WError(error, 'ConnectionsListRequest.handle()'));
             });
     }
 

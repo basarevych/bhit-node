@@ -51,7 +51,13 @@ class CreateRequest {
             return;
 
         debug(`Got CREATE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-        return this._daemonRepo.findByToken(message.createRequest.token)
+        return Promise.resolve()
+            .then(() => {
+                if (!client.daemonId)
+                    return [];
+
+                return this._daemonRepo.find(client.daemonId);
+            })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (!daemon)
@@ -143,12 +149,12 @@ class CreateRequest {
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
                                 debug(`Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                this._tracker.send(id, data);
+                                this.tracker.send(id, data);
                             });
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'CreateRequest.handle()'));
+                this.tracker._logger.error(new WError(error, 'CreateRequest.handle()'));
             });
     }
 

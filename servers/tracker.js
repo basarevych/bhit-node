@@ -90,6 +90,8 @@ class Tracker extends EventEmitter {
                         this.InitResponse = this.proto.lookup('tracker.InitResponse');
                         this.ConfirmRequest = this.proto.lookup('tracker.ConfirmRequest');
                         this.ConfirmResponse = this.proto.lookup('tracker.ConfirmResponse');
+                        this.RegisterDaemonRequest = this.proto.lookup('tracker.RegisterDaemonRequest');
+                        this.RegisterDaemonResponse = this.proto.lookup('tracker.RegisterDaemonResponse');
                         this.CreateRequest = this.proto.lookup('tracker.CreateRequest');
                         this.CreateResponse = this.proto.lookup('tracker.CreateResponse');
                         this.DeleteRequest = this.proto.lookup('tracker.DeleteRequest');
@@ -320,6 +322,7 @@ class Tracker extends EventEmitter {
 
         let client = {
             id: id,
+            daemonId: null,
             socket: socket,
             wrapper: new SocketWrapper(socket),
         };
@@ -391,6 +394,9 @@ class Tracker extends EventEmitter {
                     break;
                 case this.ClientMessage.Type.CONFIRM_REQUEST:
                     this.emit('confirm_request', id, message);
+                    break;
+                case this.ClientMessage.Type.REGISTER_DAEMON_REQUEST:
+                    this.emit('register_daemon_request', id, message);
                     break;
                 case this.ClientMessage.Type.CREATE_REQUEST:
                     this.emit('create_request', id, message);
@@ -488,6 +494,10 @@ class Tracker extends EventEmitter {
         for (let [ id, timestamp ] of this._timeouts) {
             if (!id)
                 continue;
+            if (!this.clients.has(id)) {
+                this._timeouts.delete(id);
+                continue;
+            }
 
             if (timestamp.receive !== 0 && now >= timestamp.receive) {
                 timestamp.receive = 0;

@@ -88,11 +88,11 @@ class ConfirmRequest {
                         });
                         let data = this.tracker.ServerMessage.encode(reply).finish();
                         debug(`Sending CONFIRM RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                        this._tracker.send(id, data);
+                        this.tracker.send(id, data);
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'ConfirmRequest.handle()'));
+                this.tracker._logger.error(new WError(error, 'ConfirmRequest.handle()'));
             });
     }
 

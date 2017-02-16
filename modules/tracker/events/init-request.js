@@ -159,7 +159,7 @@ class InitRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'InitRequest.handle()'));
+                this.tracker._logger.error(new WError(error, 'InitRequest.handle()'));
             });
     }
 

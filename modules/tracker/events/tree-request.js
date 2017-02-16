@@ -53,7 +53,13 @@ class TreeRequest {
             return;
 
         debug(`Got TREE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-        return this._daemonRepo.findByToken(message.treeRequest.token)
+        return Promise.resolve()
+            .then(() => {
+                if (!client.daemonId)
+                    return [];
+
+                return this._daemonRepo.find(client.daemonId);
+            })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (!daemon) {
@@ -198,7 +204,7 @@ class TreeRequest {
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'TreeRequest.handle()'));
+                this.tracker._logger.error(new WError(error, 'TreeRequest.handle()'));
             });
     }
 

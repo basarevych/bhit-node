@@ -53,7 +53,13 @@ class ConnectRequest {
             return;
 
         debug(`Got CONNECT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-        return this._daemonRepo.findByToken(message.connectRequest.token)
+        return Promise.resolve()
+            .then(() => {
+                if (!client.daemonId)
+                    return [];
+
+                return this._daemonRepo.find(client.daemonId);
+            })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (!daemon)
@@ -161,13 +167,13 @@ class ConnectRequest {
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
                                         debug(`Sending CONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                        this._tracker.send(id, data);
+                                        this.tracker.send(id, data);
                                     });
                             });
                     });
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'ConnectRequest.handle()'));
+                this.tracker._logger.error(new WError(error, 'ConnectRequest.handle()'));
             });
     }
 
