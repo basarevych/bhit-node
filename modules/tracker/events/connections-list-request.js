@@ -90,6 +90,7 @@ class ConnectionsListRequest {
                             return this.tracker.send(id, data);
                         }
 
+                        console.log(this.tracker.ConnectionsListResponse);
                         let response = this.tracker.ConnectionsListResponse.create({
                             response: this.tracker.ConnectionsListResponse.Result.ACCEPTED,
                             list: list,
