@@ -80,6 +80,9 @@ class Tracker {
         let connectionsListRequest = this._app.get('modules.tracker.events.connectionsListRequest');
         server.on('connections_list_request', connectionsListRequest.handle.bind(connectionsListRequest));
 
+        let status = this._app.get('modules.tracker.events.status');
+        server.on('status', status.handle.bind(status));
+
         return Promise.resolve();
     }
 }

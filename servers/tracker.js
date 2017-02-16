@@ -108,6 +108,7 @@ class Tracker extends EventEmitter {
                         this.ConnectionsList = this.proto.lookup('tracker.ConnectionsList');
                         this.ConnectionsListRequest = this.proto.lookup('tracker.ConnectionsListRequest');
                         this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
+                        this.Status = this.proto.lookup('tracker.Status');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -325,6 +326,7 @@ class Tracker extends EventEmitter {
             daemonId: null,
             socket: socket,
             wrapper: new SocketWrapper(socket),
+            status: new Map(),
         };
         this.clients.set(id, client);
 
@@ -415,6 +417,9 @@ class Tracker extends EventEmitter {
                     break;
                 case this.ClientMessage.Type.CONNECTIONS_LIST_REQUEST:
                     this.emit('connections_list_request', id, message);
+                    break;
+                case this.ClientMessage.Type.STATUS:
+                    this.emit('status', id, message);
                     break;
             }
         } catch (error) {
