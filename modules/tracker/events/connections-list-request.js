@@ -14,12 +14,14 @@ class ConnectionsListRequest {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {Logger} logger                           Logger service
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {ConnectionsList} connectionsList         ConnectionsList service
      */
-    constructor(app, config, daemonRepo, connectionsList) {
+    constructor(app, config, logger, daemonRepo, connectionsList) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._daemonRepo = daemonRepo;
         this._connectionsList = connectionsList;
     }
@@ -37,7 +39,7 @@ class ConnectionsListRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.daemon', 'modules.tracker.connectionsList' ];
+        return [ 'app', 'config', 'logger', 'repositories.daemon', 'modules.tracker.connectionsList' ];
     }
 
     /**
@@ -105,7 +107,7 @@ class ConnectionsListRequest {
                     })
             })
             .catch(error => {
-                this.tracker._logger.error(new WError(error, 'ConnectionsListRequest.handle()'));
+                this._logger.error(new WError(error, 'ConnectionsListRequest.handle()'));
             });
     }
 

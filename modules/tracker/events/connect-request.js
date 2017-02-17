@@ -14,13 +14,15 @@ class ConnectRequest {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {Logger} logger                           Logger service
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
         this._connectionRepo = connectionRepo;
@@ -39,7 +41,7 @@ class ConnectRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [ 'app', 'config', 'logger', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
     }
 
     /**
@@ -172,7 +174,7 @@ class ConnectRequest {
                     });
             })
             .catch(error => {
-                this.tracker._logger.error(new WError(error, 'ConnectRequest.handle()'));
+                this._logger.error(new WError(error, 'ConnectRequest.handle()'));
             });
     }
 

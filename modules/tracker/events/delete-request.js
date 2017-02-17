@@ -14,13 +14,15 @@ class DeleteRequest {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {Logger} logger                           Logger service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      */
-    constructor(app, config, userRepo, daemonRepo, pathRepo) {
+    constructor(app, config, logger, userRepo, daemonRepo, pathRepo) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -39,7 +41,7 @@ class DeleteRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.user', 'repositories.daemon', 'repositories.path' ];
+        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path' ];
     }
 
     /**
@@ -159,7 +161,7 @@ class DeleteRequest {
                     });
             })
             .catch(error => {
-                this.tracker._logger.error(new WError(error, 'DeleteRequest.handle()'));
+                this._logger.error(new WError(error, 'DeleteRequest.handle()'));
             });
     }
 

@@ -14,14 +14,16 @@ class InitRequest {
      * Create service
      * @param {App} app                         The application
      * @param {object} config                   Configuration
+     * @param {Logger} logger                   Logger service
      * @param {Emailer} emailer                 Emailer
      * @param {Util} util                       Util
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(app, config, emailer, util, userRepo, daemonRepo) {
+    constructor(app, config, logger, emailer, util, userRepo, daemonRepo) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._emailer = emailer;
         this._util = util;
         this._userRepo = userRepo;
@@ -41,7 +43,7 @@ class InitRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'emailer', 'util', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'emailer', 'util', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -159,7 +161,7 @@ class InitRequest {
                     });
             })
             .catch(error => {
-                this.tracker._logger.error(new WError(error, 'InitRequest.handle()'));
+                this._logger.error(new WError(error, 'InitRequest.handle()'));
             });
     }
 

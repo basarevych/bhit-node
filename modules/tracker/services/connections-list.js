@@ -14,14 +14,16 @@ class ConnectionsList {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {Logger} logger                           Logger service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -41,7 +43,7 @@ class ConnectionsList {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
     }
 
     /**
@@ -182,7 +184,7 @@ class ConnectionsList {
                     })
             })
             .catch(error => {
-                this._tracker._logger.error(new WError(error, 'ConnectionsList.getList()'));
+                this._logger.error(new WError(error, 'ConnectionsList.getList()'));
             });
     }
 

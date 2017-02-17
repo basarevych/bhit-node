@@ -14,12 +14,14 @@ class CreateRequest {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {Logger} logger                           Logger service
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, daemonRepo, connectionRepo) {
+    constructor(app, config, logger, daemonRepo, connectionRepo) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._daemonRepo = daemonRepo;
         this._connectionRepo = connectionRepo;
     }
@@ -37,7 +39,7 @@ class CreateRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.daemon', 'repositories.connection' ];
+        return [ 'app', 'config', 'logger', 'repositories.daemon', 'repositories.connection' ];
     }
 
     /**
@@ -154,7 +156,7 @@ class CreateRequest {
                     });
             })
             .catch(error => {
-                this.tracker._logger.error(new WError(error, 'CreateRequest.handle()'));
+                this._logger.error(new WError(error, 'CreateRequest.handle()'));
             });
     }
 

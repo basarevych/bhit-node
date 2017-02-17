@@ -14,12 +14,14 @@ class ConfirmRequest {
      * Create service
      * @param {App} app                         The application
      * @param {object} config                   Configuration
+     * @param {Logger} logger                   Logger service
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(app, config, userRepo, daemonRepo) {
+    constructor(app, config, logger, userRepo, daemonRepo) {
         this._app = app;
         this._config = config;
+        this._logger = logger;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
     }
@@ -37,7 +39,7 @@ class ConfirmRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -92,7 +94,7 @@ class ConfirmRequest {
                     });
             })
             .catch(error => {
-                this.tracker._logger.error(new WError(error, 'ConfirmRequest.handle()'));
+                this._logger.error(new WError(error, 'ConfirmRequest.handle()'));
             });
     }
 
