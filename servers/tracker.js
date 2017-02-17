@@ -325,6 +325,8 @@ class Tracker extends EventEmitter {
 
         let client = {
             id: id,
+            identity: null,
+            publicKey: null,
             daemonId: null,
             socket: socket,
             wrapper: new SocketWrapper(socket),

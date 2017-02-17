@@ -71,6 +71,9 @@ class RegisterDaemonRequest {
                 }
 
                 client.daemonId = daemon.id;
+                client.identity = message.registerDaemonRequest.identity;
+                client.publicKey = message.registerDaemonRequest.publicKey;
+
                 let info = this.tracker.daemons.get(daemon.id);
                 if (!info) {
                     info = {
