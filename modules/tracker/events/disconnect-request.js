@@ -142,11 +142,13 @@ class DisconnectRequest {
                                                 promises.push(loadConnections(subPath));
 
                                             return Promise.all(promises)
-                                                .then(([ loadedConnections, loadedNames ]) => {
-                                                    for (let subConnections of loadedConnections)
-                                                        resultConnections = resultConnections.concat(subConnections);
-                                                    for (let subName of loadedNames)
-                                                        resultNames = resultNames.concat(subName);
+                                                .then(results => {
+                                                    for (let result of results) {
+                                                        for (let subConnections of result[0])
+                                                            resultConnections = resultConnections.concat(subConnections);
+                                                        for (let subName of result[1])
+                                                            resultNames = resultNames.concat(subName);
+                                                    }
 
                                                     return [ resultConnections, resultNames ];
                                                 });
