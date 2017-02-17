@@ -14,13 +14,15 @@ class DisconnectRequest {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
+        this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
         this._connectionRepo = connectionRepo;
@@ -39,7 +41,7 @@ class DisconnectRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [ 'app', 'config', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
     }
 
     /**
@@ -100,10 +102,14 @@ class DisconnectRequest {
                     return this.tracker.send(id, data);
                 }
 
-                return this._pathRepo.findByUserAndPath(daemon.userId, message.disconnectRequest.path)
-                    .then(paths => {
+                return Promise.all([
+                        this._pathRepo.findByUserAndPath(daemon.userId, message.disconnectRequest.path),
+                        this._userRepo.find(daemon.userId),
+                    ])
+                    .then(([ paths, users ]) => {
                         let path = paths.length && paths[0];
-                        if (!path) {
+                        let user = users.length && users[0];
+                        if (!path || !user) {
                             let response = this.tracker.DisconnectResponse.create({
                                 response: this.tracker.DisconnectResponse.Result.PATH_NOT_FOUND,
                             });
@@ -118,12 +124,14 @@ class DisconnectRequest {
                         }
 
                         let loadConnections = path => {
-                            let result = [];
+                            let resultConnections = [], resultNames = [];
                             return this._connectionRepo.findByPath(path)
                                 .then(connections => {
                                     let connection = connections.length && connections[0];
-                                    if (connection)
-                                        result.push(connection);
+                                    if (connection) {
+                                        resultConnections.push(connection);
+                                        resultNames.push(user.email + path.path);
+                                    }
 
                                     return this._pathRepo.findByParent(path)
                                         .then(paths => {
@@ -132,21 +140,49 @@ class DisconnectRequest {
                                                 promises.push(loadConnections(subPath));
 
                                             return Promise.all(promises)
-                                                .then(loaded => {
-                                                    for (let subConnections of loaded)
-                                                        result = result.concat(subConnections);
+                                                .then(([ loadedConnections, loadedNames ]) => {
+                                                    for (let subConnections of loadedConnections)
+                                                        resultConnections = resultConnections.concat(subConnections);
+                                                    for (let subName of loadedNames)
+                                                        resultNames = resultNames.concat(subName);
 
-                                                    return result;
+                                                    return [ resultConnections, resultNames ];
                                                 });
                                         })
                                 });
                         };
 
                         return loadConnections(path)
-                            .then(connections => {
+                            .then(([ connections, names ]) => {
                                 let promises = [];
                                 for (let connection of connections)
                                     promises.push(this._daemonRepo.disconnect(daemon, connection));
+
+                                let info = this.tracker.daemons.get(daemon.id);
+                                if (info) {
+                                    for (let thisClientId of info.clients) {
+                                        let thisClient = this.tracker.clients.get(thisClientId);
+                                        if (thisClient && thisClient.status) {
+                                            for (let name of names)
+                                                thisClient.status.delete(name);
+                                        }
+                                    }
+                                    for (let name of names) {
+                                        let waiting = this.tracker.waiting.get(name);
+                                        if (waiting) {
+                                            if (waiting.server) {
+                                                let thisServer = this.tracker.clients.get(waiting.server);
+                                                if (!thisServer || !thisServer.status || !thisServer.status.has(name))
+                                                    waiting.server = null;
+                                            }
+                                            for (let thisClientId of waiting.clients) {
+                                                let thisClient = this.tracker.clients.get(thisClientId);
+                                                if (!thisClient || !thisClient.status || !thisClient.status.has(name))
+                                                    waiting.clients.delete(thisClientId);
+                                            }
+                                        }
+                                    }
+                                }
 
                                 return Promise.all(promises)
                                     .then(result => {

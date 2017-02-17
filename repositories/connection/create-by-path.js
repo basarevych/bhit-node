@@ -57,7 +57,7 @@ module.exports = function (path, connection, pg) {
                             });
                     });
             };
-            return client.transaction({ name: 'create_connection_by_path' }, rollback => {
+            return client.transaction({ name: 'connection_create_by_path' }, rollback => {
                     return pathRepo.findByUserAndPath(connection.userId, path, client)
                         .then(paths => {
                             if (paths.length)

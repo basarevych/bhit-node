@@ -28,6 +28,8 @@ class Tracker extends EventEmitter {
         super();
 
         this.clients = new Map();
+        this.daemons = new Map();
+        this.waiting = new Map();
 
         this._name = null;
         this._app = app;
@@ -455,6 +457,15 @@ class Tracker extends EventEmitter {
                 client.wrapper = null;
             }
             this.clients.delete(id);
+
+            if (client.daemonId) {
+                let info = this.daemons.get(client.daemonId);
+                if (info) {
+                    info.clients.delete(id);
+                    if (!info.clients.length)
+                        this.daemons.delete(client.daemonId);
+                }
+            }
         }
 
         this._timeouts.delete(id);

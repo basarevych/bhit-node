@@ -69,6 +69,14 @@ class RegisterDaemonRequest {
                 }
 
                 client.daemonId = daemon.id;
+                let info = this.tracker.daemons.get(daemon.id);
+                if (!info) {
+                    info = {
+                        clients: new Set(),
+                    };
+                    this.tracker.daemons.set(daemon.id, info);
+                }
+                info.clients.add(client.id);
                 this.tracker.emit('registration', id);
 
                 let response = this.tracker.RegisterDaemonResponse.create({

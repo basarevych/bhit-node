@@ -14,12 +14,14 @@ class DeleteRequest {
      * Create service
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
+     * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      */
-    constructor(app, config, daemonRepo, pathRepo) {
+    constructor(app, config, userRepo, daemonRepo, pathRepo) {
         this._app = app;
         this._config = config;
+        this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
     }
@@ -37,7 +39,7 @@ class DeleteRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'repositories.daemon', 'repositories.path' ];
+        return [ 'app', 'config', 'repositories.user', 'repositories.daemon', 'repositories.path' ];
     }
 
     /**
@@ -87,10 +89,14 @@ class DeleteRequest {
                     return this.tracker.send(id, data);
                 }
 
-                return this._pathRepo.findByUserAndPath(daemon.userId, message.deleteRequest.path)
-                    .then(paths => {
+                return Promise.all([
+                        this._pathRepo.findByUserAndPath(daemon.userId, message.deleteRequest.path),
+                        this._userRepo.find(daemon.userId),
+                    ])
+                    .then(([ paths, users ]) => {
                         let path = paths.length && paths[0];
-                        if (!path) {
+                        let user = users.length && users[0];
+                        if (!path || !user) {
                             let response = this.tracker.DeleteResponse.create({
                                 response: this.tracker.DeleteResponse.Result.PATH_NOT_FOUND,
                             });
@@ -104,7 +110,39 @@ class DeleteRequest {
                             return this.tracker.send(id, data);
                         }
 
-                        return this._pathRepo.deleteRecursive(path)
+                        return this._pathRepo.findByUserAndPathRecursive(path.path)
+                            .then(paths => {
+                                let info = this.tracker.daemons.get(daemon.id);
+                                if (info) {
+                                    for (let thisClientId of info.clients) {
+                                        let thisClient = this.tracker.clients.get(thisClientId);
+                                        if (thisClient && thisClient.status) {
+                                            for (let path of paths) {
+                                                let name = user.email + path.path;
+                                                thisClient.status.delete(name);
+                                            }
+                                        }
+                                    }
+                                    for (let path of paths) {
+                                        let name = user.email + path.path;
+                                        let waiting = this.tracker.waiting.get(name);
+                                        if (waiting) {
+                                            if (waiting.server) {
+                                                let thisServer = this.tracker.clients.get(waiting.server);
+                                                if (!thisServer || !thisServer.status || !thisServer.status.has(name))
+                                                    waiting.server = null;
+                                            }
+                                            for (let thisClientId of waiting.clients) {
+                                                let thisClient = this.tracker.clients.get(thisClientId);
+                                                if (!thisClient || !thisClient.status || !thisClient.status.has(name))
+                                                    waiting.clients.delete(thisClientId);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                return this._pathRepo.deleteRecursive(path);
+                            })
                             .then(() => {
                                 let response = this.tracker.DeleteResponse.create({
                                     response: this.tracker.DeleteResponse.Result.ACCEPTED,
