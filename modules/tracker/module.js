@@ -86,6 +86,12 @@ class Tracker {
         let lookupIdentityRequest = this._app.get('modules.tracker.events.lookupIdentityRequest');
         server.on('lookup_identity_request', lookupIdentityRequest.handle.bind(lookupIdentityRequest));
 
+        let punchRequest = this._app.get('modules.tracker.events.punchRequest');
+        server.on('punch_request', punchRequest.handle.bind(punchRequest));
+
+        let addressResponse = this._app.get('modules.tracker.events.addressResponse');
+        server.on('address_response', addressResponse.handle.bind(addressResponse));
+
         return Promise.resolve();
     }
 }

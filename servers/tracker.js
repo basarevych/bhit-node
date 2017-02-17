@@ -31,6 +31,7 @@ class Tracker extends EventEmitter {
         this.daemons = new Map();
         this.identities = new Map();
         this.waiting = new Map();
+        this.pairs = new Map();
 
         this._name = null;
         this._app = app;
@@ -69,6 +70,14 @@ class Tracker extends EventEmitter {
      * @type {number}
      */
     static get pongTimeout() {
+        return 5 * 1000; // ms
+    }
+
+    /**
+     * Address request respond timeout
+     * @type {number}
+     */
+    static get addressTimeout() {
         return 5 * 1000; // ms
     }
 
@@ -114,6 +123,10 @@ class Tracker extends EventEmitter {
                         this.ServerAvailable = this.proto.lookup('tracker.ServerAvailable');
                         this.LookupIdentityRequest = this.proto.lookup('tracker.LookupIdentityRequest');
                         this.LookupIdentityResponse = this.proto.lookup('tracker.LookupIdentityResponse');
+                        this.PunchRequest = this.proto.lookup('tracker.PunchRequest');
+                        this.AddressRequest = this.proto.lookup('tracker.AddressRequest');
+                        this.AddressResponse = this.proto.lookup('tracker.AddressResponse');
+                        this.PeerAvailable = this.proto.lookup('tracker.PeerAvailable');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -432,6 +445,9 @@ class Tracker extends EventEmitter {
                 case this.ClientMessage.Type.LOOKUP_IDENTITY_REQUEST:
                     this.emit('lookup_identity_request', id, message);
                     break;
+                case this.ClientMessage.Type.PUNCH_REQUEST:
+                    this.emit('punch_request', id, message);
+                    break;
             }
         } catch (error) {
             this._logger.error(`Client protocol error (TCP): ${error.message}`);
@@ -530,6 +546,11 @@ class Tracker extends EventEmitter {
 
         try {
             let message = this.ClientMessage.decode(data);
+            switch (message.type) {
+                case this.ClientMessage.Type.ADDRESS_RESPONSE:
+                    this.emit('address_response', info, message);
+                    break;
+            }
         } catch (error) {
             this._logger.error(`Client protocol error (UDP): ${error.message}`);
         }
@@ -555,6 +576,13 @@ class Tracker extends EventEmitter {
             } else if (timestamp.send !== 0 && now >= timestamp.send) {
                 timestamp.send = 0;
                 this.send(id, null);
+            }
+        }
+
+        for (let [ id, info ] of this.pairs) {
+            if (now >= info.timestamp) {
+                this.pairs.delete(info.clientRequestId);
+                this.pairs.delete(info.serverRequestId);
             }
         }
     }

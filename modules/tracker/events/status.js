@@ -135,7 +135,7 @@ class Status {
                                                 });
                                                 let msg = this.tracker.ServerMessage.create({
                                                     type: this.tracker.ServerMessage.Type.SERVER_AVAILABLE,
-                                                    server: server,
+                                                    serverAvailable: server,
                                                 });
                                                 let data = this.tracker.ServerMessage.encode(msg).finish();
                                                 debug(`Sending SERVER AVAILABLE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
