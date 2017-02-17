@@ -29,6 +29,7 @@ class Tracker extends EventEmitter {
 
         this.clients = new Map();
         this.daemons = new Map();
+        this.identities = new Map();
         this.waiting = new Map();
 
         this._name = null;
@@ -111,6 +112,8 @@ class Tracker extends EventEmitter {
                         this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
                         this.Status = this.proto.lookup('tracker.Status');
                         this.ServerAvailable = this.proto.lookup('tracker.ServerAvailable');
+                        this.LookupIdentityRequest = this.proto.lookup('tracker.LookupIdentityRequest');
+                        this.LookupIdentityResponse = this.proto.lookup('tracker.LookupIdentityResponse');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -326,8 +329,9 @@ class Tracker extends EventEmitter {
         let client = {
             id: id,
             identity: null,
-            publicKey: null,
+            key: null,
             daemonId: null,
+            daemonName: null,
             socket: socket,
             wrapper: new SocketWrapper(socket),
             status: new Map(),
@@ -425,6 +429,9 @@ class Tracker extends EventEmitter {
                 case this.ClientMessage.Type.STATUS:
                     this.emit('status', id, message);
                     break;
+                case this.ClientMessage.Type.LOOKUP_IDENTITY_REQUEST:
+                    this.emit('lookup_identity_request', id, message);
+                    break;
             }
         } catch (error) {
             this._logger.error(`Client protocol error (TCP): ${error.message}`);
@@ -461,6 +468,12 @@ class Tracker extends EventEmitter {
                 client.wrapper = null;
             }
             this.clients.delete(id);
+
+            if (client.identity) {
+                let info = this.identities.get(client.identity);
+                if (info)
+                    info.clients.delete(id);
+            }
 
             if (client.daemonId) {
                 let info = this.daemons.get(client.daemonId);

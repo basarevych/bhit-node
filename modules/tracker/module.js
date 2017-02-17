@@ -83,6 +83,9 @@ class Tracker {
         let status = this._app.get('modules.tracker.events.status');
         server.on('status', status.handle.bind(status));
 
+        let lookupIdentityRequest = this._app.get('modules.tracker.events.lookupIdentityRequest');
+        server.on('lookup_identity_request', lookupIdentityRequest.handle.bind(lookupIdentityRequest));
+
         return Promise.resolve();
     }
 }

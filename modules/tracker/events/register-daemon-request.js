@@ -71,10 +71,20 @@ class RegisterDaemonRequest {
                 }
 
                 client.daemonId = daemon.id;
+                client.daemonName = daemon.name;
                 client.identity = message.registerDaemonRequest.identity;
-                client.publicKey = message.registerDaemonRequest.publicKey;
+                client.key = message.registerDaemonRequest.key;
 
-                let info = this.tracker.daemons.get(daemon.id);
+                let info = this.tracker.identities.get(client.identity);
+                if (!info) {
+                    info = {
+                        clients: new Set(),
+                    };
+                    this.tracker.identities.set(client.identity, info);
+                }
+                info.clients.add(client.id);
+
+                info = this.tracker.daemons.get(daemon.id);
                 if (!info) {
                     info = {
                         clients: new Set(),
