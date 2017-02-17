@@ -111,6 +111,7 @@ class Tracker extends EventEmitter {
                         this.ConnectionsListRequest = this.proto.lookup('tracker.ConnectionsListRequest');
                         this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
                         this.Status = this.proto.lookup('tracker.Status');
+                        this.ServerAvailable = this.proto.lookup('tracker.ServerAvailable');
                         this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
@@ -462,7 +463,7 @@ class Tracker extends EventEmitter {
                 let info = this.daemons.get(client.daemonId);
                 if (info) {
                     info.clients.delete(id);
-                    if (!info.clients.length)
+                    if (!info.clients.size)
                         this.daemons.delete(client.daemonId);
                 }
             }
