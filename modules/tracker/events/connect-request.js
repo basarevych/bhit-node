@@ -153,7 +153,6 @@ class ConnectRequest {
 
                                 return Promise.all(promises)
                                     .then(result => {
-                                        console.log(result);
                                         let count = result.reduce((prev, cur) => prev + cur, 0);
                                         let response = this.tracker.ConnectResponse.create({
                                             response: (count > 0 ?
