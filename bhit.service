@@ -1,0 +1,16 @@
+[Unit]
+Description=Breedhub Interconnect Tracker
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/node /usr/bin/bhit run
+PIDFile=/var/run/bhit/bhit.pid
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=bhit
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
