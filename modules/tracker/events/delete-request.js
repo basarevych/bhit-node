@@ -114,31 +114,27 @@ class DeleteRequest {
 
                         return this._pathRepo.findByUserAndPathRecursive(path.path)
                             .then(paths => {
-                                let info = this.tracker.daemons.get(daemon.id);
-                                if (info) {
-                                    for (let thisClientId of info.clients) {
-                                        let thisClient = this.tracker.clients.get(thisClientId);
-                                        if (thisClient && thisClient.status) {
-                                            for (let path of paths) {
-                                                let name = user.email + path.path;
-                                                thisClient.status.delete(name);
-                                            }
+                                for (let [ thisClientId, thisClient ] of this.tracker.clients) {
+                                    if (thisClient.status) {
+                                        for (let path of paths) {
+                                            let name = user.email + path.path;
+                                            thisClient.status.delete(name);
                                         }
                                     }
-                                    for (let path of paths) {
-                                        let name = user.email + path.path;
-                                        let waiting = this.tracker.waiting.get(name);
-                                        if (waiting) {
-                                            if (waiting.server) {
-                                                let thisServer = this.tracker.clients.get(waiting.server);
-                                                if (!thisServer || !thisServer.status || !thisServer.status.has(name))
-                                                    waiting.server = null;
-                                            }
-                                            for (let thisClientId of waiting.clients) {
-                                                let thisClient = this.tracker.clients.get(thisClientId);
-                                                if (!thisClient || !thisClient.status || !thisClient.status.has(name))
-                                                    waiting.clients.delete(thisClientId);
-                                            }
+                                }
+                                for (let path of paths) {
+                                    let name = user.email + path.path;
+                                    let waiting = this.tracker.waiting.get(name);
+                                    if (waiting) {
+                                        if (waiting.server) {
+                                            let thisServer = this.tracker.clients.get(waiting.server);
+                                            if (!thisServer || !thisServer.status || !thisServer.status.has(name))
+                                                waiting.server = null;
+                                        }
+                                        for (let thisClientId of waiting.clients) {
+                                            let thisClient = this.tracker.clients.get(thisClientId);
+                                            if (!thisClient || !thisClient.status || !thisClient.status.has(name))
+                                                waiting.clients.delete(thisClientId);
                                         }
                                     }
                                 }

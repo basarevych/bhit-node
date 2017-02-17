@@ -449,6 +449,8 @@ class Tracker extends EventEmitter {
         let client = this.clients.get(id);
         if (client) {
             debug(`Client disconnected`);
+            let names = client.status.keys();
+
             if (client.socket) {
                 if (!client.socket.destroyed)
                     client.socket.destroy();
@@ -464,6 +466,22 @@ class Tracker extends EventEmitter {
                     info.clients.delete(id);
                     if (!info.clients.size)
                         this.daemons.delete(client.daemonId);
+                }
+
+                for (let name of names) {
+                    let waiting = this.waiting.get(name);
+                    if (waiting) {
+                        if (waiting.server === id) {
+                            waiting.server = null;
+                            debug(`No server for ${name} anymore`);
+                        }
+                        for (let thisClientId of waiting.clients) {
+                            if (thisClientId === id) {
+                                waiting.clients.delete(thisClientId);
+                                debug(`One client less for ${name}`);
+                            }
+                        }
+                    }
                 }
             }
         }
