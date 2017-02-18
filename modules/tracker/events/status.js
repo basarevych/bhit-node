@@ -98,6 +98,7 @@ class Status {
                                             client.status.set(message.status.connectionName, status);
                                         }
                                         status.connected = message.status.connected;
+                                        debug(`${status.connected} connected to ${client.daemonName} in ${message.status.connectionName}`);
 
                                         let waiting = this.tracker.waiting.get(message.status.connectionName);
                                         if (!waiting) {
@@ -116,9 +117,7 @@ class Status {
                                             if (message.status.internalPort)
                                                 waiting.internalPort = message.status.internalPort;
                                         } else {
-                                            if (status.connected)
-                                                waiting.clients.delete(client.id);
-                                            else
+                                            if (!status.connected)
                                                 waiting.clients.add(client.id);
                                         }
 
@@ -139,7 +138,7 @@ class Status {
                                                 });
                                                 let data = this.tracker.ServerMessage.encode(msg).finish();
                                                 debug(`Sending SERVER AVAILABLE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
-                                                return this.tracker.send(client, data);
+                                                this.tracker.send(client, data);
                                             }
                                             waiting.clients.clear();
                                         }
