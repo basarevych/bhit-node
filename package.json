@@ -1,12 +1,15 @@
 {
   "name": "bhit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Tracker for Breedhub Interconnect (connect server and client both behind NAT)",
   "license": "MIT",
   "author": "Ross Basarevych <basarevych@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/breedhub/bhit-node.git"
+  },
+  "bin": {
+    "bhit": "bhit.js"
   },
   "dependencies": {
     "arpen": "~0.0.2",
