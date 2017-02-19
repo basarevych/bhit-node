@@ -41,6 +41,7 @@ function execCmd() {
                 }
             );
             proc.stdout.pipe(process.stdout);
+            proc.stderr.pipe(process.stderr);
             process.stdin.pipe(proc.stdin);
         } catch (error) {
             reject(error);
