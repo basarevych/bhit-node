@@ -25,9 +25,11 @@ module.exports = {
                 key: 'CONFIG_DIR/certs/NAME.key',
                 cert: 'CONFIG_DIR/certs/NAME.cert',
                 ca: 'CONFIG_DIR/certs/NAME.cert',
-                //key: '/etc/letsencrypt/live/server1.example.com/privkey.pem',
-                //cert: '/etc/letsencrypt/live/server1.example.com/cert.pem',
-                //ca: '/etc/letsencrypt/live/server1.example.com/fullchain.pem',
+/*
+                // Let's Encrypt:
+                key: '/etc/letsencrypt/live/server1.example.com/privkey.pem',
+                cert: '/etc/letsencrypt/live/server1.example.com/fullchain.pem',
+*/
             },
         },
     },
