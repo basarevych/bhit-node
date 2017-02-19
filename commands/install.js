@@ -64,6 +64,13 @@ class Install {
                 }
 
                 try {
+                    fs.symlinkSync(path.join(configDir, 'config.js'), path.join(__dirname, '..', 'config', 'local.js'));
+                    console.log('Config symlink created');
+                } catch (error) {
+                    // do nothing
+                }
+
+                try {
                     fs.accessSync(configDir, fs.constants.F_OK);
                     return this.error('Configuration directory already exists');
                 } catch (error) {
@@ -89,12 +96,6 @@ class Install {
                 config = config.replace(/CONFIG_DIR/g, configDir);
                 config = config.replace(/NAME/g, hostname);
                 fs.writeFileSync(path.join(configDir, 'config.js'), config, { mode: 0o640 });
-
-                try {
-                    fs.symlinkSync(path.join(configDir, 'config.js'), path.join(__dirname, '..', 'config', 'local.js'));
-                } catch (error) {
-                    // do nothing
-                }
 
                 try {
                     fs.accessSync('/etc/systemd/system', fs.constants.F_OK);
