@@ -552,15 +552,22 @@ class Tracker extends EventEmitter {
         if (!data.length)
             return;
 
+        let message;
         try {
-            let message = this.ClientMessage.decode(data);
+            message = this.ClientMessage.decode(data);
+        } catch (error) {
+            this._logger.error(`Client protocol error (UDP): ${error.message}`);
+            return;
+        }
+
+        try {
             switch (message.type) {
                 case this.ClientMessage.Type.ADDRESS_RESPONSE:
                     this.emit('address_response', info, message);
                     break;
             }
         } catch (error) {
-            this._logger.error(`Client protocol error (UDP): ${error.message}`);
+            this._logger.error(new WError(error, 'Tracker.onUdpMessage()'));
         }
     }
 
