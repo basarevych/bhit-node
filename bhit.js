@@ -16,6 +16,7 @@ function usage() {
     console.log('\thelp\t\tPrint help about any other command');
     console.log('\tinstall\t\tRegister the program in the system');
     console.log('\tcreate-db\tCreate the schema');
+    console.log('\tclear-cache\tClear the cache');
     console.log('\trun\t\tRun the daemon');
 }
 
@@ -89,7 +90,11 @@ switch (argv['_'][0]) {
                 break;
             case 'create-db':
                 console.log('Usage: bhit create-db\n');
-                console.log('\tThis command will (re)create the database schema');
+                console.log('\tThis command will (re)create the database schema in Postgres');
+                break;
+            case 'clear-cache':
+                console.log('Usage: bhit clear-cache\n');
+                console.log('\tThis command will drop all the data in Redis');
                 break;
             case 'run':
                 console.log('Usage: bhit run\n');
@@ -103,6 +108,7 @@ switch (argv['_'][0]) {
         break;
     case 'install':
     case 'create-db':
+    case 'clear-cache':
         execCmd()
             .then(result => {
                 process.exit(result.code);
