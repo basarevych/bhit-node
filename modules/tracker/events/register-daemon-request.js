@@ -56,6 +56,16 @@ class RegisterDaemonRequest {
         return this._daemonRepo.findByToken(message.registerDaemonRequest.token)
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
+                if (daemon) {
+                    let info = this.tracker.identities.get(message.registerDaemonRequest.identity);
+                    if (info && info.clients.size) {
+                        let iter = info.clients.values();
+                        let found = iter.next().value;
+                        info = this.tracker.clients.get(found);
+                        if (info && info.daemonId != daemon.id)
+                            daemon = null;
+                    }
+                }
                 if (!daemon) {
                     let response = this.tracker.RegisterDaemonResponse.create({
                         response: this.tracker.RegisterDaemonResponse.Result.REJECTED,
