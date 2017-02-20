@@ -19,9 +19,7 @@ class DaemonModel extends Model {
         this.name = undefined;
         this.actingAs = undefined;
         this.token = undefined;
-        this.confirm = undefined;
         this.createdAt = undefined;
-        this.confirmedAt = undefined;
         this.blockedAt = undefined;
     }
 
@@ -31,13 +29,6 @@ class DaemonModel extends Model {
      */
     static get provides() {
         return 'models.daemon';
-    }
-
-    /**
-     * Token length
-     */
-    static get tokenLength() {
-        return 64;
     }
 
     /**
@@ -121,22 +112,6 @@ class DaemonModel extends Model {
     }
 
     /**
-     * Confirm token setter
-     * @type {undefined|string|null}
-     */
-    set confirm(confirm) {
-        this._setField('confirm', confirm);
-    }
-
-    /**
-     * Confirm token getter
-     * @type {undefined|string|null}
-     */
-    get confirm() {
-        return this._getField('confirm');
-    }
-
-    /**
      * Creation time setter
      * @type {undefined|object}
      */
@@ -150,22 +125,6 @@ class DaemonModel extends Model {
      */
     get createdAt() {
         return this._getField('created_at');
-    }
-
-    /**
-     * Confirm time setter
-     * @type {undefined|object|null}
-     */
-    set confirmedAt(confirmedAt) {
-        this._setField('confirmed_at', confirmedAt);
-    }
-
-    /**
-     * Confirm time getter
-     * @type {undefined|object|null}
-     */
-    get confirmedAt() {
-        return this._getField('confirmed_at');
     }
 
     /**

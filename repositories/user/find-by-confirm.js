@@ -1,14 +1,14 @@
 /**
- * DaemonRepository.findByConfirm()
+ * UserRepository.findByConfirm()
  */
 'use strict';
 
 const WError = require('verror').WError;
 
 /**
- * Find daemons by confirmation token
+ * Find users by confirmation token
  * @method findByConfirm
- * @memberOf module:repositories/daemon~DaemonRepository
+ * @memberOf module:repositories/user~UserRepository
  * @param {string} token                    Token to search by
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
@@ -25,7 +25,7 @@ module.exports = function (token, pg) {
         .then(client => {
             return client.query(
                     'SELECT * ' +
-                    '  FROM daemons ' +
+                    '  FROM users ' +
                     ' WHERE confirm = $1 ',
                     [ token ]
                 )
@@ -56,6 +56,6 @@ module.exports = function (token, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.findByConfirm()');
+            throw new WError(error, 'UserRepository.findByConfirm()');
         });
 };

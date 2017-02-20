@@ -16,14 +16,12 @@ class ConfirmRequest {
      * @param {object} config                   Configuration
      * @param {Logger} logger                   Logger service
      * @param {UserRepository} userRepo         User repository
-     * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(app, config, logger, userRepo, daemonRepo) {
+    constructor(app, config, logger, userRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._userRepo = userRepo;
-        this._daemonRepo = daemonRepo;
     }
 
     /**
@@ -39,7 +37,7 @@ class ConfirmRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'repositories.user' ];
     }
 
     /**
@@ -53,10 +51,10 @@ class ConfirmRequest {
             return;
 
         debug(`Got CONFIRM REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-        return this._daemonRepo.findByConfirm(message.confirmRequest.token)
-            .then(daemons => {
-                let daemon = daemons.length && daemons[0];
-                if (!daemon) {
+        return this._userRepo.findByConfirm(message.confirmRequest.token)
+            .then(users => {
+                let user = users.length && users[0];
+                if (!user) {
                     let response = this.tracker.ConfirmResponse.create({
                         response: this.tracker.ConfirmResponse.Result.REJECTED,
                     });
@@ -70,18 +68,18 @@ class ConfirmRequest {
                     return this.tracker.send(id, data);
                 }
 
-                daemon.token = this.tracker.generateToken();
-                daemon.confirm = null;
-                daemon.confirmedAt = moment();
+                user.token = this.tracker.generateToken();
+                user.confirm = null;
+                user.confirmedAt = moment();
 
-                return this._daemonRepo.save(daemon)
-                    .then(daemonId => {
-                        if (!daemonId)
-                            throw new Error('Could not save daemon');
+                return this._userRepo.save(user)
+                    .then(userId => {
+                        if (!userId)
+                            throw new Error('Could not save user');
 
                         let response = this.tracker.ConfirmResponse.create({
                             response: this.tracker.ConfirmResponse.Result.ACCEPTED,
-                            token: daemon.token,
+                            token: user.token,
                         });
                         let reply = this.tracker.ServerMessage.create({
                             type: this._tracker.ServerMessage.Type.CONFIRM_RESPONSE,

@@ -17,8 +17,11 @@ class UserModel extends Model {
         this.id = undefined;
         this.name = undefined;
         this.email = undefined;
+        this.token = undefined;
+        this.confirm = undefined;
         this.password = undefined;
         this.createdAt = undefined;
+        this.confirmedAt = undefined;
         this.blockedAt = undefined;
     }
 
@@ -86,6 +89,38 @@ class UserModel extends Model {
     }
 
     /**
+     * Token setter
+     * @type {undefined|string}
+     */
+    set token(token) {
+        this._setField('token', token);
+    }
+
+    /**
+     * Token getter
+     * @type {undefined|string}
+     */
+    get token() {
+        return this._getField('token');
+    }
+
+    /**
+     * Confirm token setter
+     * @type {undefined|string|null}
+     */
+    set confirm(confirm) {
+        this._setField('confirm', confirm);
+    }
+
+    /**
+     * Confirm token getter
+     * @type {undefined|string|null}
+     */
+    get confirm() {
+        return this._getField('confirm');
+    }
+
+    /**
      * Password setter
      * @type {undefined|string}
      */
@@ -115,6 +150,22 @@ class UserModel extends Model {
      */
     get createdAt() {
         return this._getField('created_at');
+    }
+
+    /**
+     * Confirm time setter
+     * @type {undefined|object|null}
+     */
+    set confirmedAt(confirmedAt) {
+        this._setField('confirmed_at', confirmedAt);
+    }
+
+    /**
+     * Confirm time getter
+     * @type {undefined|object|null}
+     */
+    get confirmedAt() {
+        return this._getField('confirmed_at');
     }
 
     /**

@@ -41,11 +41,15 @@ CREATE TABLE users (
     id bigserial NOT NULL,
     name varchar(255) NULL,
     email varchar(255) NOT NULL,
+    token varchar(255) NOT NULL,
+    confirm varchar(255) NULL,
     password varchar(255) NOT NULL,
     created_at timestamp NOT NULL,
+    confirmed_at timestamp NULL,
     blocked_at timestamp NULL,
     CONSTRAINT users_pk PRIMARY KEY (id),
-    CONSTRAINT users_unique_email UNIQUE (email)
+    CONSTRAINT users_unique_email UNIQUE (email),
+    CONSTRAINT users_unique_token UNIQUE (token)
 );
 
 CREATE OR REPLACE FUNCTION invalidate_users_cache() RETURNS trigger AS $$
@@ -57,7 +61,8 @@ BEGIN
             cache_keys,
             array[
                 'users-by-id:' || NEW.id,
-                'users-by-email:' || NEW.email
+                'users-by-email:' || NEW.email,
+                'users-by-token:' || NEW.token
             ]
         );
     END IF;
@@ -66,7 +71,8 @@ BEGIN
             cache_keys,
             array[
                 'users-by-id:' || OLD.id,
-                'users-by-email:' || OLD.email
+                'users-by-email:' || OLD.email,
+                'users-by-token:' || OLD.token
             ]
         );
     END IF;
@@ -93,9 +99,7 @@ CREATE TABLE daemons (
     user_id bigint NOT NULL,
     name varchar(255) NULL,
     token varchar(255) NOT NULL,
-    confirm varchar(255) NULL,
     created_at timestamp NOT NULL,
-    confirmed_at timestamp NULL,
     blocked_at timestamp NULL,
     CONSTRAINT daemons_pk PRIMARY KEY (id),
     CONSTRAINT daemons_unique_name UNIQUE (user_id, name),

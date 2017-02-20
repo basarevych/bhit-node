@@ -18,16 +18,14 @@ class InitRequest {
      * @param {Emailer} emailer                 Emailer
      * @param {Util} util                       Util
      * @param {UserRepository} userRepo         User repository
-     * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(app, config, logger, emailer, util, userRepo, daemonRepo) {
+    constructor(app, config, logger, emailer, util, userRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._emailer = emailer;
         this._util = util;
         this._userRepo = userRepo;
-        this._daemonRepo = daemonRepo;
     }
 
     /**
@@ -43,7 +41,7 @@ class InitRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'emailer', 'util', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'emailer', 'util', 'repositories.user' ];
     }
 
     /**
@@ -59,14 +57,28 @@ class InitRequest {
         debug(`Got INIT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         this._userRepo.findByEmail(message.initRequest.email)
             .then(users => {
-                if (users.length)
-                    return users[0];
+                if (users.length) {
+                    let response = this.tracker.InitResponse.create({
+                        response: this.tracker.InitResponse.Result.EMAIL_EXISTS,
+                    });
+                    let reply = this.tracker.ServerMessage.create({
+                        type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
+                        messageId: message.messageId,
+                        initResponse: response,
+                    });
+                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    return this.tracker.send(id, data);
+                }
 
                 let user = this._userRepo.create();
                 user.name = null;
                 user.email = message.initRequest.email;
+                user.token = this.tracker.generateToken();
+                user.confirm = this.tracker.generateToken();
                 user.password = this._util.encryptPassword(this._util.generatePassword());
                 user.createdAt = moment();
+                user.confirmedAt = null;
                 user.blockedAt = null;
 
                 return this._userRepo.save(user)
@@ -78,86 +90,29 @@ class InitRequest {
                     });
             })
             .then(user => {
-                return this._daemonRepo.findByUserAndName(user, message.initRequest.daemonName)
-                    .then(daemons => {
-                        if (daemons.length) {
-                            let daemon = daemons[0];
-                            daemon.confirm = this.tracker.generateToken();
+                let emailText = 'Breedhub Interconnect\n\n' +
+                    'Someone has requested account creation on behalf of ' + user.email + '.\n\n' +
+                    'If this was you then please run the following command on the daemon:\n\n' +
+                    'bhid confirm ' + user.confirm;
 
-                            return this._daemonRepo.save(daemon)
-                                .then(daemonId => {
-                                    if (!daemonId)
-                                        throw new Error('Could not save daemon');
-
-                                    let emailText = 'Breedhub Interconnect\n\n' +
-                                        'Someone has requested a new token for daemon ' +
-                                        message.initRequest.daemonName + ' of ' + user.email + '.\n\n' +
-                                        'If this was you then please run the following command on this daemon:\n\n' +
-                                        'bhid confirm ' + daemon.confirm;
-
-                                    return this._emailer.send({
-                                            to: user.email,
-                                            from: this._config.get('email.from'),
-                                            subject: 'Please confirm new token',
-                                            text: emailText,
-                                        })
-                                        .then(() => {
-                                            let response = this.tracker.InitResponse.create({
-                                                response: this.tracker.InitResponse.Result.ACCEPTED,
-                                            });
-                                            let reply = this.tracker.ServerMessage.create({
-                                                type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
-                                                messageId: message.messageId,
-                                                initResponse: response,
-                                            });
-                                            let data = this.tracker.ServerMessage.encode(reply).finish();
-                                            debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                            this.tracker.send(id, data);
-                                        });
-                                });
-                        }
-
-                        let daemon = this._daemonRepo.create();
-                        daemon.userId = user.id;
-                        daemon.name = message.initRequest.daemonName;
-                        daemon.token = this.tracker.generateToken();
-                        daemon.confirm = this.tracker.generateToken();
-                        daemon.createdAt = moment();
-                        daemon.confirmedAt = null;
-                        daemon.blockedAt = null;
-
-                        return this._daemonRepo.save(daemon)
-                            .then(daemonId => {
-                                if (!daemonId)
-                                    throw new Error('Could not create daemon');
-
-                                let emailText = 'Breedhub Interconnect\n\n' +
-                                    'Someone has requested creation of a new daemon named ' +
-                                    message.initRequest.daemonName + ' of ' +
-                                    user.email + '.\n\n' +
-                                    'If this was you then please run the following command on this daemon:\n\n' +
-                                    'bhid confirm ' + daemon.confirm;
-
-                                return this._emailer.send({
-                                        to: user.email,
-                                        from: this._config.get('email.from'),
-                                        subject: 'Please confirm new daemon',
-                                        text: emailText,
-                                    })
-                                    .then(() => {
-                                        let response = this.tracker.InitResponse.create({
-                                            response: this.tracker.InitResponse.Result.ACCEPTED,
-                                        });
-                                        let reply = this.tracker.ServerMessage.create({
-                                            type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
-                                            messageId: message.messageId,
-                                            initResponse: response,
-                                        });
-                                        let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                        this.tracker.send(id, data);
-                                    });
-                            });
+                return this._emailer.send({
+                        to: user.email,
+                        from: this._config.get('email.from'),
+                        subject: 'Please confirm account creation',
+                        text: emailText,
+                    })
+                    .then(() => {
+                        let response = this.tracker.InitResponse.create({
+                            response: this.tracker.InitResponse.Result.ACCEPTED,
+                        });
+                        let reply = this.tracker.ServerMessage.create({
+                            type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
+                            messageId: message.messageId,
+                            initResponse: response,
+                        });
+                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                        debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this.tracker.send(id, data);
                     });
             })
             .catch(error => {
