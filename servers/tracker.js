@@ -405,11 +405,17 @@ class Tracker extends EventEmitter {
         if (!data || !data.length)
             return true;
 
+        let message;
         try {
-            let message = this.ClientMessage.decode(data);
+            message = this.ClientMessage.decode(data);
             if (message.type === this.ClientMessage.Type.ALIVE)
                 return true;
+        } catch (error) {
+            this._logger.error(`Client protocol error (TCP): ${error.message}`);
+            return false;
+        }
 
+        try {
             debug(`Client message ${message.type} from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
             switch(message.type) {
                 case this.ClientMessage.Type.INIT_REQUEST:
@@ -450,7 +456,7 @@ class Tracker extends EventEmitter {
                     break;
             }
         } catch (error) {
-            this._logger.error(`Client protocol error (TCP): ${error.message}`);
+            this._logger.error(new WError(error, 'Tracker.onMessage()'));
         }
 
         return true;
