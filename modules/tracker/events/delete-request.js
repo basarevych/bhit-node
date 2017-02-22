@@ -18,14 +18,16 @@ class DeleteRequest {
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
+     * @param {ConnectionsList} connectionsList         ConnectionsList service
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo) {
+    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionsList) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
+        this._connectionsList = connectionsList;
     }
 
     /**
@@ -41,7 +43,15 @@ class DeleteRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'repositories.user',
+            'repositories.daemon',
+            'repositories.path',
+            'modules.tracker.connectionsList'
+        ];
     }
 
     /**
@@ -112,13 +122,17 @@ class DeleteRequest {
                             return this.tracker.send(id, data);
                         }
 
-                        return this._pathRepo.findByUserAndPathRecursive(path.path)
+                        return this._pathRepo.findByUserAndPathRecursive(user, path.path)
                             .then(paths => {
+                                let updateClients = [];
                                 for (let [ thisClientId, thisClient ] of this.tracker.clients) {
                                     if (thisClient.status) {
                                         for (let path of paths) {
                                             let name = user.email + path.path;
-                                            thisClient.status.delete(name);
+                                            if (thisClient.status.has(name)) {
+                                                updateClients.push(thisClientId);
+                                                thisClient.status.delete(name);
+                                            }
                                         }
                                     }
                                 }
@@ -139,20 +153,40 @@ class DeleteRequest {
                                     }
                                 }
 
-                                return this._pathRepo.deleteRecursive(path);
-                            })
-                            .then(() => {
-                                let response = this.tracker.DeleteResponse.create({
-                                    response: this.tracker.DeleteResponse.Result.ACCEPTED,
-                                });
-                                let reply = this.tracker.ServerMessage.create({
-                                    type: this._tracker.ServerMessage.Type.DELETE_RESPONSE,
-                                    messageId: message.messageId,
-                                    deleteResponse: response,
-                                });
-                                let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                this.tracker.send(id, data);
+                                return this._pathRepo.deleteRecursive(path)
+                                    .then(() => {
+                                        let response = this.tracker.DeleteResponse.create({
+                                            response: this.tracker.DeleteResponse.Result.ACCEPTED,
+                                        });
+                                        let reply = this.tracker.ServerMessage.create({
+                                            type: this._tracker.ServerMessage.Type.DELETE_RESPONSE,
+                                            messageId: message.messageId,
+                                            deleteResponse: response,
+                                        });
+                                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                                        debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        this.tracker.send(id, data);
+
+                                        for (let id of updateClients) {
+                                            let client = this.tracker.clients.get(id);
+                                            if (!client || !client.daemonId)
+                                                continue;
+
+                                            this._connectionsList.getList(client.daemonId)
+                                                .then(list => {
+                                                    if (!list)
+                                                        return;
+
+                                                    let reply = this.tracker.ServerMessage.create({
+                                                        type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
+                                                        connectionsList: list,
+                                                    });
+                                                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                                                    debug(`Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                    this.tracker.send(id, data);
+                                                });
+                                        }
+                                    });
                             });
                     });
             })

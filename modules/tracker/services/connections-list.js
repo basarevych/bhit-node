@@ -74,7 +74,7 @@ class ConnectionsList {
                                 .then(owners => {
                                     let owner = owners.length && owners[0];
                                     if (!owner)
-                                        return;
+                                        return null;
 
                                     return owner.email + '/' + peer.name;
                                 });
@@ -160,7 +160,7 @@ class ConnectionsList {
                                                         ])
                                                         .then(([ name , paths ]) => {
                                                             let path = paths.length && paths[0];
-                                                            if (!name || !path)
+                                                            if (!path)
                                                                 return;
 
                                                             list.clientConnections.push(this.tracker.ClientConnection.create({
@@ -168,7 +168,8 @@ class ConnectionsList {
                                                                 listenAddress: connection.listenAddress,
                                                                 listenPort: connection.listenPort,
                                                                 encrypted: connection.encrypted,
-                                                                server: name,
+                                                                fixed: connection.fixed,
+                                                                server: name || '',
                                                             }));
                                                         });
                                                 })
