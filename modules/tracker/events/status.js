@@ -104,7 +104,7 @@ class Status {
                                                     client.status.set(message.status.connectionName, status);
                                                 }
                                                 status.connected = message.status.connected;
-                                                debug(`${status.connected} connected to ${client.daemonName} in ${message.status.connectionName}`);
+                                                this._logger.info(`${status.connected} connected to ${client.daemonName} in ${message.status.connectionName}`);
 
                                                 let waiting = this.tracker.waiting.get(message.status.connectionName);
                                                 if (!waiting) {
