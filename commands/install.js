@@ -5,6 +5,7 @@
 const debug = require('debug')('bhit:command');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
 /**
  * Command class
@@ -49,13 +50,10 @@ class Install {
 
         let hostname = argv['_'][1];
 
-        return this._runner.exec('uname', [ '-s' ])
-            .then(result => {
-                if (result.code !== 0)
-                    throw new Error('Could not get platform name');
-
+        return Promise.resolve()
+            .then(() => {
                 let configDir;
-                if (result.stdout.trim() == 'FreeBSD') {
+                if (os.platform() == 'freebsd') {
                     configDir = '/usr/local/etc/bhit';
                     debug(`Platform: FreeBSD`);
                 } else {

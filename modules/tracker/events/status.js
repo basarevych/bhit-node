@@ -104,24 +104,20 @@ class Status {
                                         if (!waiting) {
                                             waiting = {
                                                 server: null,
-                                                internalAddress: null,
-                                                internalPort: null,
+                                                internalAddresses: [],
                                                 clients: new Set(),
                                             };
                                             this.tracker.waiting.set(message.status.connectionName, waiting);
                                         }
                                         if (actingAs == 'server') {
                                             waiting.server = client.id;
-                                            if (message.status.internalAddress)
-                                                waiting.internalAddress = message.status.internalAddress;
-                                            if (message.status.internalPort)
-                                                waiting.internalPort = message.status.internalPort;
+                                            waiting.internalAddresses = message.status.internalAddresses;
                                         } else {
                                             if (!status.connected)
                                                 waiting.clients.add(client.id);
                                         }
 
-                                        if (waiting.internalAddress && waiting.internalPort && waiting.clients.size) {
+                                        if (waiting.internalAddresses.length && waiting.clients.size) {
                                             for (let client of waiting.clients) {
                                                 let info = this.tracker.clients.get(client);
                                                 if (!info)
@@ -129,8 +125,7 @@ class Status {
 
                                                 let server = this.tracker.ServerAvailable.create({
                                                     connectionName: message.status.connectionName,
-                                                    internalAddress: waiting.internalAddress,
-                                                    internalPort: waiting.internalPort,
+                                                    internalAddresses: waiting.internalAddresses,
                                                 });
                                                 let msg = this.tracker.ServerMessage.create({
                                                     type: this.tracker.ServerMessage.Type.SERVER_AVAILABLE,

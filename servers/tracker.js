@@ -515,8 +515,7 @@ class Tracker extends EventEmitter {
                     if (waiting) {
                         if (waiting.server === id) {
                             waiting.server = null;
-                            waiting.internalAddress = null;
-                            waiting.internalPort = null;
+                            waiting.internalAddresses = [];
                             debug(`No server for ${name} anymore`);
                         }
                         for (let thisClientId of waiting.clients) {
