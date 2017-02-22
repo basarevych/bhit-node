@@ -76,7 +76,7 @@ class ConnectionsList {
                                     if (!owner)
                                         return null;
 
-                                    return owner.email + '/' + peer.name;
+                                    return owner.email + '?' + peer.name;
                                 });
                         };
 

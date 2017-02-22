@@ -66,55 +66,66 @@ class RegisterDaemonRequest {
                             daemon = null;
                     }
                 }
-                if (!daemon) {
-                    let response = this.tracker.RegisterDaemonResponse.create({
-                        response: this.tracker.RegisterDaemonResponse.Result.REJECTED,
+
+                return Promise.resolve()
+                    .then(() => {
+                        if (!daemon)
+                            return [];
+
+                        return this._userRepo.find(daemon.userId);
+                    })
+                    .then(users => {
+                        let user = users.length && users[0];
+                        if (!daemon || !user) {
+                            let response = this.tracker.RegisterDaemonResponse.create({
+                                response: this.tracker.RegisterDaemonResponse.Result.REJECTED,
+                            });
+                            let reply = this.tracker.ServerMessage.create({
+                                type: this.tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
+                                messageId: message.messageId,
+                                registerDaemonResponse: response,
+                            });
+                            let data = this.tracker.ServerMessage.encode(reply).finish();
+                            debug(`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            return this.tracker.send(id, data);
+                        }
+
+                        client.daemonId = daemon.id;
+                        client.daemonName = user.email + '?' + daemon.name;
+                        client.identity = message.registerDaemonRequest.identity;
+                        client.key = message.registerDaemonRequest.key;
+
+                        let info = this.tracker.identities.get(client.identity);
+                        if (!info) {
+                            info = {
+                                clients: new Set(),
+                            };
+                            this.tracker.identities.set(client.identity, info);
+                        }
+                        info.clients.add(client.id);
+
+                        info = this.tracker.daemons.get(daemon.id);
+                        if (!info) {
+                            info = {
+                                clients: new Set(),
+                            };
+                            this.tracker.daemons.set(daemon.id, info);
+                        }
+                        info.clients.add(client.id);
+                        this.tracker.emit('registration', id);
+
+                        let response = this.tracker.RegisterDaemonResponse.create({
+                            response: this.tracker.RegisterDaemonResponse.Result.ACCEPTED,
+                        });
+                        let reply = this.tracker.ServerMessage.create({
+                            type: this._tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
+                            messageId: message.messageId,
+                            registerDaemonResponse: response,
+                        });
+                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                        debug(`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this.tracker.send(id, data);
                     });
-                    let reply = this.tracker.ServerMessage.create({
-                        type: this.tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
-                        messageId: message.messageId,
-                        registerDaemonResponse: response,
-                    });
-                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                    return this.tracker.send(id, data);
-                }
-
-                client.daemonId = daemon.id;
-                client.daemonName = daemon.name;
-                client.identity = message.registerDaemonRequest.identity;
-                client.key = message.registerDaemonRequest.key;
-
-                let info = this.tracker.identities.get(client.identity);
-                if (!info) {
-                    info = {
-                        clients: new Set(),
-                    };
-                    this.tracker.identities.set(client.identity, info);
-                }
-                info.clients.add(client.id);
-
-                info = this.tracker.daemons.get(daemon.id);
-                if (!info) {
-                    info = {
-                        clients: new Set(),
-                    };
-                    this.tracker.daemons.set(daemon.id, info);
-                }
-                info.clients.add(client.id);
-                this.tracker.emit('registration', id);
-
-                let response = this.tracker.RegisterDaemonResponse.create({
-                    response: this.tracker.RegisterDaemonResponse.Result.ACCEPTED,
-                });
-                let reply = this.tracker.ServerMessage.create({
-                    type: this._tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
-                    messageId: message.messageId,
-                    registerDaemonResponse: response,
-                });
-                let data = this.tracker.ServerMessage.encode(reply).finish();
-                debug(`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                this.tracker.send(id, data);
             })
             .catch(error => {
                 this._logger.error(new WError(error, 'RegisterDaemonRequest.handle()'));

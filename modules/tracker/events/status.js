@@ -124,22 +124,26 @@ class Status {
                                                 }
 
                                                 if (waiting.internalAddresses.length && waiting.clients.size) {
-                                                    for (let client of waiting.clients) {
-                                                        let info = this.tracker.clients.get(client);
-                                                        if (!info)
-                                                            continue;
+                                                    let serverInfo = this.tracker.clients.get(waiting.server);
+                                                    if (serverInfo) {
+                                                        for (let client of waiting.clients) {
+                                                            let clientInfo = this.tracker.clients.get(client);
+                                                            if (!clientInfo)
+                                                                continue;
 
-                                                        let server = this.tracker.ServerAvailable.create({
-                                                            connectionName: message.status.connectionName,
-                                                            internalAddresses: waiting.internalAddresses,
-                                                        });
-                                                        let msg = this.tracker.ServerMessage.create({
-                                                            type: this.tracker.ServerMessage.Type.SERVER_AVAILABLE,
-                                                            serverAvailable: server,
-                                                        });
-                                                        let data = this.tracker.ServerMessage.encode(msg).finish();
-                                                        debug(`Sending SERVER AVAILABLE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
-                                                        this.tracker.send(client, data);
+                                                            let server = this.tracker.ServerAvailable.create({
+                                                                connectionName: message.status.connectionName,
+                                                                daemonName: serverInfo.daemonName,
+                                                                internalAddresses: waiting.internalAddresses,
+                                                            });
+                                                            let msg = this.tracker.ServerMessage.create({
+                                                                type: this.tracker.ServerMessage.Type.SERVER_AVAILABLE,
+                                                                serverAvailable: server,
+                                                            });
+                                                            let data = this.tracker.ServerMessage.encode(msg).finish();
+                                                            debug(`Sending SERVER AVAILABLE to ${clientInfo.socket.remoteAddress}:${clientInfo.socket.remotePort}`);
+                                                            this.tracker.send(client, data);
+                                                        }
                                                     }
                                                     waiting.clients.clear();
                                                 }
