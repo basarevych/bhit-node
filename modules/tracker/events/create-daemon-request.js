@@ -71,6 +71,19 @@ class CreateDaemonRequest {
                     debug(`Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
+                if (message.createDaemonRequest.daemonName.length && !this.tracker.validateName(message.createDaemonRequest.daemonName)) {
+                    let response = this.tracker.CreateDaemonResponse.create({
+                        response: this.tracker.CreateDaemonResponse.Result.INVALID_NAME,
+                    });
+                    let reply = this.tracker.ServerMessage.create({
+                        type: this.tracker.ServerMessage.Type.CREATE_DAEMON_RESPONSE,
+                        messageId: message.messageId,
+                        createDaemonResponse: response,
+                    });
+                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    return this.tracker.send(id, data);
+                }
 
                 if (!message.createDaemonRequest.daemonName.length) {
                     message.createDaemonRequest.daemonName = this._util.getRandomString(3, { lower: true, upper: false, digits: false });

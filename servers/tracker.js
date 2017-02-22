@@ -223,6 +223,18 @@ class Tracker extends EventEmitter {
     }
 
     /**
+     * Validate name
+     * @param {string} name                 Name to check
+     * @return {boolean}
+     */
+    validateName(name) {
+        if (!name.length)
+            return false;
+
+        return /^[-._0-9a-zA-Z]+$/.test(name);
+    }
+
+    /**
      * Validate path
      * @param {string} path                 Path to check
      * @return {boolean}
@@ -234,7 +246,7 @@ class Tracker extends EventEmitter {
         let parts = path.split('/');
         parts.shift();
         for (let node of parts) {
-            if (!node.trim().length)
+            if (!this.validateName(node))
                 return false;
         }
         return true;
