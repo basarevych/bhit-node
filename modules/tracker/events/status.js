@@ -95,18 +95,19 @@ class Status {
                                                 if (!actingAs)
                                                     return;
 
-                                                let status = client.status.get(message.status.connectionName);
-                                                if (!status && message.status.active) {
-                                                    status = {
-                                                        server: actingAs == 'server',
-                                                        connected: 0,
-                                                    };
-                                                    client.status.set(message.status.connectionName, status);
-                                                }
                                                 if (message.status.active) {
+                                                    let status = client.status.get(message.status.connectionName);
+                                                    if (!status) {
+                                                        status = {
+                                                            server: actingAs == 'server',
+                                                            connected: 0,
+                                                        };
+                                                        client.status.set(message.status.connectionName, status);
+                                                    }
                                                     status.connected = message.status.connected;
                                                     this._logger.info(`${status.connected} connected to ${client.daemonName} (${actingAs}) in ${message.status.connectionName}`);
                                                 } else {
+                                                    client.status.delete(message.status.connectionName);
                                                     this._logger.info(`Daemon ${client.daemonName} (${actingAs}) removed from ${message.status.connectionName}`);
                                                 }
 
@@ -157,6 +158,9 @@ class Status {
                                                     }
                                                     waiting.clients.clear();
                                                 }
+
+                                                if (!waiting.internalAddresses.length && !waiting.clients.size)
+                                                    this.tracker.waiting.delete(message.status.connectionName);
                                             });
                                     });
                             });
