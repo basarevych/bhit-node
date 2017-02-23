@@ -96,15 +96,19 @@ class Status {
                                                     return;
 
                                                 let status = client.status.get(message.status.connectionName);
-                                                if (!status) {
+                                                if (!status && message.status.active) {
                                                     status = {
                                                         server: actingAs == 'server',
                                                         connected: 0,
                                                     };
                                                     client.status.set(message.status.connectionName, status);
                                                 }
-                                                status.connected = message.status.connected;
-                                                this._logger.info(`${status.connected} connected to ${client.daemonName} (${actingAs}) in ${message.status.connectionName}`);
+                                                if (message.status.active) {
+                                                    status.connected = message.status.connected;
+                                                    this._logger.info(`${status.connected} connected to ${client.daemonName} (${actingAs}) in ${message.status.connectionName}`);
+                                                } else {
+                                                    this._logger.info(`Daemon ${client.daemonName} (${actingAs}) removed from ${message.status.connectionName}`);
+                                                }
 
                                                 let waiting = this.tracker.waiting.get(message.status.connectionName);
                                                 if (!waiting) {
@@ -116,11 +120,17 @@ class Status {
                                                     this.tracker.waiting.set(message.status.connectionName, waiting);
                                                 }
                                                 if (actingAs == 'server') {
-                                                    waiting.server = client.id;
-                                                    waiting.internalAddresses = message.status.internalAddresses;
+                                                    waiting.server = message.status.active ? client.id : null;
+                                                    waiting.internalAddresses = message.status.active ? message.status.internalAddresses : [];
                                                 } else {
-                                                    if (!status.connected)
-                                                        waiting.clients.add(client.id);
+                                                    if (message.status.active) {
+                                                        if (status.connected)
+                                                            waiting.clients.delete(client.id);
+                                                        else
+                                                            waiting.clients.add(client.id);
+                                                    } else {
+                                                        waiting.clients.delete(client.id);
+                                                    }
                                                 }
 
                                                 if (waiting.internalAddresses.length && waiting.clients.size) {
