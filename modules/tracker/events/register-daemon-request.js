@@ -118,7 +118,7 @@ class RegisterDaemonRequest {
                             response: this.tracker.RegisterDaemonResponse.Result.ACCEPTED,
                         });
                         let reply = this.tracker.ServerMessage.create({
-                            type: this._tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
+                            type: this.tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
                             messageId: message.messageId,
                             registerDaemonResponse: response,
                         });

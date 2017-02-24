@@ -71,7 +71,10 @@ class Status {
 
                 let parts = message.status.connectionName.split('/');
                 let emailPart = parts.shift();
-                let pathPart = '/' + parts.join('/');
+                let pathPart = parts.length ? '/' + parts.join('/') : null;
+                if (!emailPart || !pathPart)
+                    return;
+
                 return this._userRepo.findByEmail(emailPart)
                     .then(users => {
                         let user = users.length && users[0];
@@ -125,7 +128,7 @@ class Status {
                                                     waiting.internalAddresses = message.status.active ? message.status.internalAddresses : [];
                                                 } else {
                                                     if (message.status.active) {
-                                                        if (status.connected)
+                                                        if (message.status.connected)
                                                             waiting.clients.delete(client.id);
                                                         else
                                                             waiting.clients.add(client.id);

@@ -130,7 +130,8 @@ class DeleteRequest {
                                         for (let path of paths) {
                                             let name = user.email + path.path;
                                             if (thisClient.status.has(name)) {
-                                                updateClients.push(thisClientId);
+                                                if (updateClients.indexOf(thisClientId) == -1)
+                                                    updateClients.push(thisClientId);
                                                 thisClient.status.delete(name);
                                             }
                                         }
@@ -142,8 +143,10 @@ class DeleteRequest {
                                     if (waiting) {
                                         if (waiting.server) {
                                             let thisServer = this.tracker.clients.get(waiting.server);
-                                            if (!thisServer || !thisServer.status || !thisServer.status.has(name))
+                                            if (!thisServer || !thisServer.status || !thisServer.status.has(name)) {
                                                 waiting.server = null;
+                                                waiting.internalAddresses = [];
+                                            }
                                         }
                                         for (let thisClientId of waiting.clients) {
                                             let thisClient = this.tracker.clients.get(thisClientId);
@@ -159,7 +162,7 @@ class DeleteRequest {
                                             response: this.tracker.DeleteResponse.Result.ACCEPTED,
                                         });
                                         let reply = this.tracker.ServerMessage.create({
-                                            type: this._tracker.ServerMessage.Type.DELETE_RESPONSE,
+                                            type: this.tracker.ServerMessage.Type.DELETE_RESPONSE,
                                             messageId: message.messageId,
                                             deleteResponse: response,
                                         });
@@ -167,25 +170,31 @@ class DeleteRequest {
                                         debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this.tracker.send(id, data);
 
-                                        for (let id of updateClients) {
-                                            let client = this.tracker.clients.get(id);
+                                        let promises = [];
+                                        for (let thisId of updateClients) {
+                                            let client = this.tracker.clients.get(thisId);
                                             if (!client || !client.daemonId)
                                                 continue;
 
-                                            this._connectionsList.getList(client.daemonId)
-                                                .then(list => {
-                                                    if (!list)
-                                                        return;
+                                            promises.push(
+                                                this._connectionsList.getList(client.daemonId)
+                                                    .then(list => {
+                                                        if (!list)
+                                                            return;
 
-                                                    let reply = this.tracker.ServerMessage.create({
-                                                        type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
-                                                        connectionsList: list,
-                                                    });
-                                                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                    debug(`Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                                    this.tracker.send(id, data);
-                                                });
+                                                        let reply = this.tracker.ServerMessage.create({
+                                                            type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
+                                                            connectionsList: list,
+                                                        });
+                                                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                                                        debug(`Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                        this.tracker.send(thisId, data);
+                                                    })
+                                            );
                                         }
+
+                                        if (promises.length)
+                                            return Promise.all(promises);
                                     });
                             });
                     });

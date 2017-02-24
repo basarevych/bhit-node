@@ -34,6 +34,8 @@ module.exports = function (user, path, pg) {
 
                         if (promises.length)
                             return Promise.all(promises);
+                        else
+                            return [];
                     })
                     .then(results => {
                         for (let result of results)

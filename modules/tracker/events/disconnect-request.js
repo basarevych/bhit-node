@@ -19,8 +19,9 @@ class DisconnectRequest {
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
+     * @param {ConnectionsList} connectionsList         ConnectionsList service
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo, connectionsList) {
         this._app = app;
         this._config = config;
         this._logger = logger;
@@ -28,6 +29,7 @@ class DisconnectRequest {
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
         this._connectionRepo = connectionRepo;
+        this._connectionsList = connectionsList;
     }
 
     /**
@@ -43,7 +45,16 @@ class DisconnectRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'repositories.user',
+            'repositories.daemon',
+            'repositories.path',
+            'repositories.connection',
+            'modules.tracker.connectionsList'
+        ];
     }
 
     /**
@@ -176,8 +187,10 @@ class DisconnectRequest {
                                         if (waiting) {
                                             if (waiting.server) {
                                                 let thisServer = this.tracker.clients.get(waiting.server);
-                                                if (!thisServer || !thisServer.status || !thisServer.status.has(name))
+                                                if (!thisServer || !thisServer.status || !thisServer.status.has(name)) {
                                                     waiting.server = null;
+                                                    waiting.internalAddresses = [];
+                                                }
                                             }
                                             for (let thisClientId of waiting.clients) {
                                                 let thisClient = this.tracker.clients.get(thisClientId);
@@ -197,13 +210,38 @@ class DisconnectRequest {
                                                 this.tracker.DisconnectResponse.Result.NOT_CONNECTED),
                                         });
                                         let reply = this.tracker.ServerMessage.create({
-                                            type: this._tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
+                                            type: this.tracker.ServerMessage.Type.DISCONNECT_RESPONSE,
                                             messageId: message.messageId,
                                             disconnectResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
                                         debug(`Sending DISCONNECT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this.tracker.send(id, data);
+
+                                        if (count > 0) {
+                                            return this._connectionsList.getList(daemon.id)
+                                                .then(list => {
+                                                    if (!list)
+                                                        return;
+
+                                                    let notification = this.tracker.ServerMessage.create({
+                                                        type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
+                                                        connectionsList: list,
+                                                    });
+                                                    let data = this.tracker.ServerMessage.encode(notification).finish();
+
+                                                    let info = this.tracker.daemons.get(daemon.id);
+                                                    if (info) {
+                                                        for (let thisId of info.clients) {
+                                                            let client = this.tracker.clients.get(thisId);
+                                                            if (client) {
+                                                                debug(`Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                                this.tracker.send(thisId, data);
+                                                            }
+                                                        }
+                                                    }
+                                                });
+                                        }
                                     });
                             });
                     });

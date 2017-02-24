@@ -15,13 +15,15 @@ class CreateRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, daemonRepo, connectionRepo) {
+    constructor(app, config, logger, userRepo, daemonRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._connectionRepo = connectionRepo;
     }
@@ -39,7 +41,14 @@ class CreateRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.daemon', 'repositories.connection' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'repositories.user',
+            'repositories.daemon',
+            'repositories.connection',
+        ];
     }
 
     /**
@@ -125,27 +134,62 @@ class CreateRequest {
                             return this.tracker.send(id, data);
                         }
 
+                        let serverConnections = [], clientConnections = [];
                         return Promise.resolve()
                             .then(() => {
                                 if (message.createRequest.type == this.tracker.CreateRequest.Type.NOT_CONNECTED)
                                     return;
 
                                 return this._daemonRepo.connect(
-                                    daemon,
-                                    connection,
-                                    message.createRequest.type == this.tracker.CreateRequest.Type.SERVER ?
-                                        'server' :
-                                        'client'
-                                );
+                                        daemon,
+                                        connection,
+                                        message.createRequest.type == this.tracker.CreateRequest.Type.SERVER ?
+                                            'server' :
+                                            'client'
+                                    )
+                                    .then(numConnections => {
+                                        if (!numConnections || message.createRequest.daemonName)
+                                            return;
+
+                                        return this._userRepo.find(connection.userId)
+                                            .then(users => {
+                                                let user = users.length && users[0];
+                                                if (!user)
+                                                    return;
+
+                                                if (message.createRequest.type == this.tracker.CreateRequest.Type.SERVER) {
+                                                    serverConnections.push(this.tracker.ServerConnection.create({
+                                                        name: user.email + message.createRequest.path,
+                                                        connectAddress: connection.connectAddress,
+                                                        connectPort: connection.connectPort,
+                                                        encrypted: connection.encrypted,
+                                                        fixed: connection.fixed,
+                                                    }));
+                                                } else {
+                                                    clientConnections.push(this.tracker.ClientConnection.create({
+                                                        name: user.email + message.createRequest.path,
+                                                        listenAddress: connection.listenAddress,
+                                                        listenPort: connection.listenPort,
+                                                        encrypted: connection.encrypted,
+                                                        fixed: connection.fixed,
+                                                    }));
+                                                }
+                                            });
+                                    });
                             })
                             .then(() => {
+                                let list = this.tracker.ConnectionsList.create({
+                                    serverConnections: serverConnections,
+                                    clientConnections: clientConnections,
+                                });
                                 let response = this.tracker.CreateResponse.create({
                                     response: this.tracker.CreateResponse.Result.ACCEPTED,
                                     serverToken: result.connection.token,
                                     clientToken: result.path.token,
+                                    updates: list,
                                 });
                                 let reply = this.tracker.ServerMessage.create({
-                                    type: this._tracker.ServerMessage.Type.CREATE_RESPONSE,
+                                    type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
                                     messageId: message.messageId,
                                     createResponse: response,
                                 });

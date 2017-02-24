@@ -82,7 +82,7 @@ class ConfirmRequest {
                             token: user.token,
                         });
                         let reply = this.tracker.ServerMessage.create({
-                            type: this._tracker.ServerMessage.Type.CONFIRM_RESPONSE,
+                            type: this.tracker.ServerMessage.Type.CONFIRM_RESPONSE,
                             messageId: message.messageId,
                             confirmResponse: response,
                         });
