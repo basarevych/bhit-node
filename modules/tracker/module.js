@@ -95,6 +95,15 @@ class Tracker {
         let addressResponse = this._app.get('modules.tracker.events.addressResponse');
         server.on('address_response', addressResponse.handle.bind(addressResponse));
 
+        let redeemMasterRequest = this._app.get('modules.tracker.events.redeemMasterRequest');
+        server.on('redeem_master_request', redeemMasterRequest.handle.bind(redeemMasterRequest));
+
+        let redeemDaemonRequest = this._app.get('modules.tracker.events.redeemDaemonRequest');
+        server.on('redeem_daemon_request', redeemDaemonRequest.handle.bind(redeemDaemonRequest));
+
+        let redeemPathRequest = this._app.get('modules.tracker.events.redeemPathRequest');
+        server.on('redeem_path_request', redeemPathRequest.handle.bind(redeemPathRequest));
+
         return Promise.resolve();
     }
 }
