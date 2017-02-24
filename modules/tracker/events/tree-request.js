@@ -146,10 +146,14 @@ class TreeRequest {
                                         type: type,
                                         name: path.name,
                                         path: path.path,
-                                        serverToken: connection ? connection.token : '',
                                         serversNumber: parseInt(numServers),
-                                        clientToken: path.token,
+                                        connectAddress: connection.connectAddress,
+                                        connectPort: connection.connectPort,
                                         clientsNumber: parseInt(numClients),
+                                        listenAddress: connection.listenAddress,
+                                        listenPort: connection.listenPort,
+                                        encrypted: connection.encrypted,
+                                        fixed: connection.fixed,
                                     }));
                                 });
                         });
