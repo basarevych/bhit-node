@@ -85,34 +85,32 @@ class InitRequest {
                     .then(userId => {
                         if (!userId)
                             throw new Error('Could not create user');
-
-                        return user;
-                    });
-            })
-            .then(user => {
-                let emailText = 'Breedhub Interconnect\n\n' +
-                    'Someone has requested account creation on behalf of ' + user.email + '.\n\n' +
-                    'If this was you then please run the following command on the daemon:\n\n' +
-                    'bhid confirm ' + user.confirm;
-
-                return this._emailer.send({
-                        to: user.email,
-                        from: this._config.get('email.from'),
-                        subject: 'Please confirm account creation',
-                        text: emailText,
                     })
                     .then(() => {
-                        let response = this.tracker.InitResponse.create({
-                            response: this.tracker.InitResponse.Result.ACCEPTED,
-                        });
-                        let reply = this.tracker.ServerMessage.create({
-                            type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
-                            messageId: message.messageId,
-                            initResponse: response,
-                        });
-                        let data = this.tracker.ServerMessage.encode(reply).finish();
-                        debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                        this.tracker.send(id, data);
+                        let emailText = 'Breedhub Interconnect\n\n' +
+                            'Someone has requested account creation on behalf of ' + user.email + '.\n\n' +
+                            'If this was you then please run the following command on the daemon:\n\n' +
+                            'bhid confirm ' + user.confirm;
+
+                        return this._emailer.send({
+                            to: user.email,
+                            from: this._config.get('email.from'),
+                            subject: 'Please confirm account creation',
+                            text: emailText,
+                        })
+                            .then(() => {
+                                let response = this.tracker.InitResponse.create({
+                                    response: this.tracker.InitResponse.Result.ACCEPTED,
+                                });
+                                let reply = this.tracker.ServerMessage.create({
+                                    type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
+                                    messageId: message.messageId,
+                                    initResponse: response,
+                                });
+                                let data = this.tracker.ServerMessage.encode(reply).finish();
+                                debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this.tracker.send(id, data);
+                            });
                     });
             })
             .catch(error => {
