@@ -17,7 +17,8 @@ function usage() {
     console.log('\tinstall\t\tRegister the program in the system');
     console.log('\tcreate-db\tCreate the schema');
     console.log('\tclear-cache\tClear the cache');
-    console.log('\trun\t\tRun the daemon');
+    console.log('\tstart\t\tStart the daemon');
+    console.log('\tstop\t\tStop the daemon');
 }
 
 function execDaemon() {
@@ -27,12 +28,12 @@ function execDaemon() {
     return proc.promise;
 }
 
-function execCmd() {
+function execCommand(command, params) {
     return new Promise((resolve, reject) => {
         try {
             let proc = execFile(
-                path.join(__dirname, 'bin', 'cmd'),
-                process.argv.slice(2),
+                path.join(__dirname, 'bin', command),
+                params,
                 (error, stdout, stderr) => {
                     resolve({
                         code: error ? error.code : 0,
@@ -96,10 +97,15 @@ switch (argv['_'][0]) {
                 console.log('Usage: bhit clear-cache\n');
                 console.log('\tThis command will drop all the data in Redis');
                 break;
-            case 'run':
-                console.log('Usage: bhit run\n');
-                console.log('\tThis command will start the daemon');
+            case 'start':
+                console.log('Usage: bhit start\n');
+                console.log('\tThis command will start the server');
                 console.log('\tYou might want to run "systemctl bhit start" instead');
+                break;
+            case 'stop':
+                console.log('Usage: bhit stop\n');
+                console.log('\tThis command will stop the server');
+                console.log('\tYou might want to run "systemctl bhit stop" instead');
                 break;
             default:
                 console.log('Usage: bhit help <command>');
@@ -109,7 +115,7 @@ switch (argv['_'][0]) {
     case 'install':
     case 'create-db':
     case 'clear-cache':
-        execCmd()
+        execCommand('cmd', process.argv.slice(2))
             .then(result => {
                 process.exit(result.code);
             })
@@ -118,8 +124,18 @@ switch (argv['_'][0]) {
                 process.exit(1);
             });
         break;
-    case 'run':
+    case 'start':
         execDaemon()
+            .then(result => {
+                process.exit(result.code);
+            })
+            .catch(error => {
+                console.log(error.message);
+                process.exit(1);
+            });
+        break;
+    case 'stop':
+        execCommand('kill', [ pidPath ])
             .then(result => {
                 process.exit(result.code);
             })

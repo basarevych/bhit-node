@@ -3,7 +3,8 @@ Description=Breedhub Interconnect Tracker
 
 [Service]
 Type=forking
-ExecStart=/usr/bin/node /usr/bin/bhit run
+ExecStart=/usr/bin/node /usr/bin/bhit start
+ExecStop=/usr/bin/node /usr/bin/bhit stop
 PIDFile=/var/run/bhit/bhit.pid
 Restart=always
 StandardOutput=syslog
