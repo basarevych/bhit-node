@@ -57,8 +57,8 @@ if (!argv['_'].length) {
     process.exit(0);
 }
 if (argv['_'][0] != 'help' && argv['_'][0] != 'install') {
-    let etcDir = (os.platform() == 'freebsd' ? '/usr/local/etc/bhid' : '/etc/bhid');
-    for (let dir of [ etcDir, '/var/run/bhid', '/var/log/bhid', path.join(__dirname, 'config', 'local.js') ]) {
+    let etcDir = (os.platform() == 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');
+    for (let dir of [ etcDir, '/var/run/bhit', '/var/log/bhit', path.join(__dirname, 'config', 'local.js') ]) {
         try {
             fs.accessSync(dir, fs.constants.F_OK);
         } catch (error) {
