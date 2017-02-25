@@ -63,14 +63,13 @@ class Install {
 
                 try {
                     fs.symlinkSync(path.join(configDir, 'config.js'), path.join(__dirname, '..', 'config', 'local.js'));
-                    console.log('Config symlink created');
                 } catch (error) {
                     // do nothing
                 }
 
                 try {
                     fs.accessSync(configDir, fs.constants.F_OK);
-                    return this.error('Configuration directory already exists');
+                    return;
                 } catch (error) {
                     // do nothing
                 }
@@ -137,6 +136,9 @@ class Install {
                         if (result.code !== 0)
                             throw new Error('Could not create self-signed certificate');
                     });
+            })
+            .then(() => {
+                process.exit(0);
             })
             .catch(error => {
                 this.error(error.message);
