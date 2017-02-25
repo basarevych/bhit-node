@@ -79,33 +79,30 @@ class RedeemMasterRequest {
                         if (!userId)
                             throw new Error('Could not update user');
 
-                        return user;
-                    });
-            })
-            .then(user => {
-                let emailText = 'Breedhub Interconnect\n\n' +
-                    'Someone has requested master token regeneration of ' + user.email + '.\n\n' +
-                    'If this was you then please run the following command on the daemon:\n\n' +
-                    'bhid confirm ' + user.confirm;
+                        let emailText = 'Breedhub Interconnect\n\n' +
+                            'Someone has requested master token regeneration of ' + user.email + '.\n\n' +
+                            'If this was you then please run the following command on the daemon:\n\n' +
+                            'bhid confirm ' + user.confirm;
 
-                return this._emailer.send({
-                        to: user.email,
-                        from: this._config.get('email.from'),
-                        subject: 'Please confirm master token regeneration',
-                        text: emailText,
-                    })
-                    .then(() => {
-                        let response = this.tracker.RedeemMasterResponse.create({
-                            response: this.tracker.RedeemMasterResponse.Result.ACCEPTED,
-                        });
-                        let reply = this.tracker.ServerMessage.create({
-                            type: this.tracker.ServerMessage.Type.REDEEM_MASTER_RESPONSE,
-                            messageId: message.messageId,
-                            redeemMasterResponse: response,
-                        });
-                        let data = this.tracker.ServerMessage.encode(reply).finish();
-                        debug(`Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                        this.tracker.send(id, data);
+                        return this._emailer.send({
+                                to: user.email,
+                                from: this._config.get('email.from'),
+                                subject: 'Please confirm master token regeneration',
+                                text: emailText,
+                            })
+                            .then(() => {
+                                let response = this.tracker.RedeemMasterResponse.create({
+                                    response: this.tracker.RedeemMasterResponse.Result.ACCEPTED,
+                                });
+                                let reply = this.tracker.ServerMessage.create({
+                                    type: this.tracker.ServerMessage.Type.REDEEM_MASTER_RESPONSE,
+                                    messageId: message.messageId,
+                                    redeemMasterResponse: response,
+                                });
+                                let data = this.tracker.ServerMessage.encode(reply).finish();
+                                debug(`Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this.tracker.send(id, data);
+                            });
                     });
             })
             .catch(error => {

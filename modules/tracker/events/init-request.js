@@ -85,19 +85,18 @@ class InitRequest {
                     .then(userId => {
                         if (!userId)
                             throw new Error('Could not create user');
-                    })
-                    .then(() => {
+
                         let emailText = 'Breedhub Interconnect\n\n' +
                             'Someone has requested account creation on behalf of ' + user.email + '.\n\n' +
                             'If this was you then please run the following command on the daemon:\n\n' +
                             'bhid confirm ' + user.confirm;
 
                         return this._emailer.send({
-                            to: user.email,
-                            from: this._config.get('email.from'),
-                            subject: 'Please confirm account creation',
-                            text: emailText,
-                        })
+                                to: user.email,
+                                from: this._config.get('email.from'),
+                                subject: 'Please confirm account creation',
+                                text: emailText,
+                            })
                             .then(() => {
                                 let response = this.tracker.InitResponse.create({
                                     response: this.tracker.InitResponse.Result.ACCEPTED,
