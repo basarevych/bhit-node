@@ -120,6 +120,8 @@ class RegisterDaemonRequest {
 
                         let response = this.tracker.RegisterDaemonResponse.create({
                             response: this.tracker.RegisterDaemonResponse.Result.ACCEPTED,
+                            email: user.email,
+                            name: client.daemonName,
                         });
                         let reply = this.tracker.ServerMessage.create({
                             type: this.tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
