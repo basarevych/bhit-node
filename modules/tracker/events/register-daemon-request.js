@@ -107,6 +107,10 @@ class RegisterDaemonRequest {
                         info = this.tracker.daemons.get(daemon.id);
                         if (!info) {
                             info = {
+                                id: daemon.id,
+                                name: daemon.name,
+                                userId: daemon.userId,
+                                userEmail: user.email,
                                 clients: new Set(),
                             };
                             this.tracker.daemons.set(daemon.id, info);

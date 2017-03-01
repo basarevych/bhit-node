@@ -64,11 +64,26 @@ class AttachRequest {
         if (!client)
             return;
 
+        let userId, userEmail, userPath;
+        let parts = message.attachRequest.path.split('/');
+        if (parts.length && parts[0].length) {
+            userEmail = parts.shift();
+            parts.unshift('');
+        }
+        userPath = parts.join('/');
+
         debug(`Got ATTACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
                     return [];
+
+                let info = this.tracker.daemons.get(client.daemonId);
+                if (!info)
+                    return [];
+
+                if (!userEmail)
+                    userEmail = info.userEmail;
 
                 return this._daemonRepo.find(client.daemonId);
             })
@@ -87,7 +102,7 @@ class AttachRequest {
                     debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
-                if (!this.tracker.validatePath(message.attachRequest.path)) {
+                if (!this.tracker.validatePath(userPath)) {
                     let response = this.tracker.AttachResponse.create({
                         response: this.tracker.AttachResponse.Result.INVALID_PATH,
                     });
@@ -103,21 +118,26 @@ class AttachRequest {
 
                 return Promise.all([
                         this._pathRepo.findByToken(message.attachRequest.token),
-                        this._connectionRepo.findByToken(message.attachRequest.token)
+                        this._connectionRepo.findByToken(message.attachRequest.token),
+                        this._userRepo.findByEmail(userEmail),
                     ])
-                    .then(([ paths, connections ]) => {
+                    .then(([ paths, connections, users ]) => {
                         let path = paths.length && paths[0];
                         let connection = connections.length && connections[0];
-                        let userId;
+                        let user = users.length && users[0];
 
                         let actingAs;
-                        if (path) {
-                            actingAs = 'client';
-                            userId = path.userId;
-                        } else if (connection) {
-                            actingAs = 'server';
-                            userId = connection.userId;
-                        } else {
+                        if (user) {
+                            if (path) {
+                                actingAs = 'client';
+                                userId = path.userId;
+                            } else if (connection) {
+                                actingAs = 'server';
+                                userId = connection.userId;
+                            }
+                        }
+
+                        if (!actingAs || user.id != userId) {
                             let response = this.tracker.AttachResponse.create({
                                 response: this.tracker.AttachResponse.Result.PATH_NOT_FOUND,
                             });
@@ -163,14 +183,14 @@ class AttachRequest {
                                     return this._pathRepo.find(connection.pathId)
                                         .then(paths => {
                                             let path = paths.length && paths[0];
-                                            if (path && path.path == message.attachRequest.path)
+                                            if (path && path.path == userPath)
                                                 return [ connection, path ];
 
                                             return null;
                                         });
                                 }
 
-                                return loadConnection(path, message.attachRequest.path);
+                                return loadConnection(path, userPath);
                             })
                             .then(result => {
                                 if (!result) {
@@ -199,79 +219,69 @@ class AttachRequest {
                                                 if (count === 0)
                                                     return this.tracker.AttachResponse.Result.ALREADY_CONNECTED;
 
-                                                if (message.attachRequest.daemonName)
-                                                    return this.tracker.AttachResponse.Result.ACCEPTED;
+                                                if (actingAs == 'server') {
+                                                    return this._daemonRepo.findByConnection(connection)
+                                                        .then(clientDaemons => {
+                                                            let clients = [];
+                                                            let clientPromises = [];
+                                                            for (let clientDaemon of clientDaemons) {
+                                                                if (clientDaemon.actingAs != 'client')
+                                                                    continue;
 
-                                                return this._userRepo.find(userId)
-                                                    .then(users => {
-                                                        let user = users.length && users[0];
-                                                        if (!user)
-                                                            return this.tracker.AttachResponse.Result.ACCEPTED;
+                                                                clientPromises.push(
+                                                                    this._userRepo.find(clientDaemon.userId)
+                                                                        .then(clientUsers => {
+                                                                            let clientUser = clientUsers.length && clientUsers[0];
+                                                                            if (!clientUser)
+                                                                                return;
 
-                                                        if (actingAs == 'server') {
-                                                            return this._daemonRepo.findByConnection(connection)
-                                                                .then(clientDaemons => {
-                                                                    let clients = [];
-                                                                    let clientPromises = [];
-                                                                    for (let clientDaemon of clientDaemons) {
-                                                                        if (clientDaemon.actingAs != 'client')
-                                                                            continue;
-
-                                                                        clientPromises.push(
-                                                                            this._userRepo.find(clientDaemon.userId)
-                                                                                .then(clientUsers => {
-                                                                                    let clientUser = clientUsers.length && clientUsers[0];
-                                                                                    if (!clientUser)
-                                                                                        return;
-
-                                                                                    clients.push(clientUser.email + '?' + clientDaemon.name);
-                                                                                })
-                                                                        );
-                                                                    }
-
-                                                                    return Promise.all(clientPromises)
-                                                                        .then(() => {
-                                                                            serverConnections.push(this.tracker.ServerConnection.create({
-                                                                                name: user.email + path.path,
-                                                                                connectAddress: connection.connectAddress,
-                                                                                connectPort: connection.connectPort,
-                                                                                encrypted: connection.encrypted,
-                                                                                fixed: connection.fixed,
-                                                                                clients: clients,
-                                                                            }));
-
-                                                                            return this.tracker.AttachResponse.Result.ACCEPTED;
-                                                                        });
-                                                                });
-                                                        } else {
-                                                            return this._daemonRepo.findServerByConnection(connection)
-                                                                .then(serverDaemons => {
-                                                                    let serverDaemon = serverDaemons.length && serverDaemons[0];
-
-                                                                    return Promise.resolve()
-                                                                        .then(() => {
-                                                                            if (!serverDaemon)
-                                                                                return [];
-
-                                                                            return this._userRepo.find(serverDaemon.userId);
+                                                                            clients.push(clientUser.email + '?' + clientDaemon.name);
                                                                         })
-                                                                        .then(serverUsers => {
-                                                                            let serverUser = serverUsers.length && serverUsers[0];
+                                                                );
+                                                            }
 
-                                                                            clientConnections.push(this.tracker.ClientConnection.create({
-                                                                                name: user.email + path.path,
-                                                                                listenAddress: connection.listenAddress,
-                                                                                listenPort: connection.listenPort,
-                                                                                encrypted: connection.encrypted,
-                                                                                fixed: connection.fixed,
-                                                                                server: (serverDaemon && serverUser) ? serverUser.email + '?' + serverDaemon.name : '',
-                                                                            }));
+                                                            return Promise.all(clientPromises)
+                                                                .then(() => {
+                                                                    serverConnections.push(this.tracker.ServerConnection.create({
+                                                                        name: userEmail + path.path,
+                                                                        connectAddress: connection.connectAddress,
+                                                                        connectPort: connection.connectPort,
+                                                                        encrypted: connection.encrypted,
+                                                                        fixed: connection.fixed,
+                                                                        clients: clients,
+                                                                    }));
 
-                                                                            return this.tracker.AttachResponse.Result.ACCEPTED;
-                                                                        });
+                                                                    return this.tracker.AttachResponse.Result.ACCEPTED;
                                                                 });
-                                                        }
-                                                    });
+                                                        });
+                                                } else {
+                                                    return this._daemonRepo.findServerByConnection(connection)
+                                                        .then(serverDaemons => {
+                                                            let serverDaemon = serverDaemons.length && serverDaemons[0];
+
+                                                            return Promise.resolve()
+                                                                .then(() => {
+                                                                    if (!serverDaemon)
+                                                                        return [];
+
+                                                                    return this._userRepo.find(serverDaemon.userId);
+                                                                })
+                                                                .then(serverUsers => {
+                                                                    let serverUser = serverUsers.length && serverUsers[0];
+
+                                                                    clientConnections.push(this.tracker.ClientConnection.create({
+                                                                        name: userEmail + path.path,
+                                                                        listenAddress: connection.listenAddress,
+                                                                        listenPort: connection.listenPort,
+                                                                        encrypted: connection.encrypted,
+                                                                        fixed: connection.fixed,
+                                                                        server: (serverDaemon && serverUser) ? serverUser.email + '?' + serverDaemon.name : '',
+                                                                    }));
+
+                                                                    return this.tracker.AttachResponse.Result.ACCEPTED;
+                                                                });
+                                                        });
+                                                }
                                             })
                                             .then(value => {
                                                 let list = this.tracker.ConnectionsList.create({

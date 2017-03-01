@@ -67,11 +67,26 @@ class DetachRequest {
         if (!client)
             return;
 
+        let userEmail, userPath;
+        let parts = message.detachRequest.path.split('/');
+        if (parts.length && parts[0].length) {
+            userEmail = parts.shift();
+            parts.unshift('');
+        }
+        userPath = parts.join('/');
+
         debug(`Got DETACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
                     return [];
+
+                let info = this.tracker.daemons.get(client.daemonId);
+                if (!info)
+                    return [];
+
+                if (!userEmail)
+                    userEmail = info.userEmail;
 
                 return this._daemonRepo.find(client.daemonId);
             })
@@ -90,7 +105,7 @@ class DetachRequest {
                     debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
-                if (!this.tracker.validatePath(message.detachRequest.path)) {
+                if (!this.tracker.validatePath(userPath)) {
                     let response = this.tracker.DetachResponse.create({
                         response: this.tracker.DetachResponse.Result.INVALID_PATH,
                     });
@@ -104,76 +119,39 @@ class DetachRequest {
                     return this.tracker.send(id, data);
                 }
 
-                return Promise.all([
-                        this._pathRepo.findByUserAndPath(daemon.userId, message.detachRequest.path),
-                        this._userRepo.find(daemon.userId),
-                    ])
-                    .then(([ paths, users ]) => {
-                        let path = paths.length && paths[0];
+                return this._userRepo.findByEmail(userEmail)
+                    .then(users => {
                         let user = users.length && users[0];
-                        if (!path || !user) {
-                            let response = this.tracker.DetachResponse.create({
-                                response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
-                            });
-                            let reply = this.tracker.ServerMessage.create({
-                                type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
-                                messageId: message.messageId,
-                                detachResponse: response,
-                            });
-                            let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                            return this.tracker.send(id, data);
-                        }
 
-                            return this._connectionRepo.findByPath(path)
-                                .then(connections => {
-                                    let connection = connections.length && connections[0];
-                                    if (!connection) {
-                                        let response = this.tracker.DetachResponse.create({
-                                            response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
-                                        });
-                                        let reply = this.tracker.ServerMessage.create({
-                                            type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
-                                            messageId: message.messageId,
-                                            detachResponse: response,
-                                        });
-                                        let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                        return this.tracker.send(id, data);
-                                    }
+                        return Promise.resolve()
+                            .then(() => {
+                                if (!user)
+                                    return [];
 
-                                    let name = user.email + path.path;
+                                return this._pathRepo.findByUserAndPath(user, userPath);
+                            })
+                            .then(paths => {
+                                let path = paths.length && paths[0];
+                                if (!path || !user) {
+                                    let response = this.tracker.DetachResponse.create({
+                                        response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
+                                    });
+                                    let reply = this.tracker.ServerMessage.create({
+                                        type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
+                                        messageId: message.messageId,
+                                        detachResponse: response,
+                                    });
+                                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                                    debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    return this.tracker.send(id, data);
+                                }
 
-                                    return this._daemonRepo.disconnect(daemon, connection)
-                                        .then(count => {
-                                            let info = this.tracker.daemons.get(daemon.id);
-                                            if (info) {
-                                                for (let thisClientId of info.clients) {
-                                                    let thisClient = this.tracker.clients.get(thisClientId);
-                                                    if (thisClient && thisClient.status)
-                                                        thisClient.status.delete(name);
-                                                }
-                                                let waiting = this.tracker.waiting.get(name);
-                                                if (waiting) {
-                                                    if (waiting.server) {
-                                                        let thisServer = this.tracker.clients.get(waiting.server);
-                                                        if (!thisServer || !thisServer.status || !thisServer.status.has(name)) {
-                                                            waiting.server = null;
-                                                            waiting.internalAddresses = [];
-                                                        }
-                                                    }
-                                                    for (let thisClientId of waiting.clients) {
-                                                        let thisClient = this.tracker.clients.get(thisClientId);
-                                                        if (!thisClient || !thisClient.status || !thisClient.status.has(name))
-                                                            waiting.clients.delete(thisClientId);
-                                                    }
-                                                }
-                                            }
-
+                                return this._connectionRepo.findByPath(path)
+                                    .then(connections => {
+                                        let connection = connections.length && connections[0];
+                                        if (!connection) {
                                             let response = this.tracker.DetachResponse.create({
-                                                response: (count > 0 ?
-                                                    this.tracker.DetachResponse.Result.ACCEPTED :
-                                                    this.tracker.DetachResponse.Result.NOT_CONNECTED),
+                                                response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
                                             });
                                             let reply = this.tracker.ServerMessage.create({
                                                 type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
@@ -182,33 +160,77 @@ class DetachRequest {
                                             });
                                             let data = this.tracker.ServerMessage.encode(reply).finish();
                                             debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                            this.tracker.send(id, data);
+                                            return this.tracker.send(id, data);
+                                        }
 
-                                            if (count > 0) {
-                                                return this._connectionsList.getList(daemon.id)
-                                                    .then(list => {
-                                                        if (!list)
-                                                            return;
+                                        let name = user.email + path.path;
 
-                                                        let notification = this.tracker.ServerMessage.create({
-                                                            type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
-                                                            connectionsList: list,
-                                                        });
-                                                        let data = this.tracker.ServerMessage.encode(notification).finish();
-
-                                                        let info = this.tracker.daemons.get(daemon.id);
-                                                        if (info) {
-                                                            for (let thisId of info.clients) {
-                                                                let client = this.tracker.clients.get(thisId);
-                                                                if (client) {
-                                                                    debug(`Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                                                    this.tracker.send(thisId, data);
-                                                                }
+                                        return this._daemonRepo.disconnect(daemon, connection)
+                                            .then(count => {
+                                                let info = this.tracker.daemons.get(daemon.id);
+                                                if (info) {
+                                                    for (let thisClientId of info.clients) {
+                                                        let thisClient = this.tracker.clients.get(thisClientId);
+                                                        if (thisClient && thisClient.status)
+                                                            thisClient.status.delete(name);
+                                                    }
+                                                    let waiting = this.tracker.waiting.get(name);
+                                                    if (waiting) {
+                                                        if (waiting.server) {
+                                                            let thisServer = this.tracker.clients.get(waiting.server);
+                                                            if (!thisServer || !thisServer.status || !thisServer.status.has(name)) {
+                                                                waiting.server = null;
+                                                                waiting.internalAddresses = [];
                                                             }
                                                         }
-                                                    });
-                                            }
-                                        })
+                                                        for (let thisClientId of waiting.clients) {
+                                                            let thisClient = this.tracker.clients.get(thisClientId);
+                                                            if (!thisClient || !thisClient.status || !thisClient.status.has(name))
+                                                                waiting.clients.delete(thisClientId);
+                                                        }
+                                                    }
+                                                }
+
+                                                let response = this.tracker.DetachResponse.create({
+                                                    response: (count > 0 ?
+                                                        this.tracker.DetachResponse.Result.ACCEPTED :
+                                                        this.tracker.DetachResponse.Result.NOT_CONNECTED),
+                                                });
+                                                let reply = this.tracker.ServerMessage.create({
+                                                    type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
+                                                    messageId: message.messageId,
+                                                    detachResponse: response,
+                                                });
+                                                let data = this.tracker.ServerMessage.encode(reply).finish();
+                                                debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                this.tracker.send(id, data);
+
+                                                if (count > 0) {
+                                                    return this._connectionsList.getList(daemon.id)
+                                                        .then(list => {
+                                                            if (!list)
+                                                                return;
+
+                                                            let notification = this.tracker.ServerMessage.create({
+                                                                type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
+                                                                connectionsList: list,
+                                                            });
+                                                            let data = this.tracker.ServerMessage.encode(notification).finish();
+
+                                                            let info = this.tracker.daemons.get(daemon.id);
+                                                            if (info) {
+                                                                for (let thisId of info.clients) {
+                                                                    let client = this.tracker.clients.get(thisId);
+                                                                    if (client) {
+                                                                        debug(`Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                                        this.tracker.send(thisId, data);
+                                                                    }
+                                                                }
+                                                            }
+                                                        });
+                                                }
+                                            })
+                                    });
                             });
                     });
             })
