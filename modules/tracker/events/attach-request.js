@@ -98,6 +98,19 @@ class AttachRequest {
                     debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
+                if (!this.tracker.validatePath(message.attachRequest.path)) {
+                    let response = this.tracker.AttachResponse.create({
+                        response: this.tracker.AttachResponse.Result.INVALID_PATH,
+                    });
+                    let reply = this.tracker.ServerMessage.create({
+                        type: this.tracker.ServerMessage.Type.ATTACH_RESPONSE,
+                        messageId: message.messageId,
+                        attachResponse: response,
+                    });
+                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                    debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    return this.tracker.send(id, data);
+                }
 
                 return Promise.all([
                         this._pathRepo.findByToken(message.attachRequest.token),
@@ -117,7 +130,7 @@ class AttachRequest {
                             userId = connection.userId;
                         } else {
                             let response = this.tracker.AttachResponse.create({
-                                response: this.tracker.AttachResponse.Result.REJECTED,
+                                response: this.tracker.AttachResponse.Result.PATH_NOT_FOUND,
                             });
                             let reply = this.tracker.ServerMessage.create({
                                 type: this.tracker.ServerMessage.Type.ATTACH_RESPONSE,
@@ -173,7 +186,7 @@ class AttachRequest {
                             .then(result => {
                                 if (!result) {
                                     let response = this.tracker.AttachResponse.create({
-                                        response: this.tracker.AttachResponse.Result.REJECTED,
+                                        response: this.tracker.AttachResponse.Result.PATH_NOT_FOUND,
                                     });
                                     let reply = this.tracker.ServerMessage.create({
                                         type: this.tracker.ServerMessage.Type.ATTACH_RESPONSE,
