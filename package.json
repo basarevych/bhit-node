@@ -9,7 +9,8 @@
     "url": "git+https://github.com/breedhub/bhit-node.git"
   },
   "bin": {
-    "bhit": "bhit.js"
+    "bhitd": "bin/daemon",
+    "bhitctl": "bin/cmd"
   },
   "dependencies": {
     "arpen": "~0.0.2",
