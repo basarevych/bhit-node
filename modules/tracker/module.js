@@ -71,11 +71,14 @@ class Tracker {
         let deleteRequest = this._app.get('modules.tracker.events.deleteRequest');
         server.on('delete_request', deleteRequest.handle.bind(deleteRequest));
 
-        let connectRequest = this._app.get('modules.tracker.events.connectRequest');
-        server.on('connect_request', connectRequest.handle.bind(connectRequest));
+        let importRequest = this._app.get('modules.tracker.events.importRequest');
+        server.on('import_request', importRequest.handle.bind(importRequest));
 
-        let disconnectRequest = this._app.get('modules.tracker.events.disconnectRequest');
-        server.on('disconnect_request', disconnectRequest.handle.bind(disconnectRequest));
+        let attachRequest = this._app.get('modules.tracker.events.attachRequest');
+        server.on('attach_request', attachRequest.handle.bind(attachRequest));
+
+        let detachRequest = this._app.get('modules.tracker.events.detachRequest');
+        server.on('detach_request', detachRequest.handle.bind(detachRequest));
 
         let treeRequest = this._app.get('modules.tracker.events.treeRequest');
         server.on('tree_request', treeRequest.handle.bind(treeRequest));

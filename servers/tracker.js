@@ -109,10 +109,12 @@ class Tracker extends EventEmitter {
                         this.CreateResponse = this.proto.lookup('tracker.CreateResponse');
                         this.DeleteRequest = this.proto.lookup('tracker.DeleteRequest');
                         this.DeleteResponse = this.proto.lookup('tracker.DeleteResponse');
-                        this.ConnectRequest = this.proto.lookup('tracker.ConnectRequest');
-                        this.ConnectResponse = this.proto.lookup('tracker.ConnectResponse');
-                        this.DisconnectRequest = this.proto.lookup('tracker.DisconnectRequest');
-                        this.DisconnectResponse = this.proto.lookup('tracker.DisconnectResponse');
+                        this.ImportRequest = this.proto.lookup('tracker.ImportRequest');
+                        this.ImportResponse = this.proto.lookup('tracker.ImportResponse');
+                        this.AttachRequest = this.proto.lookup('tracker.AttachRequest');
+                        this.AttachResponse = this.proto.lookup('tracker.AttachResponse');
+                        this.DetachRequest = this.proto.lookup('tracker.DetachRequest');
+                        this.DetachResponse = this.proto.lookup('tracker.DetachResponse');
                         this.Tree = this.proto.lookup('tracker.Tree');
                         this.TreeRequest = this.proto.lookup('tracker.TreeRequest');
                         this.TreeResponse = this.proto.lookup('tracker.TreeResponse');
@@ -462,11 +464,14 @@ class Tracker extends EventEmitter {
                 case this.ClientMessage.Type.DELETE_REQUEST:
                     this.emit('delete_request', id, message);
                     break;
-                case this.ClientMessage.Type.CONNECT_REQUEST:
-                    this.emit('connect_request', id, message);
+                case this.ClientMessage.Type.IMPORT_REQUEST:
+                    this.emit('import_request', id, message);
                     break;
-                case this.ClientMessage.Type.DISCONNECT_REQUEST:
-                    this.emit('disconnect_request', id, message);
+                case this.ClientMessage.Type.ATTACH_REQUEST:
+                    this.emit('attach_request', id, message);
+                    break;
+                case this.ClientMessage.Type.DETACH_REQUEST:
+                    this.emit('detach_request', id, message);
                     break;
                 case this.ClientMessage.Type.TREE_REQUEST:
                     this.emit('tree_request', id, message);
