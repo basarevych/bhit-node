@@ -77,17 +77,6 @@ class DetachRequest {
             })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
-                if (!daemon)
-                    return null;
-                if (!message.detachRequest.daemonName)
-                    return daemon;
-
-                return this._daemonRepo.findByUserAndName(daemon.userId, message.detachRequest.daemonName)
-                    .then(daemons => {
-                        return daemons.length && daemons[0];
-                    });
-            })
-            .then(daemon => {
                 if (!daemon) {
                     let response = this.tracker.DetachResponse.create({
                         response: this.tracker.DetachResponse.Result.REJECTED,

@@ -88,15 +88,14 @@ message CreateRequest {
         CLIENT = 1;
         NOT_CONNECTED = 2;
     }
-    optional string daemon_name = 1;
-    required string path = 2;
-    required Type type = 3;
-    required bool encrypted = 4;
-    required bool fixed = 5;
-    optional string connect_address = 6;
-    required string connect_port = 7;
-    optional string listen_address = 8;
-    required string listen_port = 9;
+    required string path = 1;
+    required Type type = 2;
+    required bool encrypted = 3;
+    required bool fixed = 4;
+    optional string connect_address = 5;
+    required string connect_port = 6;
+    optional string listen_address = 7;
+    required string listen_port = 8;
 }
 
 message CreateResponse {
@@ -140,9 +139,8 @@ message ImportResponse {
 }
 
 message AttachRequest {
-    optional string daemon_name = 1;
-    required string token = 2;
-    required string path = 3;
+    required string token = 1;
+    required string path = 2;
 }
 
 message AttachResponse {
@@ -158,8 +156,7 @@ message AttachResponse {
 }
 
 message DetachRequest {
-    optional string daemon_name = 1;
-    required string path = 2;
+    required string path = 1;
 }
 
 message DetachResponse {

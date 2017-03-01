@@ -71,17 +71,6 @@ class CreateRequest {
             })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
-                if (!daemon)
-                    return null;
-                if (!message.createRequest.daemonName)
-                    return daemon;
-
-                return this._daemonRepo.findByUserAndName(daemon.userId, message.createRequest.daemonName)
-                    .then(daemons => {
-                        return daemons.length && daemons[0];
-                    });
-            })
-            .then(daemon => {
                 if (!daemon) {
                     let response = this.tracker.CreateResponse.create({
                         response: this.tracker.CreateResponse.Result.REJECTED,

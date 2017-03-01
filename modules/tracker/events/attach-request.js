@@ -74,17 +74,6 @@ class AttachRequest {
             })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
-                if (!daemon)
-                    return null;
-                if (!message.attachRequest.daemonName)
-                    return daemon;
-
-                return this._daemonRepo.findByUserAndName(daemon.userId, message.attachRequest.daemonName)
-                    .then(daemons => {
-                        return daemons.length && daemons[0];
-                    });
-            })
-            .then(daemon => {
                 if (!daemon) {
                     let response = this.tracker.AttachResponse.create({
                         response: this.tracker.AttachResponse.Result.REJECTED,
