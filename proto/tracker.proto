@@ -149,7 +149,7 @@ message AttachResponse {
         REJECTED = 1;
         INVALID_PATH = 10;
         PATH_NOT_FOUND = 11;
-        ALREADY_CONNECTED = 20;
+        ALREADY_ATTACHED = 20;
     }
     required Result response = 1;
     optional ConnectionsList updates = 2;
@@ -165,7 +165,7 @@ message DetachResponse {
         REJECTED = 1;
         INVALID_PATH = 10;
         PATH_NOT_FOUND = 11;
-        NOT_CONNECTED = 20;
+        NOT_ATTACHED = 20;
     }
     required Result response = 1;
 }
