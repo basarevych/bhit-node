@@ -145,14 +145,20 @@ class Tracker extends EventEmitter {
             })
             .then(() => {
                 let key = this._config.get(`servers.${name}.ssl.key`);
+                if (key)
+                    key = key.trim();
                 if (key && key[0] != '/')
-                    key = path.join(this._config.base_path, key);
+                    key = path.join(this._config.base_path, 'certs', key);
                 let cert = this._config.get(`servers.${name}.ssl.cert`);
+                if (cert)
+                    cert = cert.trim();
                 if (cert && cert[0] != '/')
-                    cert = path.join(this._config.base_path, cert);
+                    cert = path.join(this._config.base_path, 'certs', cert);
                 let ca = this._config.get(`server.${name}.ssl.ca`);
+                if (ca)
+                    ca = ca.trim();
                 if (ca && ca[0] != '/')
-                    ca = path.join(this._config.base_path, ca);
+                    ca = path.join(this._config.base_path, 'certs', ca);
 
                 let options = {
                     key: fs.readFileSync(key),

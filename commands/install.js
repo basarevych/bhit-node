@@ -104,7 +104,6 @@ class Install {
                 } catch (error) {
                     try {
                         let config = fs.readFileSync(path.join(__dirname, '..', 'bhit.conf'), { encoding: 'utf8'});
-                        config = config.replace(/CONFIG_DIR/g, configDir);
                         config = config.replace(/NAME/g, hostname);
                         fs.writeFileSync(path.join(configDir, 'bhit.conf'), config, { mode: 0o640 });
                     } catch (error) {

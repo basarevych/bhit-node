@@ -2,10 +2,20 @@
  * Installation specific application configuration
  */
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const ini = require('ini');
+
+let userConfig;
+try {
+    userConfig = ini.parse(fs.readFileSync(os.platform() == 'freebsd' ? '/usr/local/etc/bhit/bhit.conf' : '/etc/bhit/bhit.conf', 'utf8'));
+} catch (error) {
+    userConfig = {};
+}
 
 module.exports = {
     // Server instance name (alphanumeric)
-    instance: 'server1',
+    instance: userConfig.instance || 'server1',
 
     // Environment
     env: process.env.NODE_ENV || 'production',
@@ -19,12 +29,12 @@ module.exports = {
     servers: {
         tracker: {
             class: 'servers.tracker',
-            host: "0.0.0.0",
-            port: 42042,
+            host: userConfig.listen_address || "0.0.0.0",
+            port: userConfig.listen_port || 42042,
             ssl: {
-                key: 'CONFIG_DIR/certs/NAME.key',
-                cert: 'CONFIG_DIR/certs/NAME.cert',
-                ca: 'CONFIG_DIR/certs/NAME.cert',
+                key: userConfig.key_file,
+                cert: userConfig.cert_file,
+                ca: userConfig.ca_file,
 /*
                 // Let's Encrypt:
                 key: '/etc/letsencrypt/live/server1.example.com/privkey.pem',
