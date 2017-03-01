@@ -103,10 +103,10 @@ class CreateRequest {
                 connection.token = this._connectionRepo.generateToken();
                 connection.encrypted = message.createRequest.encrypted;
                 connection.fixed = message.createRequest.fixed;
-                connection.connectAddress = message.createRequest.connectAddress;
+                connection.connectAddress = message.createRequest.connectAddress || null;
                 connection.connectPort = message.createRequest.connectPort;
-                connection.listenAddress = message.createRequest.listenAddress;
-                connection.listenPort = message.createRequest.listenPort;
+                connection.listenAddress = message.createRequest.listenPort ? message.createRequest.listenAddress || null : null;
+                connection.listenPort = message.createRequest.listenPort || null;
                 return this._connectionRepo.createByPath(message.createRequest.path, connection)
                     .then(result => {
                         if (!result.path || !result.connection) {

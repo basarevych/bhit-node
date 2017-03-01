@@ -210,7 +210,13 @@ class AttachRequest {
                                 let connection = result && result[0];
                                 let path = result && result[1];
 
-                                return this._daemonRepo.connect(daemon, connection, actingAs)
+                                return this._daemonRepo.connect(
+                                        daemon,
+                                        connection,
+                                        actingAs,
+                                        message.attachRequest.addressOverride,
+                                        message.attachRequest.portOverride
+                                    )
                                     .then(count => {
                                         let serverConnections = [], clientConnections = [];
 
@@ -244,8 +250,8 @@ class AttachRequest {
                                                                 .then(() => {
                                                                     serverConnections.push(this.tracker.ServerConnection.create({
                                                                         name: userEmail + path.path,
-                                                                        connectAddress: connection.connectAddress,
-                                                                        connectPort: connection.connectPort,
+                                                                        connectAddress: message.attachRequest.addressOverride || connection.connectAddress || '',
+                                                                        connectPort: message.attachRequest.portOverride || connection.connectPort || '',
                                                                         encrypted: connection.encrypted,
                                                                         fixed: connection.fixed,
                                                                         clients: clients,
@@ -271,8 +277,8 @@ class AttachRequest {
 
                                                                     clientConnections.push(this.tracker.ClientConnection.create({
                                                                         name: userEmail + path.path,
-                                                                        listenAddress: connection.listenAddress,
-                                                                        listenPort: connection.listenPort,
+                                                                        listenAddress: message.attachRequest.addressOverride || connection.listenAddress || '',
+                                                                        listenPort: message.attachRequest.portOverride || connection.listenPort || '',
                                                                         encrypted: connection.encrypted,
                                                                         fixed: connection.fixed,
                                                                         server: (serverDaemon && serverUser) ? serverUser.email + '?' + serverDaemon.name : '',

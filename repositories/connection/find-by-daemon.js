@@ -31,7 +31,7 @@ module.exports = function (daemon, pg) {
                 })
                 .then(client => {
                     return client.query(
-                            '    SELECT c.*, dc.acting_as ' +
+                            '    SELECT c.*, dc.acting_as, dc.address_override, dc.port_override ' +
                             '      FROM connections c ' +
                             'INNER JOIN daemon_connections dc ' +
                             '        ON c.id = dc.connection_id ' +

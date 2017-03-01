@@ -17,7 +17,6 @@ class ConnectionModel extends Model {
         this.id = undefined;
         this.userId = undefined;
         this.pathId = undefined;
-        this.actingAs = undefined;
         this.token = undefined;
         this.encrypted = undefined;
         this.fixed = undefined;
@@ -25,6 +24,9 @@ class ConnectionModel extends Model {
         this.connectPort = undefined;
         this.listenAddress = undefined;
         this.listenPort = undefined;
+        this.actingAs = undefined;
+        this.addressOverride = undefined;
+        this.portOverride = undefined;
     }
 
     /**
@@ -84,22 +86,6 @@ class ConnectionModel extends Model {
     }
 
     /**
-     * Acting type setter
-     * @type {undefined|string}
-     */
-    set actingAs(type) {
-        this._setField('acting_as', type);
-    }
-
-    /**
-     * Acting type getter
-     * @type {undefined|string}
-     */
-    get actingAs() {
-        return this._getField('acting_as');
-    }
-
-    /**
      * Token setter
      * @type {undefined|string}
      */
@@ -149,7 +135,7 @@ class ConnectionModel extends Model {
 
     /**
      * Connect address setter
-     * @type {undefined|string}
+     * @type {undefined|string|null}
      */
     set connectAddress(address) {
         this._setField('connect_address', address);
@@ -157,7 +143,7 @@ class ConnectionModel extends Model {
 
     /**
      * Connect address getter
-     * @type {undefined|string}
+     * @type {undefined|string|null}
      */
     get connectAddress() {
         return this._getField('connect_address');
@@ -181,7 +167,7 @@ class ConnectionModel extends Model {
 
     /**
      * Listen address setter
-     * @type {undefined|string}
+     * @type {undefined|string|null}
      */
     set listenAddress(address) {
         this._setField('listen_address', address);
@@ -189,7 +175,7 @@ class ConnectionModel extends Model {
 
     /**
      * Listen address getter
-     * @type {undefined|string}
+     * @type {undefined|string|null}
      */
     get listenAddress() {
         return this._getField('listen_address');
@@ -197,7 +183,7 @@ class ConnectionModel extends Model {
 
     /**
      * Listen port setter
-     * @type {undefined|string}
+     * @type {undefined|string|null}
      */
     set listenPort(port) {
         this._setField('listen_port', port);
@@ -205,10 +191,58 @@ class ConnectionModel extends Model {
 
     /**
      * Listen port getter
-     * @type {undefined|string}
+     * @type {undefined|string|null}
      */
     get listenPort() {
         return this._getField('listen_port');
+    }
+
+    /**
+     * Acting type setter
+     * @type {undefined|string}
+     */
+    set actingAs(type) {
+        this._setField('acting_as', type);
+    }
+
+    /**
+     * Acting type getter
+     * @type {undefined|string}
+     */
+    get actingAs() {
+        return this._getField('acting_as');
+    }
+
+    /**
+     * Address override setter
+     * @type {undefined|string|null}
+     */
+    set addressOverride(address) {
+        this._setField('address_override', address);
+    }
+
+    /**
+     * Address override getter
+     * @type {undefined|string|null}
+     */
+    get addressOverride() {
+        return this._getField('address_override');
+    }
+
+    /**
+     * Port override setter
+     * @type {undefined|string|null}
+     */
+    set portOverride(port) {
+        this._setField('port_override', port);
+    }
+
+    /**
+     * Port override getter
+     * @type {undefined|string|null}
+     */
+    get portOverride() {
+        return this._getField('port_override');
     }
 }
 

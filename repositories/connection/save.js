@@ -28,7 +28,7 @@ module.exports = function (connection, pg) {
                     let data = this._postgres.constructor.serializeModel(connection);
                     let fields = Object.keys(data)
                         .filter(field => {
-                            return field != 'id' && field != 'acting_as';
+                            return [ 'id', 'acting_as', 'address_override', 'port_override' ].indexOf(field) == -1;
                         });
 
                     let query, params = [];

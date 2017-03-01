@@ -95,8 +95,8 @@ class ConnectionsList {
 
                                                         list.serverConnections.push(this.tracker.ServerConnection.create({
                                                             name: user.email + path.path,
-                                                            connectAddress: connection.connectAddress,
-                                                            connectPort: connection.connectPort,
+                                                            connectAddress: connection.addressOverride || connection.connectAddress || '',
+                                                            connectPort: connection.portOverride || connection.connectPort || '',
                                                             encrypted: connection.encrypted,
                                                             fixed: connection.fixed,
                                                             clients: [],
@@ -138,8 +138,8 @@ class ConnectionsList {
 
                                                     list.serverConnections.push(this.tracker.ServerConnection.create({
                                                         name: user.email + path.path,
-                                                        connectAddress: connection.connectAddress,
-                                                        connectPort: connection.connectPort,
+                                                        connectAddress: connection.addressOverride || connection.connectAddress || '',
+                                                        connectPort: connection.portOverride || connection.connectPort || '',
                                                         encrypted: connection.encrypted,
                                                         fixed: connection.fixed,
                                                         clients: clients,

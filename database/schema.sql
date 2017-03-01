@@ -218,10 +218,10 @@ CREATE TABLE connections (
     token varchar(255) NOT NULL,
     encrypted boolean NOT NULL,
     fixed boolean NOT NULL,
-    connect_address varchar(255) NOT NULL,
+    connect_address varchar(255) NULL,
     connect_port varchar(255) NOT NULL,
-    listen_address varchar(255) NOT NULL,
-    listen_port varchar(255) NOT NULL,
+    listen_address varchar(255) NULL,
+    listen_port varchar(255) NULL,
     CONSTRAINT connections_pk PRIMARY KEY (id),
     CONSTRAINT connections_unique_path UNIQUE (user_id, path_id),
     CONSTRAINT connections_user_fk FOREIGN KEY(user_id)
@@ -277,6 +277,8 @@ CREATE TABLE daemon_connections (
     daemon_id bigint NOT NULL,
     connection_id bigint NOT NULL,
     acting_as daemon_type NOT NULL,
+    address_override varchar(255) NULL,
+    port_override varchar(255) NULL,
     CONSTRAINT daemon_connections_pk PRIMARY KEY (id),
     CONSTRAINT daemon_connections_daemon_fk FOREIGN KEY(daemon_id)
         REFERENCES daemons(id)

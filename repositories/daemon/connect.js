@@ -12,11 +12,13 @@ const WError = require('verror').WError;
  * @param {DaemonModel} daemon              Daemon model
  * @param {ConnectionModel} connection      Connection model
  * @param {string} actingAs                 'server' or 'client'
+ * @param {string} addressOverride          Override address
+ * @param {string} portOverride             Override port
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.
  * @return {Promise}                        Resolves to a number of connections made
  */
-module.exports = function (daemon, connection, actingAs, pg) {
+module.exports = function (daemon, connection, actingAs, addressOverride, portOverride, pg) {
     return Promise.resolve()
         .then(() => {
             if (typeof pg == 'object')
@@ -65,12 +67,14 @@ module.exports = function (daemon, connection, actingAs, pg) {
 
                                     return client.query(
                                             'INSERT ' +
-                                            '  INTO daemon_connections(daemon_id, connection_id, acting_as) ' +
+                                            '  INTO daemon_connections(daemon_id, connection_id, acting_as, address_override, port_override) ' +
                                             'VALUES ($1, $2, $3) ',
                                             [
                                                 typeof daemon == 'object' ? daemon.id : daemon,
                                                 typeof connection == 'object' ? connection.id : connection,
-                                                actingAs
+                                                actingAs,
+                                                addressOverride || null,
+                                                portOverride || null,
                                             ]
                                         )
                                         .then(() => {
