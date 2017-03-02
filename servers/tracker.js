@@ -5,6 +5,7 @@
 const debug = require('debug')('bhit:tracker');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const tls = require('tls');
 const dgram = require('dgram');
 const uuid = require('uuid');
@@ -146,28 +147,45 @@ class Tracker extends EventEmitter {
                 })
             })
             .then(() => {
+                let configPath = (os.platform() == 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');
                 let key = this._config.get(`servers.${name}.ssl.key`);
                 if (key)
                     key = key.trim();
                 if (key && key[0] != '/')
-                    key = path.join(this._config.base_path, 'certs', key);
+                    key = path.join(configPath, 'certs', key);
                 let cert = this._config.get(`servers.${name}.ssl.cert`);
                 if (cert)
                     cert = cert.trim();
                 if (cert && cert[0] != '/')
-                    cert = path.join(this._config.base_path, 'certs', cert);
+                    cert = path.join(configPath, 'certs', cert);
                 let ca = this._config.get(`server.${name}.ssl.ca`);
                 if (ca)
                     ca = ca.trim();
                 if (ca && ca[0] != '/')
-                    ca = path.join(this._config.base_path, 'certs', ca);
+                    ca = path.join(configPath, 'certs', ca);
 
-                let options = {
-                    key: fs.readFileSync(key),
-                    cert: fs.readFileSync(cert),
-                };
-                if (ca)
-                    options.ca = fs.readFileSync(ca);
+                let options = {};
+                try {
+                    if (key)
+                        options.key = fs.readFileSync(key);
+                } catch (error) {
+                    this._logger.error(error.message);
+                    process.exit(1);
+                }
+                try {
+                    if (cert)
+                        options.cert = fs.readFileSync(cert);
+                } catch (error) {
+                    this._logger.error(error.message);
+                    process.exit(1);
+                }
+                try {
+                    if (ca)
+                        options.ca = fs.readFileSync(ca);
+                } catch (error) {
+                    this._logger.error(error.message);
+                    process.exit(1);
+                }
 
                 return [ dgram.createSocket('udp4'), tls.createServer(options, this.onConnection.bind(this)) ];
             })

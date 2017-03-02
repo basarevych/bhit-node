@@ -29,12 +29,12 @@ module.exports = {
     servers: {
         tracker: {
             class: 'servers.tracker',
-            host: userConfig.listen_address || "0.0.0.0",
-            port: userConfig.listen_port || 42042,
+            host: (userConfig.tracker && userConfig.tracker.listen_address) || "0.0.0.0",
+            port: (userConfig.tracker && userConfig.tracker.listen_port) || 42042,
             ssl: {
-                key: userConfig.key_file,
-                cert: userConfig.cert_file,
-                ca: userConfig.ca_file,
+                key: userConfig.tracker && userConfig.tracker.key_file,
+                cert: userConfig.tracker && userConfig.tracker.cert_file,
+                ca: userConfig.tracker && userConfig.tracker.ca_file,
 /*
                 // Let's Encrypt:
                 key: '/etc/letsencrypt/live/server1.example.com/privkey.pem',
@@ -63,11 +63,11 @@ module.exports = {
     // PostgreSQL servers
     postgres: {
         main: {
-            host: 'localhost',
-            port: 5432,
-            user: 'username',
-            password: 'password',
-            db_name: 'dbname',
+            host: userConfig.database && userConfig.database.host,
+            port: userConfig.database && userConfig.database.port,
+            user: userConfig.database && userConfig.database.user,
+            password: userConfig.database && userConfig.database.password,
+            db_name: userConfig.database && userConfig.database.db_name,
             min_pool: 10,
             max_pool: 100,
         },
