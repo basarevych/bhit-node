@@ -16,11 +16,13 @@ class Install {
      * @param {App} app                 The application
      * @param {object} config           Configuration
      * @param {Runner} runner           Runner service
+     * @param {Help} help               Help command
      */
-    constructor(app, config, runner) {
+    constructor(app, config, runner, help) {
         this._app = app;
         this._config = config;
         this._runner = runner;
+        this._help = help;
     }
 
     /**
@@ -36,7 +38,7 @@ class Install {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'runner' ];
+        return [ 'app', 'config', 'runner', 'commands.help' ];
     }
 
     /**
@@ -46,7 +48,7 @@ class Install {
      */
     run(argv) {
         if (argv['_'].length < 2)
-            return this.error('Invalid parameters');
+            return this._help.helpInstall(argv);
 
         let hostname = argv['_'][1];
 

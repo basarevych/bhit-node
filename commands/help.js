@@ -82,9 +82,10 @@ class Help {
      * Install command
      */
     helpInstall(argv) {
-        console.log('Usage:\tbhitctl install\n');
-        console.log('\tThis command will register the program in the system');
-        console.log('\tand will create configuration in /etc/bhit by default');
+        console.log('Usage:\tbhitctl install <address>\n');
+        console.log('\tThis command will register the program in the system and will create');
+        console.log('\tconfiguration in /etc/bhit by default');
+        console.log('\t<address> is either hostname or IP address the tracker will listen on');
         process.exit(0);
     }
 

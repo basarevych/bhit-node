@@ -43,7 +43,7 @@ class Status {
      * @return {Promise}
      */
     run(argv) {
-        return this._start.exec('status', [ '/var/run/bhid/daemon.pid' ])
+        return this._start.exec('status', [ '/var/run/bhit/daemon.pid' ])
             .then(result => {
                 process.exit(result.code === 0 ? 0 : 1);
             })
