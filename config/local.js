@@ -63,11 +63,11 @@ module.exports = {
     // PostgreSQL servers
     postgres: {
         main: {
-            host: userConfig.database && userConfig.database.host,
-            port: userConfig.database && userConfig.database.port,
-            user: userConfig.database && userConfig.database.user,
-            password: userConfig.database && userConfig.database.password,
-            db_name: userConfig.database && userConfig.database.db_name,
+            host: userConfig.postgres && userConfig.postgres.host,
+            port: userConfig.postgres && userConfig.postgres.port,
+            user: userConfig.postgres && userConfig.postgres.user,
+            password: userConfig.postgres && userConfig.postgres.password,
+            db_name: userConfig.postgres && userConfig.postgres.db_name,
             min_pool: 10,
             max_pool: 100,
         },
@@ -76,9 +76,9 @@ module.exports = {
     // Redis servers
     redis: {
         main: {
-            host: 'localhost',
-            port: 6379,
-            //password: 'password',
+            host: userConfig.redis && userConfig.redis.host,
+            port: userConfig.redis && userConfig.redis.port,
+            password: userConfig.redis && userConfig.redis.password,
         },
     },
 
