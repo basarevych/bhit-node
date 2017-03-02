@@ -68,7 +68,7 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                                     return client.query(
                                             'INSERT ' +
                                             '  INTO daemon_connections(daemon_id, connection_id, acting_as, address_override, port_override) ' +
-                                            'VALUES ($1, $2, $3) ',
+                                            'VALUES ($1, $2, $3, $4, $5) ',
                                             [
                                                 typeof daemon == 'object' ? daemon.id : daemon,
                                                 typeof connection == 'object' ? connection.id : connection,

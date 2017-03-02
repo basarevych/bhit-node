@@ -1492,6 +1492,11 @@
       "from": "ms@0.7.2",
       "resolved": "https://registry.npmjs.org/ms/-/ms-0.7.2.tgz"
     },
+    "mute-stream": {
+      "version": "0.0.7",
+      "from": "mute-stream@>=0.0.4 <0.1.0",
+      "resolved": "https://registry.npmjs.org/mute-stream/-/mute-stream-0.0.7.tgz"
+    },
     "nan": {
       "version": "2.5.1",
       "from": "nan@>=2.0.0 <3.0.0",
@@ -1519,6 +1524,11 @@
       "version": "6.6.3",
       "from": "protobufjs@>=6.6.3 <6.7.0",
       "resolved": "https://registry.npmjs.org/protobufjs/-/protobufjs-6.6.3.tgz"
+    },
+    "read": {
+      "version": "1.0.7",
+      "from": "read@latest",
+      "resolved": "https://registry.npmjs.org/read/-/read-1.0.7.tgz"
     },
     "readable-stream": {
       "version": "2.2.2",

@@ -52,11 +52,11 @@ module.exports = {
     // SMTP servers
     smtp: {
         main: {
-            host: 'localhost',
-            port: 25,
-            ssl: false,
-            //user: 'username',
-            //password: 'password',
+            host: userConfig.smtp && userConfig.smtp.host,
+            port: userConfig.smtp && userConfig.smtp.port,
+            ssl: userConfig.smtp && userConfig.smtp.ssl == 'yes',
+            user: userConfig.smtp && userConfig.smtp.user,
+            password: userConfig.smtp && userConfig.smtp.password,
         },
     },
 

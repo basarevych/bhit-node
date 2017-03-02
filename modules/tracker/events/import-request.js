@@ -241,8 +241,8 @@ class ImportRequest {
 
                                                                             clientConnections.push(this.tracker.ClientConnection.create({
                                                                                 name: user.email + path.path,
-                                                                                listenAddress: connection.listenAddress,
-                                                                                listenPort: connection.listenPort,
+                                                                                listenAddress: connection.listenAddress || '',
+                                                                                listenPort: connection.listenPort || '',
                                                                                 encrypted: connection.encrypted,
                                                                                 fixed: connection.fixed,
                                                                                 server: (serverDaemon && serverUser) ? serverUser.email + '?' + serverDaemon.name : '',
