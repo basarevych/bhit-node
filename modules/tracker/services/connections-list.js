@@ -165,8 +165,8 @@ class ConnectionsList {
 
                                                             list.clientConnections.push(this.tracker.ClientConnection.create({
                                                                 name: user.email + path.path,
-                                                                listenAddress: connection.listenAddress,
-                                                                listenPort: connection.listenPort,
+                                                                listenAddress: connection.addressOverride || connection.listenAddress || '',
+                                                                listenPort: connection.addressOverride || connection.listenPort || '',
                                                                 encrypted: connection.encrypted,
                                                                 fixed: connection.fixed,
                                                                 server: name || '',

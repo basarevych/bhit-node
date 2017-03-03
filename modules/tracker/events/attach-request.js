@@ -180,6 +180,11 @@ class AttachRequest {
                         return Promise.resolve()
                             .then(() => {
                                 if (actingAs == 'server') {
+                                    if (message.attachRequest.addressOverride == '*')
+                                        message.attachRequest.addressOverride = '';
+                                    if (message.attachRequest.portOverride == '*')
+                                        message.attachRequest.portOverride = '';
+
                                     return this._pathRepo.find(connection.pathId)
                                         .then(paths => {
                                             let path = paths.length && paths[0];
