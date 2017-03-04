@@ -76,7 +76,7 @@
       "resolved": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-2.1.1.tgz"
     },
     "arpen": {
-      "version": "0.0.2",
+      "version": "0.0.3",
       "dependencies": {
         "abbrev": {
           "version": "1.0.9",

@@ -13,7 +13,7 @@
     "bhitctl": "bin/cmd"
   },
   "dependencies": {
-    "arpen": "~0.0.2",
+    "arpen": "~0.0.3",
     "daemon": "~1.1.0",
     "debug": "~2.6.0",
     "fs-ext": "~0.5.0",
