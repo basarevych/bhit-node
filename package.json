@@ -1,6 +1,6 @@
 {
   "name": "bhit",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "description": "Tracker for Breedhub Interconnect (connect server and client both behind NAT)",
   "license": "MIT",
   "author": "Ross Basarevych <basarevych@gmail.com>",

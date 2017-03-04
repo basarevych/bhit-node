@@ -124,7 +124,7 @@ class Install {
                     fs.accessSync('/etc/init.d', fs.constants.F_OK);
                     debug('Creating sysvinit service');
                     let service = fs.readFileSync(path.join(__dirname, '..', 'sysvinit.service'), {encoding: 'utf8'});
-                    fs.writeFileSync('/etc/init.d/bhit', service, {mode: 0o644});
+                    fs.writeFileSync('/etc/init.d/bhit', service, {mode: 0o755});
                 } catch (error) {
                     // do nothing
                 }

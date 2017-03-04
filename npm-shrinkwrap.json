@@ -1,6 +1,6 @@
 {
   "name": "bhit",
-  "version": "0.3.5",
+  "version": "0.4.0",
   "dependencies": {
     "@protobufjs/aspromise": {
       "version": "1.1.1",
