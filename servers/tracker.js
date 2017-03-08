@@ -23,9 +23,10 @@ class Tracker extends EventEmitter {
      * @param {App} app                     Application
      * @param {object} config               Configuration
      * @param {Logger} logger               Logger service
+     * @param {Filer} filer                 Filer service
      * @param {Util} util                   Util service
      */
-    constructor(app, config, logger, util) {
+    constructor(app, config, logger, filer, util) {
         super();
 
         this.clients = new Map();
@@ -38,6 +39,7 @@ class Tracker extends EventEmitter {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._filer = filer;
         this._util = util;
         this._timeouts = new Map();
     }
@@ -55,7 +57,7 @@ class Tracker extends EventEmitter {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'util' ];
+        return [ 'app', 'config', 'logger', 'filer', 'util' ];
     }
 
     /**
@@ -226,6 +228,23 @@ class Tracker extends EventEmitter {
                 },
                 Promise.resolve()
             )
+            .then(() => {
+                return this._filer.lockRead(path.join(this._config.base_path, 'package.json'));
+            })
+            .then(packageInfo => {
+                let json;
+                try {
+                    json = JSON.parse(packageInfo);
+                } catch (error) {
+                    json = { version: '?.?.?' };
+                }
+
+                this._logger.info(`Tracker v${json.version} started`);
+                process.on('SIGTERM', () => {
+                    this._logger.info('Terminating on SIGTERM signal');
+                    process.exit(0);
+                });
+            })
             .then(() => {
                 debug('Starting the server');
                 let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
