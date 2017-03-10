@@ -45,6 +45,10 @@ class Restart {
      * @return {Promise}
      */
     run(argv) {
+        process.on('SIGHUP', () => {
+            // ignore
+        });
+
         return this._stop.terminate()
             .then(() => {
                 return this._start.launch();
