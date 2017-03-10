@@ -338,7 +338,7 @@ class Tracker extends EventEmitter {
 
         switch (error.code) {
             case 'EACCES':
-                this._logger.error('Tracker UDP port requires elevated privileges');
+                this._logger.error('Could not bind to tracker UDP port');
                 break;
             case 'EADDRINUSE':
                 this._logger.error('Tracker UDP port is already in use');
@@ -359,7 +359,7 @@ class Tracker extends EventEmitter {
 
         switch (error.code) {
             case 'EACCES':
-                this._logger.error('Tracker TCP port requires elevated privileges');
+                this._logger.error('Could not bind to tracker TCP port');
                 break;
             case 'EADDRINUSE':
                 this._logger.error('Tracker TCP port is already in use');
