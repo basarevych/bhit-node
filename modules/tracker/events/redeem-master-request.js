@@ -90,19 +90,24 @@ class RedeemMasterRequest {
                                 subject: 'Please confirm master token regeneration',
                                 text: emailText,
                             })
-                            .then(() => {
-                                let response = this.tracker.RedeemMasterResponse.create({
-                                    response: this.tracker.RedeemMasterResponse.Result.ACCEPTED,
-                                });
-                                let reply = this.tracker.ServerMessage.create({
-                                    type: this.tracker.ServerMessage.Type.REDEEM_MASTER_RESPONSE,
-                                    messageId: message.messageId,
-                                    redeemMasterResponse: response,
-                                });
-                                let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                this.tracker.send(id, data);
-                            });
+                            .then(
+                                () => {
+                                    let response = this.tracker.RedeemMasterResponse.create({
+                                        response: this.tracker.RedeemMasterResponse.Result.ACCEPTED,
+                                    });
+                                    let reply = this.tracker.ServerMessage.create({
+                                        type: this.tracker.ServerMessage.Type.REDEEM_MASTER_RESPONSE,
+                                        messageId: message.messageId,
+                                        redeemMasterResponse: response,
+                                    });
+                                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                                    debug(`Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this.tracker.send(id, data);
+                                },
+                                error => {
+                                    this._logger.error(`Could not send mail: ${error.message}`);
+                                }
+                            );
                     });
             })
             .catch(error => {
