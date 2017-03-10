@@ -21,7 +21,7 @@
     "merge": "~1.2.0",
     "minimist": "~1.2.0",
     "moment-timezone": "~0.5.11",
-    "protobufjs": "~6.6.3",
+    "protobufjs": "https://registry.npmjs.org/protobufjs/-/protobufjs-6.6.3.tgz",
     "read": "~1.0.7",
     "socket-wrapper": "~0.0.1",
     "strip-ansi": "~3.0.1",
