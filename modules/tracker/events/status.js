@@ -2,7 +2,6 @@
  * Status event
  * @module tracker/events/status
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -43,7 +42,15 @@ class Status {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'repositories.user',
+            'repositories.daemon',
+            'repositories.path',
+            'repositories.connection'
+        ];
     }
 
     /**
@@ -56,7 +63,7 @@ class Status {
         if (!client)
             return;
 
-        debug(`Got STATUS from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('status', `Got STATUS from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -102,7 +109,7 @@ class Status {
                                                     let status = client.status.get(message.status.connectionName);
                                                     if (!status) {
                                                         status = {
-                                                            server: actingAs == 'server',
+                                                            server: actingAs === 'server',
                                                             connected: 0,
                                                         };
                                                         client.status.set(message.status.connectionName, status);
@@ -123,7 +130,7 @@ class Status {
                                                     };
                                                     this.tracker.waiting.set(message.status.connectionName, waiting);
                                                 }
-                                                if (actingAs == 'server') {
+                                                if (actingAs === 'server') {
                                                     waiting.server = message.status.active ? client.id : null;
                                                     waiting.internalAddresses = message.status.active ? message.status.internalAddresses : [];
                                                 } else {
@@ -155,7 +162,7 @@ class Status {
                                                                 serverAvailable: server,
                                                             });
                                                             let data = this.tracker.ServerMessage.encode(msg).finish();
-                                                            debug(`Sending SERVER AVAILABLE to ${clientInfo.socket.remoteAddress}:${clientInfo.socket.remotePort}`);
+                                                            this._logger.debug('status', `Sending SERVER AVAILABLE to ${clientInfo.socket.remoteAddress}:${clientInfo.socket.remotePort}`);
                                                             this.tracker.send(client, data);
                                                         }
                                                     }

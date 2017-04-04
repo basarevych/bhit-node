@@ -2,7 +2,6 @@
  * Connections List Request event
  * @module tracker/events/connections-list-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -39,7 +38,7 @@ class ConnectionsListRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.daemon', 'modules.tracker.connectionsList' ];
+        return [ 'app', 'config', 'logger', 'repositories.daemon', 'connectionsList' ];
     }
 
     /**
@@ -52,7 +51,7 @@ class ConnectionsListRequest {
         if (!client)
             return;
 
-        debug(`Got CONNECTIONS LIST REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('connections-list-request', `Got CONNECTIONS LIST REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -72,7 +71,7 @@ class ConnectionsListRequest {
                         connectionsListResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('connections-list-request', `Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -88,7 +87,7 @@ class ConnectionsListRequest {
                                 connectionsListResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('connections-list-request', `Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -102,7 +101,7 @@ class ConnectionsListRequest {
                             connectionsListResponse: response,
                         });
                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                        debug(`Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this._logger.debug('connections-list-request', `Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                         this.tracker.send(id, data);
                     })
             })

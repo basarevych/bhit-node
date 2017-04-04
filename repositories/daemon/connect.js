@@ -21,7 +21,7 @@ const WError = require('verror').WError;
 module.exports = function (daemon, connection, actingAs, addressOverride, portOverride, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -34,8 +34,8 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                             ' WHERE daemon_id = $1 ' +
                             '   AND connection_id = $2 ',
                             [
-                                typeof daemon == 'object' ? daemon.id : daemon,
-                                typeof connection == 'object' ? connection.id : connection,
+                                typeof daemon === 'object' ? daemon.id : daemon,
+                                typeof connection === 'object' ? connection.id : connection,
                             ]
                         )
                         .then(result => {
@@ -44,7 +44,7 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
 
                             return Promise.resolve()
                                 .then(() => {
-                                    if (actingAs == 'client')
+                                    if (actingAs === 'client')
                                         return true;
 
                                     return client.query(
@@ -53,7 +53,7 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                                             ' WHERE connection_id = $1 ' +
                                             '   AND acting_as = $2 ',
                                             [
-                                                typeof connection == 'object' ? connection.id : connection,
+                                                typeof connection === 'object' ? connection.id : connection,
                                                 'server',
                                             ]
                                         )
@@ -70,8 +70,8 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                                             '  INTO daemon_connections(daemon_id, connection_id, acting_as, address_override, port_override) ' +
                                             'VALUES ($1, $2, $3, $4, $5) ',
                                             [
-                                                typeof daemon == 'object' ? daemon.id : daemon,
-                                                typeof connection == 'object' ? connection.id : connection,
+                                                typeof daemon === 'object' ? daemon.id : daemon,
+                                                typeof connection === 'object' ? connection.id : connection,
                                                 actingAs,
                                                 addressOverride || null,
                                                 portOverride || null,
@@ -85,12 +85,12 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

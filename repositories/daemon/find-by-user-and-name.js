@@ -18,7 +18,7 @@ const WError = require('verror').WError;
 module.exports = function (user, name, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -28,19 +28,19 @@ module.exports = function (user, name, pg) {
                     'SELECT * ' +
                     '  FROM daemons ' +
                     ' WHERE user_id = $1 AND name = $2 ',
-                    [ typeof user == 'object' ? user.id : user, name ]
+                    [ typeof user === 'object' ? user.id : user, name ]
                 )
                 .then(result => {
                     return result.rowCount ? result.rows : [];
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

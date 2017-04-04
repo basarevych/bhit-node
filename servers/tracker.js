@@ -2,7 +2,6 @@
  * Tracker server
  * @module servers/tracker
  */
-const debug = require('debug')('bhit:tracker');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -93,7 +92,7 @@ class Tracker extends EventEmitter {
         this._name = name;
 
         return new Promise((resolve, reject) => {
-                debug('Loading protocol');
+                this._logger.debug('tracker', 'Loading protocol');
                 protobuf.load(path.join(this._config.base_path, 'proto', 'tracker.proto'), (error, root) => {
                     if (error)
                         return reject(new WError(error, 'Tracker.init()'));
@@ -149,21 +148,21 @@ class Tracker extends EventEmitter {
                 })
             })
             .then(() => {
-                let configPath = (os.platform() == 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');
+                let configPath = (os.platform() === 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');
                 let key = this._config.get(`servers.${name}.ssl.key`);
                 if (key)
                     key = key.trim();
-                if (key && key[0] != '/')
+                if (key && key[0] !== '/')
                     key = path.join(configPath, 'certs', key);
                 let cert = this._config.get(`servers.${name}.ssl.cert`);
                 if (cert)
                     cert = cert.trim();
-                if (cert && cert[0] != '/')
+                if (cert && cert[0] !== '/')
                     cert = path.join(configPath, 'certs', cert);
                 let ca = this._config.get(`server.${name}.ssl.ca`);
                 if (ca)
                     ca = ca.trim();
-                if (ca && ca[0] != '/')
+                if (ca && ca[0] !== '/')
                     ca = path.join(configPath, 'certs', ca);
 
                 let options = {};
@@ -221,7 +220,7 @@ class Tracker extends EventEmitter {
                             return;
 
                         let result = curModule.register(name);
-                        if (result === null || typeof result != 'object' || typeof result.then != 'function')
+                        if (result === null || typeof result !== 'object' || typeof result.then !== 'function')
                             throw new Error(`Module '${curName}' register() did not return a Promise`);
                         return result;
                     });
@@ -229,31 +228,14 @@ class Tracker extends EventEmitter {
                 Promise.resolve()
             )
             .then(() => {
-                return this._filer.lockRead(path.join(this._config.base_path, 'package.json'));
-            })
-            .then(packageInfo => {
-                let json;
-                try {
-                    json = JSON.parse(packageInfo);
-                } catch (error) {
-                    json = { version: '?.?.?' };
-                }
-
-                this._logger.info(`Tracker v${json.version} started`);
-                process.on('SIGTERM', () => {
-                    this._logger.info('Terminating on SIGTERM signal');
-                    process.exit(0);
-                });
-            })
-            .then(() => {
-                debug('Starting the server');
+                this._logger.debug('tracker', 'Starting the server');
                 let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
-                let host = (typeof port == 'string' ? undefined : this._config.get(`servers.${this._name}.host`));
+                let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${this._name}.host`));
                 let udpServer = this._app.get('udp');
                 let tcpServer = this._app.get('tcp');
 
 
-                debug('Initiating tracker sockets');
+                this._logger.debug('tracker', 'Initiating tracker sockets');
                 try {
                     this._timeoutTimer = setInterval(() => { this._checkTimeout(); }, 500);
 
@@ -291,7 +273,7 @@ class Tracker extends EventEmitter {
      * @return {boolean}
      */
     validatePath(path) {
-        if (!path.length || path[0] != '/')
+        if (!path.length || path[0] !== '/')
             return false;
 
         let parts = path.split('/');
@@ -336,17 +318,18 @@ class Tracker extends EventEmitter {
         if (error.syscall !== 'listen')
             return this._logger.error(new WError(error, 'Tracker.onUdpError()'));
 
+        let msg;
         switch (error.code) {
             case 'EACCES':
-                this._logger.error('Could not bind to tracker UDP port');
+                msg = 'Could not bind to tracker UDP port';
                 break;
             case 'EADDRINUSE':
-                this._logger.error('Tracker UDP port is already in use');
+                msg = 'Tracker UDP port is already in use';
                 break;
             default:
-                this._logger.error(error);
+                msg = error;
         }
-        process.exit(1);
+        this._logger.error(msg, () => { process.exit(1); });
     }
 
     /**
@@ -357,17 +340,18 @@ class Tracker extends EventEmitter {
         if (error.syscall !== 'listen')
             return this._logger.error(new WError(error, 'Tracker.onTcpError()'));
 
+        let msg;
         switch (error.code) {
             case 'EACCES':
-                this._logger.error('Could not bind to tracker TCP port');
+                msg = 'Could not bind to tracker TCP port';
                 break;
             case 'EADDRINUSE':
-                this._logger.error('Tracker TCP port is already in use');
+                msg = 'Tracker TCP port is already in use';
                 break;
             default:
-                this._logger.error(error);
+                msg = error;
         }
-        process.exit(1);
+        this._logger.error(msg, () => { process.exit(1); });
     }
 
     /**
@@ -377,7 +361,7 @@ class Tracker extends EventEmitter {
         let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
         this._logger.info(
             'Tracker UDP server listening on ' +
-            (typeof port == 'string' ?
+            (typeof port === 'string' ?
                 port :
                 this._config.get(`servers.${this._name}.host`) + ':' + port)
         );
@@ -390,7 +374,7 @@ class Tracker extends EventEmitter {
         let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
         this._logger.info(
             'Tracker TCP server listening on ' +
-            (typeof port == 'string' ?
+            (typeof port === 'string' ?
                 port :
                 this._config.get(`servers.${this._name}.host`) + ':' + port)
         );
@@ -402,7 +386,7 @@ class Tracker extends EventEmitter {
      */
     onConnection(socket) {
         let id = uuid.v1();
-        debug(`New socket from ${socket.remoteAddress}:${socket.remotePort}`);
+        this._logger.debug('tracker', `New socket from ${socket.remoteAddress}:${socket.remotePort}`);
 
         let client = {
             id: id,
@@ -481,7 +465,7 @@ class Tracker extends EventEmitter {
         }
 
         try {
-            debug(`Client message ${message.type} from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+            this._logger.debug('tracker', `Client message ${message.type} from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
             switch(message.type) {
                 case this.ClientMessage.Type.INIT_REQUEST:
                     this.emit('init_request', id, message);
@@ -559,7 +543,7 @@ class Tracker extends EventEmitter {
     onClose(id) {
         let client = this.clients.get(id);
         if (client) {
-            debug(`Client disconnected`);
+            this._logger.debug('tracker', `Client disconnected`);
             let names = client.status.keys();
 
             if (client.socket) {
@@ -591,12 +575,12 @@ class Tracker extends EventEmitter {
                         if (waiting.server === id) {
                             waiting.server = null;
                             waiting.internalAddresses = [];
-                            debug(`No server for ${name} anymore`);
+                            this._logger.debug('tracker', `No server for ${name} anymore`);
                         }
                         for (let thisClientId of waiting.clients) {
                             if (thisClientId === id) {
                                 waiting.clients.delete(thisClientId);
-                                debug(`One client less for ${name}`);
+                                this._logger.debug('tracker', `One client less for ${name}`);
                             }
                         }
                     }
@@ -612,7 +596,7 @@ class Tracker extends EventEmitter {
      * @param {string} id                   Client ID
      */
     onTimeout(id) {
-        debug(`Client timeout`);
+        this._logger.debug('tracker', `Client timeout`);
         let client = this.clients.get(id);
         if (client && client.socket) {
             client.socket.destroy();
@@ -626,7 +610,7 @@ class Tracker extends EventEmitter {
      * @param {object} info                 Info
      */
     onUdpMessage(data, info) {
-        debug(`Got UDP message from ${info.address}:${info.port}`);
+        this._logger.debug('tracker', `Got UDP message from ${info.address}:${info.port}`);
 
         if (!data.length)
             return;

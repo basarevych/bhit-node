@@ -2,7 +2,6 @@
  * Attach Request event
  * @module tracker/events/attach-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -72,7 +71,7 @@ class AttachRequest {
         }
         userPath = parts.join('/');
 
-        debug(`Got ATTACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('attach-request', `Got ATTACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -99,7 +98,7 @@ class AttachRequest {
                         attachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (!this.tracker.validatePath(userPath)) {
@@ -112,7 +111,7 @@ class AttachRequest {
                         attachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -137,7 +136,7 @@ class AttachRequest {
                             }
                         }
 
-                        if (!actingAs || user.id != userId) {
+                        if (!actingAs || user.id !== userId) {
                             let response = this.tracker.AttachResponse.create({
                                 response: this.tracker.AttachResponse.Result.PATH_NOT_FOUND,
                             });
@@ -147,7 +146,7 @@ class AttachRequest {
                                 attachResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -155,7 +154,7 @@ class AttachRequest {
                             return this._connectionRepo.findByPath(path)
                                 .then(connections => {
                                     let connection = connections.length && connections[0];
-                                    if (connection && path.path == fullPath)
+                                    if (connection && path.path === fullPath)
                                         return [ connection, path ];
 
                                     return this._pathRepo.findByParent(path)
@@ -179,16 +178,16 @@ class AttachRequest {
 
                         return Promise.resolve()
                             .then(() => {
-                                if (actingAs == 'server') {
-                                    if (message.attachRequest.addressOverride == '*')
+                                if (actingAs === 'server') {
+                                    if (message.attachRequest.addressOverride === '*')
                                         message.attachRequest.addressOverride = '';
-                                    if (message.attachRequest.portOverride == '*')
+                                    if (message.attachRequest.portOverride === '*')
                                         message.attachRequest.portOverride = '';
 
                                     return this._pathRepo.find(connection.pathId)
                                         .then(paths => {
                                             let path = paths.length && paths[0];
-                                            if (path && path.path == userPath)
+                                            if (path && path.path === userPath)
                                                 return [ connection, path ];
 
                                             return null;
@@ -208,7 +207,7 @@ class AttachRequest {
                                         attachResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                     return this.tracker.send(id, data);
                                 }
 
@@ -230,13 +229,13 @@ class AttachRequest {
                                                 if (count === 0)
                                                     return this.tracker.AttachResponse.Result.ALREADY_CONNECTED;
 
-                                                if (actingAs == 'server') {
+                                                if (actingAs === 'server') {
                                                     return this._daemonRepo.findByConnection(connection)
                                                         .then(clientDaemons => {
                                                             let clients = [];
                                                             let clientPromises = [];
                                                             for (let clientDaemon of clientDaemons) {
-                                                                if (clientDaemon.actingAs != 'client')
+                                                                if (clientDaemon.actingAs !== 'client')
                                                                     continue;
 
                                                                 clientPromises.push(
@@ -309,7 +308,7 @@ class AttachRequest {
                                                     attachResponse: response,
                                                 });
                                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                debug(`Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                                 this.tracker.send(id, data);
                                             });
                                     });

@@ -2,7 +2,6 @@
  * Address Response event
  * @module tracker/events/address-response
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -48,11 +47,11 @@ class AddressResponse {
         if (!pair)
             return;
 
-        debug(`Got ADDRESS RESPONSE from ${info.address}:${info.port}`);
-        if (pair.clientRequestId == message.addressResponse.requestId) {
+        this._logger.debug('address-response', `Got ADDRESS RESPONSE from ${info.address}:${info.port}`);
+        if (pair.clientRequestId === message.addressResponse.requestId) {
             pair.clientAddress = info.address;
             pair.clientPort = info.port.toString();
-        } else if (pair.serverRequestId == message.addressResponse.requestId) {
+        } else if (pair.serverRequestId === message.addressResponse.requestId) {
             pair.serverAddress = info.address;
             pair.serverPort = info.port.toString();
         }
@@ -79,7 +78,7 @@ class AddressResponse {
                 peerAvailable: peer,
             });
             let data = this.tracker.ServerMessage.encode(msg).finish();
-            debug(`Sending PEER AVAILABLE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+            this._logger.debug('address-response', `Sending PEER AVAILABLE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
             this.tracker.send(pair.clientId, data);
 
             peer = this.tracker.PeerAvailable.create({
@@ -92,7 +91,7 @@ class AddressResponse {
                 peerAvailable: peer,
             });
             data = this.tracker.ServerMessage.encode(msg).finish();
-            debug(`Sending PEER AVAILABLE to ${server.socket.remoteAddress}:${server.socket.remotePort}`);
+            this._logger.debug('address-response', `Sending PEER AVAILABLE to ${server.socket.remoteAddress}:${server.socket.remotePort}`);
             return this.tracker.send(pair.serverId, data);
         } catch (error) {
             this._logger.error(new WError(error, 'AddressResponse.handle()'));

@@ -2,7 +2,6 @@
  * Punch Request event
  * @module tracker/events/punch-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const uuid = require('uuid');
 const WError = require('verror').WError;
@@ -44,7 +43,15 @@ class PunchRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'repositories.user',
+            'repositories.daemon',
+            'repositories.path',
+            'repositories.connection'
+        ];
     }
 
     /**
@@ -61,7 +68,7 @@ class PunchRequest {
         if (!info || info.server)
             return;
 
-        debug(`Got PUNCH REQUEST REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('punch-request', `Got PUNCH REQUEST REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         let parts = message.punchRequest.connectionName.split('/');
         let emailPart = parts.shift();
         let pathPart = '/' + parts.join('/');
@@ -135,7 +142,7 @@ class PunchRequest {
                                             addressRequest: request,
                                         });
                                         let data = this.tracker.ServerMessage.encode(msg).finish();
-                                        debug(`Sending ADDRESS REQUEST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        this._logger.debug('punch-request', `Sending ADDRESS REQUEST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this.tracker.send(clientId, data);
 
                                         request = this.tracker.AddressRequest.create({
@@ -147,7 +154,7 @@ class PunchRequest {
                                             addressRequest: request,
                                         });
                                         data = this.tracker.ServerMessage.encode(msg).finish();
-                                        debug(`Sending ADDRESS REQUEST to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
+                                        this._logger.debug('punch-request', `Sending ADDRESS REQUEST to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
                                         this.tracker.send(serverId, data);
                                     });
                             });

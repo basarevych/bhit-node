@@ -17,7 +17,7 @@ const WError = require('verror').WError;
 module.exports = function (connection, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -28,7 +28,7 @@ module.exports = function (connection, pg) {
                     let data = this._postgres.constructor.serializeModel(connection);
                     let fields = Object.keys(data)
                         .filter(field => {
-                            return [ 'id', 'acting_as', 'address_override', 'port_override' ].indexOf(field) == -1;
+                            return [ 'id', 'acting_as', 'address_override', 'port_override' ].indexOf(field) === -1;
                         });
 
                     let query, params = [];
@@ -69,12 +69,12 @@ module.exports = function (connection, pg) {
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

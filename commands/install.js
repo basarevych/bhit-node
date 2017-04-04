@@ -2,10 +2,10 @@
  * Install command
  * @module commands/install
  */
-const debug = require('debug')('bhit:command');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const argvParser = require('argv');
 
 /**
  * Command class
@@ -43,24 +43,32 @@ class Install {
 
     /**
      * Run the command
-     * @param {object} argv             Minimist object
+     * @param {string[]} argv           Arguments
      * @return {Promise}
      */
     run(argv) {
-        if (argv['_'].length < 2)
+        let args = argvParser
+            .option({
+                name: 'help',
+                short: 'h',
+                type: 'boolean',
+            })
+            .run(argv);
+
+        if (args.targets.length < 2)
             return this._help.helpInstall(argv);
 
-        let hostname = argv['_'][1];
+        let hostname = args.targets[1];
 
         return Promise.resolve()
             .then(() => {
                 let configDir;
-                if (os.platform() == 'freebsd') {
+                if (os.platform() === 'freebsd') {
                     configDir = '/usr/local/etc/bhit';
-                    debug(`Platform: FreeBSD`);
+                    this._app.debug(`Platform: FreeBSD`);
                 } else {
                     configDir = '/etc/bhit';
-                    debug(`Platform: Linux`);
+                    this._app.debug(`Platform: Linux`);
                 }
 
                 try {
@@ -69,7 +77,7 @@ class Install {
                     try {
                         fs.mkdirSync(configDir, 0o750);
                     } catch (error) {
-                        this.error(`Could not create ${configDir}`);
+                        throw new Error(`Could not create ${configDir}`);
                     }
                 }
                 try {
@@ -78,7 +86,7 @@ class Install {
                     try {
                         fs.mkdirSync(path.join(configDir, 'certs'), 0o755);
                     } catch (error) {
-                        this.error(`Could not create ${path.join(configDir, 'certs')}`);
+                        throw new Error(`Could not create ${path.join(configDir, 'certs')}`);
                     }
                 }
                 try {
@@ -87,7 +95,7 @@ class Install {
                     try {
                         fs.mkdirSync('/var/run/bhit', 0o755);
                     } catch (error) {
-                        this.error(`Could not create /var/run/bhit`);
+                        throw new Error(`Could not create /var/run/bhit`);
                     }
                 }
                 try {
@@ -96,12 +104,12 @@ class Install {
                     try {
                         fs.mkdirSync('/var/log/bhit', 0o755);
                     } catch (error) {
-                        this.error(`Could not create /var/log/bhit`);
+                        throw new Error(`Could not create /var/log/bhit`);
                     }
                 }
 
                 try {
-                    debug('Creating default config');
+                    this._app.debug('Creating default config');
                     fs.accessSync(path.join(configDir, 'bhit.conf'), fs.constants.F_OK);
                 } catch (error) {
                     try {
@@ -109,12 +117,12 @@ class Install {
                         config = config.replace(/NAME/g, hostname);
                         fs.writeFileSync(path.join(configDir, 'bhit.conf'), config, { mode: 0o640 });
                     } catch (error) {
-                        this.error(`Could not create bhit.conf`);
+                        throw new Error(`Could not create bhit.conf`);
                     }
                 }
                 try {
                     fs.accessSync('/etc/systemd/system', fs.constants.F_OK);
-                    debug('Creating systemd service');
+                    this._app.debug('Creating systemd service');
                     let service = fs.readFileSync(path.join(__dirname, '..', 'systemd.service'), {encoding: 'utf8'});
                     fs.writeFileSync('/etc/systemd/system/bhit.service', service, {mode: 0o644});
                 } catch (error) {
@@ -122,7 +130,7 @@ class Install {
                 }
                 try {
                     fs.accessSync('/etc/init.d', fs.constants.F_OK);
-                    debug('Creating sysvinit service');
+                    this._app.debug('Creating sysvinit service');
                     let service = fs.readFileSync(path.join(__dirname, '..', 'sysvinit.service'), {encoding: 'utf8'});
                     fs.writeFileSync('/etc/init.d/bhit', service, {mode: 0o755});
                 } catch (error) {
@@ -141,14 +149,14 @@ class Install {
                 if (certExists)
                     return;
 
-                debug('Creating temporary openssl config');
+                this._app.debug('Creating temporary openssl config');
                 let type = (/^\d+\.\d+\.\d+\.\d+$/.test(hostname) ? 'IP' : 'DNS');
                 let sslConfig = fs.readFileSync('/etc/ssl/openssl.cnf', { encoding: 'utf8' });
                 sslConfig += `\n[SAN]\nsubjectAltName=${type}:${hostname}\n`;
                 fs.writeFileSync('/tmp/bhit.openssl.cnf', sslConfig, { mode: 0o644 });
 
-                debug('Creating self-signed certificate');
-                this._runner.exec(
+                this._app.debug('Creating self-signed certificate');
+                return this._runner.exec(
                         'openssl',
                         [
                             'req',
@@ -176,10 +184,13 @@ class Install {
                     });
             })
             .then(() => {
-                process.exit(0);
+                return this._app.debug('done')
+                    .then(() => {
+                        process.exit(0);
+                    });
             })
             .catch(error => {
-                this.error(error.message);
+                return this.error(error.message);
             });
     }
 
@@ -188,8 +199,18 @@ class Install {
      * @param {...*} args
      */
     error(...args) {
-        console.error(...args);
-        process.exit(1);
+        if (args.length)
+            args[args.length - 1] = args[args.length - 1] + '\n';
+
+        return this._app.error(...args)
+            .then(
+                () => {
+                    process.exit(1);
+                },
+                () => {
+                    process.exit(1);
+                }
+            );
     }
 }
 

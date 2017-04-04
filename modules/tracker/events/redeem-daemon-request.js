@@ -2,7 +2,6 @@
  * Redeem Daemon Request event
  * @module tracker/events/redeem-daemon-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -54,7 +53,7 @@ class RedeemDaemonRequest {
         if (!client)
             return;
 
-        debug(`Got REDEEM DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('redeem-daemon-request', `Got REDEEM DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         this._userRepo.findByToken(message.redeemDaemonRequest.token)
             .then(users => {
                 let user = users.length && users[0];
@@ -68,7 +67,7 @@ class RedeemDaemonRequest {
                         redeemDaemonResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('redeem-daemon-request', `Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -85,7 +84,7 @@ class RedeemDaemonRequest {
                                 redeemDaemonResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('redeem-daemon-request', `Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -106,7 +105,7 @@ class RedeemDaemonRequest {
                                     redeemDaemonResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('redeem-daemon-request', `Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                 this.tracker.send(id, data);
                             });
                     });

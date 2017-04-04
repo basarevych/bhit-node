@@ -2,9 +2,9 @@
  * Clear cache command
  * @module commands/clear-cache
  */
-const debug = require('debug')('bhit:command');
 const path = require('path');
 const fs = require('fs');
+const argvParser = require('argv');
 
 /**
  * Command class
@@ -40,10 +40,18 @@ class ClearCache {
 
     /**
      * Run the command
-     * @param {object} argv             Minimist object
+     * @param {string[]} argv           Arguments
      * @return {Promise}
      */
     run(argv) {
+        let args = argvParser
+            .option({
+                name: 'help',
+                short: 'h',
+                type: 'boolean',
+            })
+            .run(argv);
+
         return this._redis.connect(this._config.get('cache.redis'))
             .then(client => {
                 return client.query('FLUSHDB')
@@ -51,8 +59,11 @@ class ClearCache {
                         client.done();
                     })
             })
+            .then(() => {
+                process.exit(0);
+            })
             .catch(error => {
-                this.error(error.message);
+                return this.error(error.message);
             });
     }
 
@@ -61,8 +72,18 @@ class ClearCache {
      * @param {...*} args
      */
     error(...args) {
-        console.error(...args);
-        process.exit(1);
+        if (args.length)
+            args[args.length - 1] = args[args.length - 1] + '\n';
+
+        return this._app.error(...args)
+            .then(
+                () => {
+                    process.exit(1);
+                },
+                () => {
+                    process.exit(1);
+                }
+            );
     }
 }
 

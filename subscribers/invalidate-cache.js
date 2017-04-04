@@ -48,7 +48,7 @@ class InvalidateCache {
      * @param {*} message                       Body of the message
      */
     onMessage(message) {
-        if (typeof message != 'object' || typeof message.key != 'string')
+        if (typeof message !== 'object' || typeof message.key !== 'string')
             this._logger.error('Received invalid cache invalidation message', message);
 
         this._cacher.unset('sql:' + message.key)

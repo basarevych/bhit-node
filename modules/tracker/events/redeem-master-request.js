@@ -2,7 +2,6 @@
  * Redeem Master Request event
  * @module tracker/events/redeem-master-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -54,7 +53,7 @@ class RedeemMasterRequest {
         if (!client)
             return;
 
-        debug(`Got REDEEM MASTER REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('redeem-master-request', `Got REDEEM MASTER REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         this._userRepo.findByEmail(message.redeemMasterRequest.email)
             .then(users => {
                 let user = users.length && users[0];
@@ -68,7 +67,7 @@ class RedeemMasterRequest {
                         redeemMasterResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('redeem-master-request', `Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -101,7 +100,7 @@ class RedeemMasterRequest {
                                         redeemMasterResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    debug(`Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('redeem-master-request', `Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                     this.tracker.send(id, data);
                                 },
                                 error => {

@@ -2,9 +2,9 @@
  * Start command
  * @module commands/start
  */
-const debug = require('debug')('bhid:command');
 const path = require('path');
 const execFile = require('child_process').execFile;
+const argvParser = require('argv');
 
 /**
  * Command class
@@ -14,10 +14,12 @@ class Start {
      * Create the service
      * @param {App} app                 The application
      * @param {object} config           Configuration
+     * @param {Install} install         Install command
      */
-    constructor(app, config) {
+    constructor(app, config, install) {
         this._app = app;
         this._config = config;
+        this._install = install;
     }
 
     /**
@@ -33,18 +35,26 @@ class Start {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config' ];
+        return [ 'app', 'config', 'commands.install' ];
     }
 
     /**
      * Run the command
-     * @param {object} argv             Minimist object
+     * @param {string[]} argv           Arguments
      * @return {Promise}
      */
     run(argv) {
+        let args = argvParser
+            .option({
+                name: 'help',
+                short: 'h',
+                type: 'boolean',
+            })
+            .run(argv);
+
         return this.launch()
             .then(result => {
-                if (result.code != 0) {
+                if (result.code !== 0) {
                     console.log(result.stdout);
                     console.error(result.stderr);
                     process.exit(1);
@@ -53,7 +63,7 @@ class Start {
                 process.exit(0);
             })
             .catch(error => {
-                this.error(error.message);
+                return this.error(error.message);
             })
     }
 
@@ -100,8 +110,18 @@ class Start {
      * @param {...*} args
      */
     error(...args) {
-        console.error(...args);
-        process.exit(1);
+        if (args.length)
+            args[args.length - 1] = args[args.length - 1] + '\n';
+
+        return this._app.error(...args)
+            .then(
+                () => {
+                    process.exit(1);
+                },
+                () => {
+                    process.exit(1);
+                }
+            );
     }
 }
 

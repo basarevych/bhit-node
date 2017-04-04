@@ -2,7 +2,6 @@
  * Lookup Identity Request event
  * @module tracker/events/lookup-identity-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -48,7 +47,7 @@ class LookupIdentityRequest {
         if (!client || !client.daemonId)
             return;
 
-        debug(`Got LOOKUP IDENTITY REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('lookup-identity-request', `Got LOOKUP IDENTITY REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         try {
             let info = this.tracker.identities.get(message.lookupIdentityRequest.identity);
             if (info && info.clients.size) {
@@ -68,7 +67,7 @@ class LookupIdentityRequest {
                     lookupIdentityResponse: response,
                 });
                 let data = this.tracker.ServerMessage.encode(msg).finish();
-                debug(`Sending LOOKUP IDENTITY RESPONSE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
+                this._logger.debug('lookup-identity-request', `Sending LOOKUP IDENTITY RESPONSE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
                 return this.tracker.send(id, data);
             }
 
@@ -83,7 +82,7 @@ class LookupIdentityRequest {
                 lookupIdentityResponse: response,
             });
             let data = this.tracker.ServerMessage.encode(msg).finish();
-            debug(`Sending LOOKUP IDENTITY RESPONSE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
+            this._logger.debug('lookup-identity-request', `Sending LOOKUP IDENTITY RESPONSE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
             return this.tracker.send(id, data);
         } catch (error) {
             this._logger.error(new WError(error, 'LookupIdentityRequest.handle()'));

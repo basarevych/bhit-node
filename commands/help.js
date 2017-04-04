@@ -2,7 +2,7 @@
  * Help command
  * @module commands/help
  */
-const debug = require('debug')('bhit:command');
+const argvParser = require('argv');
 
 /**
  * Command class
@@ -38,15 +38,23 @@ class Help {
 
     /**
      * Run the command
-     * @param {object} argv             Minimist object
+     * @param {string[]} argv           Arguments
      * @return {Promise}
      */
     run(argv) {
-        if (argv['_'].length < 2)
+        let args = argvParser
+            .option({
+                name: 'help',
+                short: 'h',
+                type: 'boolean',
+            })
+            .run(argv);
+
+        if (args.targets.length < 2)
             return this.usage();
 
-        let method = this[`help${this._util.dashedToCamel(argv['_'][1], true)}`];
-        if (typeof method != 'function')
+        let method = this[`help${this._util.dashedToCamel(args.targets[1], true)}`];
+        if (typeof method !== 'function')
             return this.usage();
 
         return method.call(this, argv);
@@ -56,91 +64,127 @@ class Help {
      * General help
      */
     usage() {
-        console.log('Usage:\tbhitctl <command> [<parameters]');
-        console.log('Commands:');
-        console.log('\thelp\t\tPrint help about any other command');
-        console.log('\tinstall\t\tRegister the program in the system');
-        console.log('\tcreate-db\tCreate the schema');
-        console.log('\tclear-cache\tClear the cache');
-        console.log('\tstart\t\tStart the tracker');
-        console.log('\tstop\t\tStop the tracker');
-        console.log('\trestart\t\tRestart the tracker');
-        console.log('\tstatus\t\tQuery running status of the tracker');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl <command> [<parameters]\n\n' +
+                'Commands:\n' +
+                '\thelp\t\tPrint help about any other command\n' +
+                '\tinstall\t\tRegister the program in the system\n' +
+                '\tcreate-db\tCreate the schema\n' +
+                '\tclear-cache\tClear the cache\n' +
+                '\tstart\t\tStart the tracker\n' +
+                '\tstop\t\tStop the tracker\n' +
+                '\trestart\t\tRestart the tracker\n' +
+                '\tstatus\t\tQuery running status of the tracker\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Help command
      */
     helpHelp(argv) {
-        console.log('Usage:\tbhitctl help <command>\n');
-        console.log('\tPrint help for the given command');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl help <command>\n\n' +
+                '\tPrint help for the given command\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Install command
      */
     helpInstall(argv) {
-        console.log('Usage:\tbhitctl install <address>\n');
-        console.log('\tThis command will register the program in the system and will create');
-        console.log('\tconfiguration in /etc/bhit by default');
-        console.log('\t<address> is either hostname or IP address the tracker will listen on');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl install <address>\n\n' +
+                '\tThis command will register the program in the system and will create\n' +
+                '\tconfiguration in /etc/bhit by default\n' +
+                '\t<address> is either hostname or IP address the tracker will listen on\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Create DB command
      */
     helpCreateDb(argv) {
-        console.log('Usage:\tbhitctl create-db\n');
-        console.log('\tDrop if present and recreate all the database tables');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl create-db\n\n' +
+                '\tDrop if present and recreate all the database tables\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Clear Cache command
      */
     helpClearCache(argv) {
-        console.log('Usage:\tbhitctl clear-cache\n');
-        console.log('\tDrop Redis cache');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl clear-cache\n\n' +
+                '\tDrop Redis cache\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Start command
      */
     helpStart(argv) {
-        console.log('Usage:\tbhitctl start\n');
-        console.log('\tThis command will start the tracker');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl start\n\n' +
+                '\tThis command will start the tracker\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Stop command
      */
     helpStop(argv) {
-        console.log('Usage:\tbhitctl stop\n');
-        console.log('\tThis command will stop the tracker');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl stop\n\n' +
+                '\tThis command will stop the tracker\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Restart command
      */
     helpRestart(argv) {
-        console.log('Usage:\tbhitctl restart\n');
-        console.log('\tThis command will stop and start the tracker');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl restart\n\n' +
+                '\tThis command will stop and start the tracker\n'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
      * Status command
      */
     helpStatus(argv) {
-        console.log('Usage:\tbhitctl status\n');
-        console.log('\tThis command will print tracker status');
-        process.exit(0);
+        return this._app.info(
+                'Usage:\tbhitctl status\n\n' +
+                '\tThis command will print tracker status'
+            )
+            .then(() => {
+                process.exit(0);
+            });
     }
 
     /**
@@ -148,8 +192,18 @@ class Help {
      * @param {...*} args
      */
     error(...args) {
-        console.error(...args);
-        process.exit(1);
+        if (args.length)
+            args[args.length - 1] = args[args.length - 1] + '\n';
+
+        return this._app.error(...args)
+            .then(
+                () => {
+                    process.exit(1);
+                },
+                () => {
+                    process.exit(1);
+                }
+            );
     }
 }
 

@@ -15,7 +15,7 @@ const WError = require('verror').WError;
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (connection, pg) {
-    let key = `sql:daemon-connections-by-connection-id:${typeof connection == 'object' ? connection.id : connection}`;
+    let key = `sql:daemon-connections-by-connection-id:${typeof connection === 'object' ? connection.id : connection}`;
 
     return this._cacher.get(key)
         .then(value => {
@@ -24,7 +24,7 @@ module.exports = function (connection, pg) {
 
             return Promise.resolve()
                 .then(() => {
-                    if (typeof pg == 'object')
+                    if (typeof pg === 'object')
                         return pg;
 
                     return this._postgres.connect(pg);
@@ -36,7 +36,7 @@ module.exports = function (connection, pg) {
                             'INNER JOIN daemon_connections dc ' +
                             '        ON d.id = dc.daemon_id ' +
                             '     WHERE dc.connection_id = $1 ',
-                            [ typeof connection == 'object' ? connection.id : connection ]
+                            [ typeof connection === 'object' ? connection.id : connection ]
                         )
                         .then(result => {
                             let rows = result.rowCount ? result.rows : [];
@@ -50,12 +50,12 @@ module.exports = function (connection, pg) {
                         })
                         .then(
                             value => {
-                                if (typeof pg != 'object')
+                                if (typeof pg !== 'object')
                                     client.done();
                                 return value;
                             },
                             error => {
-                                if (typeof pg != 'object')
+                                if (typeof pg !== 'object')
                                     client.done();
                                 throw error;
                             }

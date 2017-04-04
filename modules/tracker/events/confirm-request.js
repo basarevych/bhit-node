@@ -2,7 +2,6 @@
  * Confirm Request event
  * @module tracker/events/confirm-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -50,7 +49,7 @@ class ConfirmRequest {
         if (!client)
             return;
 
-        debug(`Got CONFIRM REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('confirm-request', `Got CONFIRM REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return this._userRepo.findByConfirm(message.confirmRequest.token)
             .then(users => {
                 let user = users.length && users[0];
@@ -64,7 +63,7 @@ class ConfirmRequest {
                         confirmResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending CONFIRM RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('confirm-request', `Sending CONFIRM RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -87,7 +86,7 @@ class ConfirmRequest {
                             confirmResponse: response,
                         });
                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                        debug(`Sending CONFIRM RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this._logger.debug('confirm-request', `Sending CONFIRM RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                         this.tracker.send(id, data);
                     });
             })

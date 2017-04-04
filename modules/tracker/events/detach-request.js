@@ -2,7 +2,6 @@
  * Detach Request event
  * @module tracker/events/detach-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -53,7 +52,7 @@ class DetachRequest {
             'repositories.daemon',
             'repositories.path',
             'repositories.connection',
-            'modules.tracker.connectionsList'
+            'connectionsList'
         ];
     }
 
@@ -75,7 +74,7 @@ class DetachRequest {
         }
         userPath = parts.join('/');
 
-        debug(`Got DETACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('detach-request', `Got DETACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -102,7 +101,7 @@ class DetachRequest {
                         detachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (!this.tracker.validatePath(userPath)) {
@@ -115,7 +114,7 @@ class DetachRequest {
                         detachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -142,7 +141,7 @@ class DetachRequest {
                                         detachResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                     return this.tracker.send(id, data);
                                 }
 
@@ -159,7 +158,7 @@ class DetachRequest {
                                                 detachResponse: response,
                                             });
                                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                                            debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                            this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                             return this.tracker.send(id, data);
                                         }
 
@@ -202,7 +201,7 @@ class DetachRequest {
                                                     detachResponse: response,
                                                 });
                                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                debug(`Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                                 this.tracker.send(id, data);
 
                                                 if (count > 0) {
@@ -222,7 +221,7 @@ class DetachRequest {
                                                                 for (let thisId of info.clients) {
                                                                     let client = this.tracker.clients.get(thisId);
                                                                     if (client) {
-                                                                        debug(`Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                                        this._logger.debug('detach-request', `Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                                                         this.tracker.send(thisId, data);
                                                                     }
                                                                 }

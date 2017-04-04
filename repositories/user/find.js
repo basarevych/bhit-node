@@ -24,7 +24,7 @@ module.exports = function (id, pg) {
 
             return Promise.resolve()
                 .then(() => {
-                    if (typeof pg == 'object')
+                    if (typeof pg === 'object')
                         return pg;
 
                     return this._postgres.connect(pg);
@@ -48,12 +48,12 @@ module.exports = function (id, pg) {
                         })
                         .then(
                             value => {
-                                if (typeof pg != 'object')
+                                if (typeof pg !== 'object')
                                     client.done();
                                 return value;
                             },
                             error => {
-                                if (typeof pg != 'object')
+                                if (typeof pg !== 'object')
                                     client.done();
                                 throw error;
                             }

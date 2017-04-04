@@ -2,7 +2,6 @@
  * Create Daemon Request event
  * @module tracker/events/create-daemon-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -54,7 +53,7 @@ class CreateDaemonRequest {
         if (!client)
             return;
 
-        debug(`Got CREATE DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('create-daemon-request', `Got CREATE DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         this._userRepo.findByToken(message.createDaemonRequest.token)
             .then(users => {
                 let user = users.length && users[0];
@@ -68,7 +67,7 @@ class CreateDaemonRequest {
                         createDaemonResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('create-daemon-request', `Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (message.createDaemonRequest.daemonName.length && !this.tracker.validateName(message.createDaemonRequest.daemonName)) {
@@ -81,7 +80,7 @@ class CreateDaemonRequest {
                         createDaemonResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('create-daemon-request', `Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -107,7 +106,7 @@ class CreateDaemonRequest {
                                 createDaemonResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('create-daemon-request', `Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -134,7 +133,7 @@ class CreateDaemonRequest {
                                     createDaemonResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('create-daemon-request', `Sending CREATE DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                 this.tracker.send(id, data);
                             });
                     });

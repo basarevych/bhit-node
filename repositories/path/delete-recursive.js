@@ -17,7 +17,7 @@ const WError = require('verror').WError;
 module.exports = function (path, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -26,7 +26,7 @@ module.exports = function (path, pg) {
             return client.transaction({ name: 'path_delete_recursive' }, rollback => {
                 return Promise.resolve()
                     .then(() => {
-                        if (typeof path == 'object')
+                        if (typeof path === 'object')
                             return [ path ];
 
                         return this.find(path, client);
@@ -55,12 +55,12 @@ module.exports = function (path, pg) {
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

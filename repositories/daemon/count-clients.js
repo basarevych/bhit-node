@@ -17,7 +17,7 @@ const WError = require('verror').WError;
 module.exports = function (connection, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -31,7 +31,7 @@ module.exports = function (connection, pg) {
                     '     WHERE dc.connection_id = $1 ' +
                     '       AND dc.acting_as = $2 ',
                     [
-                        typeof connection == 'object' ? connection.id : connection,
+                        typeof connection === 'object' ? connection.id : connection,
                         'client',
                     ]
                 )
@@ -40,12 +40,12 @@ module.exports = function (connection, pg) {
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

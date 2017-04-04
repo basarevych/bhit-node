@@ -2,7 +2,6 @@
  * Register Daemon Request event
  * @module tracker/events/register-daemon-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -52,7 +51,7 @@ class RegisterDaemonRequest {
         if (!client)
             return;
 
-        debug(`Got REGISTER DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('register-daemon-request', `Got REGISTER DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return this._daemonRepo.findByToken(message.registerDaemonRequest.token)
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
@@ -62,7 +61,7 @@ class RegisterDaemonRequest {
                         let iter = info.clients.values();
                         let found = iter.next().value;
                         info = this.tracker.clients.get(found);
-                        if (info && info.daemonId != daemon.id)
+                        if (info && info.daemonId !== daemon.id)
                             daemon = null;
                     }
                 }
@@ -86,7 +85,7 @@ class RegisterDaemonRequest {
                                 registerDaemonResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('register-daemon-request',`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -129,7 +128,7 @@ class RegisterDaemonRequest {
                             registerDaemonResponse: response,
                         });
                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                        debug(`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this._logger.debug('register-daemon-request', `Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                         this.tracker.send(id, data);
                     });
             })

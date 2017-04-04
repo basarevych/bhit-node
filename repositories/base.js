@@ -83,7 +83,7 @@ class Repository {
     ) {
         return Promise.resolve()
             .then(() => {
-                if (typeof pg == 'object')
+                if (typeof pg === 'object')
                     return pg;
 
                 return this._postgres.connect(pg);
@@ -131,12 +131,12 @@ class Repository {
                     })
                     .then(
                         value => {
-                            if (typeof pg != 'object')
+                            if (typeof pg !== 'object')
                                 client.done();
                             return value;
                         },
                         error => {
-                            if (typeof pg != 'object')
+                            if (typeof pg !== 'object')
                                 client.done();
                             throw error;
                         }

@@ -2,7 +2,6 @@
  * Redeem Path Request event
  * @module tracker/events/redeem-path-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -64,7 +63,7 @@ class RedeemPathRequest {
         if (!client)
             return;
 
-        debug(`Got REDEEM PATH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('redeem-path-request', `Got REDEEM PATH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         this._userRepo.findByToken(message.redeemPathRequest.token)
             .then(users => {
                 let user = users.length && users[0];
@@ -78,7 +77,7 @@ class RedeemPathRequest {
                         redeemPathResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('redeem-path-request', `Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -95,13 +94,13 @@ class RedeemPathRequest {
                                 redeemPathResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('redeem-path-request', `Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
                         return Promise.resolve()
                             .then(() => {
-                                if (message.redeemPathRequest.type == this.tracker.RedeemPathRequest.Type.CLIENT) {
+                                if (message.redeemPathRequest.type === this.tracker.RedeemPathRequest.Type.CLIENT) {
                                     path.token = this.tracker.generateToken();
                                     return this._pathRepo.save(path)
                                         .then(pathId => {
@@ -146,7 +145,7 @@ class RedeemPathRequest {
                                     redeemPathResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('redeem-path-request', `Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                 this.tracker.send(id, data);
                             });
                     });

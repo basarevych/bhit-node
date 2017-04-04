@@ -2,7 +2,6 @@
  * Delete Request event
  * @module tracker/events/delete-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -50,7 +49,7 @@ class DeleteRequest {
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
-            'modules.tracker.connectionsList'
+            'connectionsList'
         ];
     }
 
@@ -64,7 +63,7 @@ class DeleteRequest {
         if (!client)
             return;
 
-        debug(`Got DELETE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('delete-request', `Got DELETE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -84,7 +83,7 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (!this.tracker.validatePath(message.deleteRequest.path)) {
@@ -97,7 +96,7 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -118,7 +117,7 @@ class DeleteRequest {
                                 deleteResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -130,7 +129,7 @@ class DeleteRequest {
                                         for (let path of paths) {
                                             let name = user.email + path.path;
                                             if (thisClient.status.has(name)) {
-                                                if (updateClients.indexOf(thisClientId) == -1)
+                                                if (updateClients.indexOf(thisClientId) === -1)
                                                     updateClients.push(thisClientId);
                                                 thisClient.status.delete(name);
                                             }
@@ -167,7 +166,7 @@ class DeleteRequest {
                                             deleteResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        debug(`Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this.tracker.send(id, data);
 
                                         let promises = [];
@@ -187,7 +186,7 @@ class DeleteRequest {
                                                             connectionsList: list,
                                                         });
                                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                        debug(`Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                        this._logger.debug('delete-request', `Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                                         this.tracker.send(thisId, data);
                                                     })
                                             );

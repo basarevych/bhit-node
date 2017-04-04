@@ -17,7 +17,7 @@ const WError = require('verror').WError;
 module.exports = function (user, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -27,19 +27,19 @@ module.exports = function (user, pg) {
                     'DELETE ' +
                     '  FROM users ' +
                     ' WHERE id = $1 ',
-                    [ typeof user == 'object' ? user.id : user ]
+                    [ typeof user === 'object' ? user.id : user ]
                 )
                 .then(result => {
                     return result.rowCount;
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

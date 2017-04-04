@@ -17,7 +17,7 @@ const WError = require('verror').WError;
 module.exports = function (daemon, pg) {
     return Promise.resolve()
         .then(() => {
-            if (typeof pg == 'object')
+            if (typeof pg === 'object')
                 return pg;
 
             return this._postgres.connect(pg);
@@ -27,19 +27,19 @@ module.exports = function (daemon, pg) {
                     'DELETE ' +
                     '  FROM daemons ' +
                     ' WHERE id = $1 ',
-                    [ typeof daemon == 'object' ? daemon.id : daemon ]
+                    [ typeof daemon === 'object' ? daemon.id : daemon ]
                 )
                 .then(result => {
                     return result.rowCount;
                 })
                 .then(
                     value => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         return value;
                     },
                     error => {
-                        if (typeof pg != 'object')
+                        if (typeof pg !== 'object')
                             client.done();
                         throw error;
                     }

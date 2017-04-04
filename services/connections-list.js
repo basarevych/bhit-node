@@ -1,8 +1,7 @@
 /**
  * Connections List service
- * @module tracker/services/connections-list
+ * @module services/connections-list
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -31,11 +30,11 @@ class ConnectionsList {
     }
 
     /**
-     * Service name is 'modules.tracker.connectionsList'
+     * Service name is 'connectionsList'
      * @type {string}
      */
     static get provides() {
-        return 'modules.tracker.connectionsList';
+        return 'connectionsList';
     }
 
     /**
@@ -43,7 +42,15 @@ class ConnectionsList {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'repositories.user',
+            'repositories.daemon',
+            'repositories.path',
+            'repositories.connection'
+        ];
     }
 
     /**
@@ -84,7 +91,7 @@ class ConnectionsList {
                             .then(connections => {
                                 let promises = [];
                                 for (let connection of connections) {
-                                    if (connection.actingAs == 'server') {
+                                    if (connection.actingAs === 'server') {
                                         if (!connection.fixed) {
                                             promises.push(
                                                 this._pathRepo.find(connection.pathId)
@@ -112,7 +119,7 @@ class ConnectionsList {
                                                 .then(peers => {
                                                     let peerPromises = [];
                                                     for (let peer of peers) {
-                                                        if (peer.actingAs != 'client')
+                                                        if (peer.actingAs !== 'client')
                                                             continue;
                                                         peerPromises.push(
                                                             getFullName(peer)
@@ -146,7 +153,7 @@ class ConnectionsList {
                                                     }));
                                                 })
                                         );
-                                    } else if (connection.actingAs == 'client') {
+                                    } else if (connection.actingAs === 'client') {
                                         promises.push(
                                             this._daemonRepo.findServerByConnection(connection)
                                                 .then(servers => {

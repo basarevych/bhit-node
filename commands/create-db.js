@@ -2,10 +2,10 @@
  * Create DB command
  * @module commands/create-db
  */
-const debug = require('debug')('bhit:command');
 const path = require('path');
 const fs = require('fs');
 const read = require('read');
+const argvParser = require('argv');
 
 /**
  * Command class
@@ -41,16 +41,24 @@ class CreateDb {
 
     /**
      * Run the command
-     * @param {object} argv             Minimist object
+     * @param {string[]} argv           Arguments
      * @return {Promise}
      */
     run(argv) {
+        let args = argvParser
+            .option({
+                name: 'help',
+                short: 'h',
+                type: 'boolean',
+            })
+            .run(argv);
+
         return new Promise((resolve, reject) => {
-                read({prompt: 'Destroy the data and recreate the schema? (yes/no): '}, (error, answer) => {
+                read({ prompt: 'Destroy the data and recreate the schema? (yes/no): ' }, (error, answer) => {
                     if (error)
                         return this.error(error.message);
 
-                    if (answer.toLowerCase() != 'yes' && answer.toLowerCase() != 'y')
+                    if (answer.toLowerCase() !== 'yes' && answer.toLowerCase() !== 'y')
                         process.exit(0);
 
                     let proc = this._runner.spawn(
@@ -84,7 +92,7 @@ class CreateDb {
                 process.exit(0);
             })
             .catch(error => {
-                this.error(error.message);
+                return this.error(error.message);
             });
     }
 
@@ -93,8 +101,18 @@ class CreateDb {
      * @param {...*} args
      */
     error(...args) {
-        console.error(...args);
-        process.exit(1);
+        if (args.length)
+            args[args.length - 1] = args[args.length - 1] + '\n';
+
+        return this._app.error(...args)
+            .then(
+                () => {
+                    process.exit(1);
+                },
+                () => {
+                    process.exit(1);
+                }
+            );
     }
 }
 

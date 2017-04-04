@@ -2,7 +2,6 @@
  * Tree Request event
  * @module tracker/events/tree-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -54,7 +53,7 @@ class TreeRequest {
         if (!client)
             return;
 
-        debug(`Got TREE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('tree-request', `Got TREE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -74,7 +73,7 @@ class TreeRequest {
                         treeResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (message.treeRequest.path.length && !this.tracker.validatePath(message.treeRequest.path)) {
@@ -87,14 +86,14 @@ class TreeRequest {
                         treeResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
                 let treeRoots = [];
                 let loadTree = (tree, path) => {
                     let nodes = [];
-                    let isConnection, type, numServers = 0, numClients = 0;
+                    let isConnection = false, type, numServers = 0, numClients = 0;
                     return this._connectionRepo.findByPath(path)
                         .then(connections => {
                             let connection = connections.length && connections[0];
@@ -102,7 +101,6 @@ class TreeRequest {
                             return Promise.resolve()
                                 .then(() => {
                                     if (!connection) {
-                                        isConnection = false;
                                         type = this.tracker.Tree.Type.NOT_CONNECTED;
                                         return;
                                     }
@@ -113,7 +111,7 @@ class TreeRequest {
                                             if (!actingAs)
                                                 type = this.tracker.Tree.Type.NOT_CONNECTED;
                                             else
-                                                type = (actingAs == 'server' ? this.tracker.Tree.Type.SERVER : this.tracker.Tree.Type.CLIENT);
+                                                type = (actingAs === 'server' ? this.tracker.Tree.Type.SERVER : this.tracker.Tree.Type.CLIENT);
                                         })
                                         .then(() => {
                                             return Promise.all([
@@ -177,7 +175,7 @@ class TreeRequest {
                                 treeResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -204,7 +202,7 @@ class TreeRequest {
                                     treeResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                 return this.tracker.send(id, data);
                             });
                     });

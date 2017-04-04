@@ -2,7 +2,6 @@
  * Import Request event
  * @module tracker/events/import-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -64,7 +63,7 @@ class ImportRequest {
         if (!client)
             return;
 
-        debug(`Got IMPORT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('import-request', `Got IMPORT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -95,7 +94,7 @@ class ImportRequest {
                         importResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('import-request', `Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -125,7 +124,7 @@ class ImportRequest {
                                 importResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('import-request', `Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -156,7 +155,7 @@ class ImportRequest {
 
                         return Promise.resolve()
                             .then(() => {
-                                if (actingAs == 'server')
+                                if (actingAs === 'server')
                                     return [ connection ];
 
                                 return loadConnections(path);
@@ -171,7 +170,7 @@ class ImportRequest {
                                             return this.tracker.ImportResponse.Result.REJECTED;
 
                                         let promises = [];
-                                        if (actingAs == 'server') {
+                                        if (actingAs === 'server') {
                                             let connection = connections.length && connections[0];
                                             if (connection) {
                                                 promises.push(
@@ -186,7 +185,7 @@ class ImportRequest {
                                                                     let clients = [];
                                                                     let clientPromises = [];
                                                                     for (let clientDaemon of clientDaemons) {
-                                                                        if (clientDaemon.actingAs != 'client')
+                                                                        if (clientDaemon.actingAs !== 'client')
                                                                             continue;
 
                                                                         clientPromises.push(
@@ -274,7 +273,7 @@ class ImportRequest {
                                             importResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        debug(`Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        this._logger.debug('import-request', `Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                         this.tracker.send(id, data);
                                     });
                             });

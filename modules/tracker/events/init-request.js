@@ -2,7 +2,6 @@
  * Init Request event
  * @module tracker/events/init-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -54,7 +53,7 @@ class InitRequest {
         if (!client)
             return;
 
-        debug(`Got INIT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('init-request', `Got INIT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         this._userRepo.findByEmail(message.initRequest.email)
             .then(users => {
                 if (users.length) {
@@ -67,7 +66,7 @@ class InitRequest {
                         initResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('init-request', `Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -108,7 +107,7 @@ class InitRequest {
                                         initResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    debug(`Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('init-request', `Sending INIT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                     this.tracker.send(id, data);
                                 },
                                 error => {

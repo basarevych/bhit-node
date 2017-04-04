@@ -2,8 +2,8 @@
  * Restart command
  * @module commands/restart
  */
-const debug = require('debug')('bhid:command');
 const path = require('path');
+const argvParser = require('argv');
 
 /**
  * Command class
@@ -15,12 +15,14 @@ class Restart {
      * @param {object} config           Configuration
      * @param {Start} start             Start command
      * @param {Stop} stop               Stop command
+     * @param {Install} install         Install command
      */
-    constructor(app, config, start, stop) {
+    constructor(app, config, start, stop, install) {
         this._app = app;
         this._config = config;
         this._start = start;
         this._stop = stop;
+        this._install = install;
     }
 
     /**
@@ -36,15 +38,29 @@ class Restart {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'commands.start', 'commands.stop' ];
+        return [ 'app', 'config', 'commands.start', 'commands.stop', 'commands.install' ];
     }
 
     /**
      * Run the command
-     * @param {object} argv             Minimist object
+     * @param {string[]} argv           Arguments
      * @return {Promise}
      */
     run(argv) {
+        let args = argvParser
+            .option({
+                name: 'help',
+                short: 'h',
+                type: 'boolean',
+            })
+            .run(argv);
+
+        let onSignal = this._app.onSignal;
+        this._app.onSignal = signal => {
+            if (signal !== 'SIGHUP')
+                onSignal(signal);
+        };
+
         return this._stop.terminate()
             .then(() => {
                 return this._start.launch();
@@ -53,7 +69,7 @@ class Restart {
                 process.exit(0);
             })
             .catch(error => {
-                this.error(error.message);
+                return this.error(error.message);
             })
     }
 
@@ -62,8 +78,18 @@ class Restart {
      * @param {...*} args
      */
     error(...args) {
-        console.error(...args);
-        process.exit(1);
+        if (args.length)
+            args[args.length - 1] = args[args.length - 1] + '\n';
+
+        return this._app.error(...args)
+            .then(
+                () => {
+                    process.exit(1);
+                },
+                () => {
+                    process.exit(1);
+                }
+            );
     }
 }
 

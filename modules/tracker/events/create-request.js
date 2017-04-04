@@ -2,7 +2,6 @@
  * Create Request event
  * @module tracker/events/create-request
  */
-const debug = require('debug')('bhit:tracker');
 const moment = require('moment-timezone');
 const WError = require('verror').WError;
 
@@ -61,7 +60,7 @@ class CreateRequest {
         if (!client)
             return;
 
-        debug(`Got CREATE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('create-request', `Got CREATE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -81,7 +80,7 @@ class CreateRequest {
                         createResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
                 if (!this.tracker.validatePath(message.createRequest.path)) {
@@ -94,7 +93,7 @@ class CreateRequest {
                         createResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    debug(`Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -119,20 +118,20 @@ class CreateRequest {
                                 createResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            debug(`Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                             return this.tracker.send(id, data);
                         }
 
                         let serverConnections = [], clientConnections = [];
                         return Promise.resolve()
                             .then(() => {
-                                if (message.createRequest.type == this.tracker.CreateRequest.Type.NOT_CONNECTED)
+                                if (message.createRequest.type === this.tracker.CreateRequest.Type.NOT_CONNECTED)
                                     return;
 
                                 return this._daemonRepo.connect(
                                         daemon,
                                         connection,
-                                        message.createRequest.type == this.tracker.CreateRequest.Type.SERVER ?
+                                        message.createRequest.type === this.tracker.CreateRequest.Type.SERVER ?
                                             'server' :
                                             'client'
                                     )
@@ -146,7 +145,7 @@ class CreateRequest {
                                                 if (!user)
                                                     return;
 
-                                                if (message.createRequest.type == this.tracker.CreateRequest.Type.SERVER) {
+                                                if (message.createRequest.type === this.tracker.CreateRequest.Type.SERVER) {
                                                     serverConnections.push(this.tracker.ServerConnection.create({
                                                         name: user.email + message.createRequest.path,
                                                         connectAddress: connection.connectAddress,
@@ -183,7 +182,7 @@ class CreateRequest {
                                     createResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                debug(`Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
                                 this.tracker.send(id, data);
                             });
                     });

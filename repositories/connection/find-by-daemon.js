@@ -15,7 +15,7 @@ const WError = require('verror').WError;
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (daemon, pg) {
-    let key = `sql:daemon-connections-by-daemon-id:${typeof daemon == 'object' ? daemon.id : daemon}`;
+    let key = `sql:daemon-connections-by-daemon-id:${typeof daemon === 'object' ? daemon.id : daemon}`;
 
     return this._cacher.get(key)
         .then(value => {
@@ -24,7 +24,7 @@ module.exports = function (daemon, pg) {
 
             return Promise.resolve()
                 .then(() => {
-                    if (typeof pg == 'object')
+                    if (typeof pg === 'object')
                         return pg;
 
                     return this._postgres.connect(pg);
@@ -36,7 +36,7 @@ module.exports = function (daemon, pg) {
                             'INNER JOIN daemon_connections dc ' +
                             '        ON c.id = dc.connection_id ' +
                             '     WHERE dc.daemon_id = $1 ',
-                            [ typeof daemon == 'object' ? daemon.id : daemon ]
+                            [ typeof daemon === 'object' ? daemon.id : daemon ]
                         )
                         .then(result => {
                             let rows = result.rowCount ? result.rows : [];
@@ -50,12 +50,12 @@ module.exports = function (daemon, pg) {
                         })
                         .then(
                             value => {
-                                if (typeof pg != 'object')
+                                if (typeof pg !== 'object')
                                     client.done();
                                 return value;
                             },
                             error => {
-                                if (typeof pg != 'object')
+                                if (typeof pg !== 'object')
                                     client.done();
                                 throw error;
                             }
