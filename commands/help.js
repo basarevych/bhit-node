@@ -74,7 +74,7 @@ class Help {
                 '\tstart\t\tStart the tracker\n' +
                 '\tstop\t\tStop the tracker\n' +
                 '\trestart\t\tRestart the tracker\n' +
-                '\tstatus\t\tQuery running status of the tracker\n'
+                '\tstatus\t\tQuery running status of the tracker'
             )
             .then(() => {
                 process.exit(0);
@@ -87,7 +87,7 @@ class Help {
     helpHelp(argv) {
         return this._app.info(
                 'Usage:\tbhitctl help <command>\n\n' +
-                '\tPrint help for the given command\n'
+                '\tPrint help for the given command'
             )
             .then(() => {
                 process.exit(0);
@@ -102,7 +102,7 @@ class Help {
                 'Usage:\tbhitctl install <address>\n\n' +
                 '\tThis command will register the program in the system and will create\n' +
                 '\tconfiguration in /etc/bhit by default\n' +
-                '\t<address> is either hostname or IP address the tracker will listen on\n'
+                '\t<address> is either hostname or IP address the tracker will listen on'
             )
             .then(() => {
                 process.exit(0);
@@ -115,7 +115,7 @@ class Help {
     helpCreateDb(argv) {
         return this._app.info(
                 'Usage:\tbhitctl create-db\n\n' +
-                '\tDrop if present and recreate all the database tables\n'
+                '\tDrop if present and recreate all the database tables'
             )
             .then(() => {
                 process.exit(0);
@@ -128,7 +128,7 @@ class Help {
     helpClearCache(argv) {
         return this._app.info(
                 'Usage:\tbhitctl clear-cache\n\n' +
-                '\tDrop Redis cache\n'
+                '\tDrop Redis cache'
             )
             .then(() => {
                 process.exit(0);
@@ -141,7 +141,7 @@ class Help {
     helpStart(argv) {
         return this._app.info(
                 'Usage:\tbhitctl start\n\n' +
-                '\tThis command will start the tracker\n'
+                '\tThis command will start the tracker'
             )
             .then(() => {
                 process.exit(0);
@@ -154,7 +154,7 @@ class Help {
     helpStop(argv) {
         return this._app.info(
                 'Usage:\tbhitctl stop\n\n' +
-                '\tThis command will stop the tracker\n'
+                '\tThis command will stop the tracker'
             )
             .then(() => {
                 process.exit(0);
@@ -167,7 +167,7 @@ class Help {
     helpRestart(argv) {
         return this._app.info(
                 'Usage:\tbhitctl restart\n\n' +
-                '\tThis command will stop and start the tracker\n'
+                '\tThis command will stop and start the tracker'
             )
             .then(() => {
                 process.exit(0);
@@ -192,9 +192,6 @@ class Help {
      * @param {...*} args
      */
     error(...args) {
-        if (args.length)
-            args[args.length - 1] = args[args.length - 1] + '\n';
-
         return this._app.error(...args)
             .then(
                 () => {
