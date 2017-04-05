@@ -1,6 +1,6 @@
 /**
- * Invalidate cache subscriber
- * @module subscribers/invalidate-cache
+ * Invalidating cache service
+ * @module services/invalidate-cache
  */
 
 class InvalidateCache {
@@ -17,11 +17,11 @@ class InvalidateCache {
     }
 
     /**
-     * Service name is 'subscribers.invalidateCache'
+     * Service name is 'invalidateCache'
      * @type {string}
      */
     static get provides() {
-        return 'subscribers.invalidateCache';
+        return 'invalidateCache';
     }
 
     /**

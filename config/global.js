@@ -99,7 +99,7 @@ module.exports = {
             level: 'error',
             to: 'debug@example.com',
         },
-        crush: {
+        crash: {
             enable: false,                 // email program crash or not
             to: 'debug@example.com',
         },

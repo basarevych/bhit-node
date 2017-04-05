@@ -19,13 +19,14 @@ const SocketWrapper = require('socket-wrapper');
 class Tracker extends EventEmitter {
     /**
      * Create the service
-     * @param {App} app                     Application
-     * @param {object} config               Configuration
-     * @param {Logger} logger               Logger service
-     * @param {Filer} filer                 Filer service
-     * @param {Util} util                   Util service
+     * @param {App} app                             Application
+     * @param {object} config                       Configuration
+     * @param {Logger} logger                       Logger service
+     * @param {Filer} filer                         Filer service
+     * @param {Util} util                           Util service
+     * @param {InvalidateCache} invalidateCache     InvalidateCache service
      */
-    constructor(app, config, logger, filer, util) {
+    constructor(app, config, logger, filer, util, invalidateCache) {
         super();
 
         this.clients = new Map();
@@ -40,6 +41,7 @@ class Tracker extends EventEmitter {
         this._logger = logger;
         this._filer = filer;
         this._util = util;
+        this._invalidateCache = invalidateCache;
         this._timeouts = new Map();
     }
 
@@ -56,7 +58,7 @@ class Tracker extends EventEmitter {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'filer', 'util' ];
+        return [ 'app', 'config', 'logger', 'filer', 'util', 'invalidateCache' ];
     }
 
     /**
@@ -239,6 +241,9 @@ class Tracker extends EventEmitter {
                 },
                 Promise.resolve()
             )
+            .then(() => {
+                return this._invalidateCache.register();
+            })
             .then(() => {
                 this._logger.debug('tracker', 'Starting the server');
                 let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
