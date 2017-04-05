@@ -91,61 +91,73 @@ class Tracker extends EventEmitter {
     init(name) {
         this._name = name;
 
-        return new Promise((resolve, reject) => {
-                this._logger.debug('tracker', 'Loading protocol');
-                protobuf.load(path.join(this._config.base_path, 'proto', 'tracker.proto'), (error, root) => {
-                    if (error)
-                        return reject(new WError(error, 'Tracker.init()'));
+        return this._filer.lockRead(path.join(this._config.base_path, 'package.json'))
+            .then(packageInfo => {
+                let json;
+                try {
+                    json = JSON.parse(packageInfo);
+                } catch (error) {
+                    json = { name: 'program' };
+                }
+                this._logger.info(`Starting ${json.name}` + (json.version ? ' v' + json.version : ''));
+            })
+            .then(() => {
+                return new Promise((resolve, reject) => {
+                    this._logger.debug('tracker', 'Loading protocol');
+                    protobuf.load(path.join(this._config.base_path, 'proto', 'tracker.proto'), (error, root) => {
+                        if (error)
+                            return reject(new WError(error, 'Tracker.init()'));
 
-                    try {
-                        this.proto = root;
-                        this.InitRequest = this.proto.lookup('tracker.InitRequest');
-                        this.InitResponse = this.proto.lookup('tracker.InitResponse');
-                        this.ConfirmRequest = this.proto.lookup('tracker.ConfirmRequest');
-                        this.ConfirmResponse = this.proto.lookup('tracker.ConfirmResponse');
-                        this.CreateDaemonRequest = this.proto.lookup('tracker.CreateDaemonRequest');
-                        this.CreateDaemonResponse = this.proto.lookup('tracker.CreateDaemonResponse');
-                        this.RegisterDaemonRequest = this.proto.lookup('tracker.RegisterDaemonRequest');
-                        this.RegisterDaemonResponse = this.proto.lookup('tracker.RegisterDaemonResponse');
-                        this.CreateRequest = this.proto.lookup('tracker.CreateRequest');
-                        this.CreateResponse = this.proto.lookup('tracker.CreateResponse');
-                        this.DeleteRequest = this.proto.lookup('tracker.DeleteRequest');
-                        this.DeleteResponse = this.proto.lookup('tracker.DeleteResponse');
-                        this.ImportRequest = this.proto.lookup('tracker.ImportRequest');
-                        this.ImportResponse = this.proto.lookup('tracker.ImportResponse');
-                        this.AttachRequest = this.proto.lookup('tracker.AttachRequest');
-                        this.AttachResponse = this.proto.lookup('tracker.AttachResponse');
-                        this.DetachRequest = this.proto.lookup('tracker.DetachRequest');
-                        this.DetachResponse = this.proto.lookup('tracker.DetachResponse');
-                        this.Tree = this.proto.lookup('tracker.Tree');
-                        this.TreeRequest = this.proto.lookup('tracker.TreeRequest');
-                        this.TreeResponse = this.proto.lookup('tracker.TreeResponse');
-                        this.ServerConnection = this.proto.lookup('tracker.ServerConnection');
-                        this.ClientConnection = this.proto.lookup('tracker.ClientConnection');
-                        this.ConnectionsList = this.proto.lookup('tracker.ConnectionsList');
-                        this.ConnectionsListRequest = this.proto.lookup('tracker.ConnectionsListRequest');
-                        this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
-                        this.Status = this.proto.lookup('tracker.Status');
-                        this.ServerAvailable = this.proto.lookup('tracker.ServerAvailable');
-                        this.LookupIdentityRequest = this.proto.lookup('tracker.LookupIdentityRequest');
-                        this.LookupIdentityResponse = this.proto.lookup('tracker.LookupIdentityResponse');
-                        this.PunchRequest = this.proto.lookup('tracker.PunchRequest');
-                        this.AddressRequest = this.proto.lookup('tracker.AddressRequest');
-                        this.AddressResponse = this.proto.lookup('tracker.AddressResponse');
-                        this.PeerAvailable = this.proto.lookup('tracker.PeerAvailable');
-                        this.RedeemMasterRequest = this.proto.lookup('tracker.RedeemMasterRequest');
-                        this.RedeemMasterResponse = this.proto.lookup('tracker.RedeemMasterResponse');
-                        this.RedeemDaemonRequest = this.proto.lookup('tracker.RedeemDaemonRequest');
-                        this.RedeemDaemonResponse = this.proto.lookup('tracker.RedeemDaemonResponse');
-                        this.RedeemPathRequest = this.proto.lookup('tracker.RedeemPathRequest');
-                        this.RedeemPathResponse = this.proto.lookup('tracker.RedeemPathResponse');
-                        this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
-                        this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
-                        resolve();
-                    } catch (error) {
-                        reject(new WError(error, 'Tracker.init()'));
-                    }
-                })
+                        try {
+                            this.proto = root;
+                            this.InitRequest = this.proto.lookup('tracker.InitRequest');
+                            this.InitResponse = this.proto.lookup('tracker.InitResponse');
+                            this.ConfirmRequest = this.proto.lookup('tracker.ConfirmRequest');
+                            this.ConfirmResponse = this.proto.lookup('tracker.ConfirmResponse');
+                            this.CreateDaemonRequest = this.proto.lookup('tracker.CreateDaemonRequest');
+                            this.CreateDaemonResponse = this.proto.lookup('tracker.CreateDaemonResponse');
+                            this.RegisterDaemonRequest = this.proto.lookup('tracker.RegisterDaemonRequest');
+                            this.RegisterDaemonResponse = this.proto.lookup('tracker.RegisterDaemonResponse');
+                            this.CreateRequest = this.proto.lookup('tracker.CreateRequest');
+                            this.CreateResponse = this.proto.lookup('tracker.CreateResponse');
+                            this.DeleteRequest = this.proto.lookup('tracker.DeleteRequest');
+                            this.DeleteResponse = this.proto.lookup('tracker.DeleteResponse');
+                            this.ImportRequest = this.proto.lookup('tracker.ImportRequest');
+                            this.ImportResponse = this.proto.lookup('tracker.ImportResponse');
+                            this.AttachRequest = this.proto.lookup('tracker.AttachRequest');
+                            this.AttachResponse = this.proto.lookup('tracker.AttachResponse');
+                            this.DetachRequest = this.proto.lookup('tracker.DetachRequest');
+                            this.DetachResponse = this.proto.lookup('tracker.DetachResponse');
+                            this.Tree = this.proto.lookup('tracker.Tree');
+                            this.TreeRequest = this.proto.lookup('tracker.TreeRequest');
+                            this.TreeResponse = this.proto.lookup('tracker.TreeResponse');
+                            this.ServerConnection = this.proto.lookup('tracker.ServerConnection');
+                            this.ClientConnection = this.proto.lookup('tracker.ClientConnection');
+                            this.ConnectionsList = this.proto.lookup('tracker.ConnectionsList');
+                            this.ConnectionsListRequest = this.proto.lookup('tracker.ConnectionsListRequest');
+                            this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
+                            this.Status = this.proto.lookup('tracker.Status');
+                            this.ServerAvailable = this.proto.lookup('tracker.ServerAvailable');
+                            this.LookupIdentityRequest = this.proto.lookup('tracker.LookupIdentityRequest');
+                            this.LookupIdentityResponse = this.proto.lookup('tracker.LookupIdentityResponse');
+                            this.PunchRequest = this.proto.lookup('tracker.PunchRequest');
+                            this.AddressRequest = this.proto.lookup('tracker.AddressRequest');
+                            this.AddressResponse = this.proto.lookup('tracker.AddressResponse');
+                            this.PeerAvailable = this.proto.lookup('tracker.PeerAvailable');
+                            this.RedeemMasterRequest = this.proto.lookup('tracker.RedeemMasterRequest');
+                            this.RedeemMasterResponse = this.proto.lookup('tracker.RedeemMasterResponse');
+                            this.RedeemDaemonRequest = this.proto.lookup('tracker.RedeemDaemonRequest');
+                            this.RedeemDaemonResponse = this.proto.lookup('tracker.RedeemDaemonResponse');
+                            this.RedeemPathRequest = this.proto.lookup('tracker.RedeemPathRequest');
+                            this.RedeemPathResponse = this.proto.lookup('tracker.RedeemPathResponse');
+                            this.ClientMessage = this.proto.lookup('tracker.ClientMessage');
+                            this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
+                            resolve();
+                        } catch (error) {
+                            reject(new WError(error, 'Tracker.init()'));
+                        }
+                    })
+                });
             })
             .then(() => {
                 let configPath = (os.platform() === 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');

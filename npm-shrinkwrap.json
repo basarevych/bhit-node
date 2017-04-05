@@ -1,6 +1,6 @@
 {
   "name": "bhit",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "dependencies": {
     "@protobufjs/aspromise": {
       "version": "1.1.1",
@@ -75,7 +75,7 @@
       "resolved": "https://registry.npmjs.org/argv/-/argv-0.0.2.tgz"
     },
     "arpen": {
-      "version": "0.0.15",
+      "version": "0.0.18",
       "dependencies": {
         "abbrev": {
           "version": "1.1.0",
