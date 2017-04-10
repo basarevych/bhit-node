@@ -54,6 +54,14 @@ class ConnectionsList {
     }
 
     /**
+     * This service is a singleton
+     * @type {string}
+     */
+    static get lifecycle() {
+        return 'singleton';
+    }
+
+    /**
      * Event handler
      * @param {string} daemonId             ID of the daemon
      * @return {Promise}

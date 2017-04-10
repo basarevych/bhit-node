@@ -11,6 +11,7 @@ class InvalidateCache {
      * @param {Logger} logger                   Logger service
      */
     constructor(pubsub, cacher, logger) {
+        this._started = false;
         this._pubsub = pubsub;
         this._cacher = cacher;
         this._logger = logger;
@@ -33,10 +34,22 @@ class InvalidateCache {
     }
 
     /**
+     * This service is a singleton
+     * @type {string}
+     */
+    static get lifecycle() {
+        return 'singleton';
+    }
+
+    /**
      * Initialize the subscriber
      * @return {Promise}
      */
     register() {
+        if (this._started)
+            return Promise.resolve();
+
+        this._started = true;
         return this._pubsub.connect('InvalidateCache', 'postgres.main')
             .then(client => {
                 return client.subscribe("invalidate_cache", this.onMessage.bind(this));
