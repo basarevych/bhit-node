@@ -21,11 +21,10 @@ module.exports = {
     instance: (userConfig.tracker && userConfig.tracker.instance) || 'tracker',
 
     // Environment
-    env: process.env.NODE_ENV || 'production',
+    env: process.env.NODE_ENV || (process.env.DEBUG ? 'development' : 'production'),
 
     // Load base classes and services, path names
     autoload: [
-        '!src/servers',
         '!src/services',
         'commands',
         'servers',
