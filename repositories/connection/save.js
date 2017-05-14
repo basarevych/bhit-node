@@ -25,7 +25,7 @@ module.exports = function (connection, pg) {
         .then(client => {
             return Promise.resolve()
                 .then(() => {
-                    let data = this._postgres.constructor.serializeModel(connection);
+                    let data = connection._serialize();
                     let fields = Object.keys(data)
                         .filter(field => {
                             return [ 'id', 'acting_as', 'address_override', 'port_override' ].indexOf(field) === -1;

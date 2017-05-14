@@ -61,6 +61,9 @@ class CreateDb {
                     if (answer.toLowerCase() !== 'yes' && answer.toLowerCase() !== 'y')
                         process.exit(0);
 
+                    let expect = new Map();
+                    expect.set(/assword.*:/, this._config.get('postgres.main.password'));
+
                     let proc = this._runner.spawn(
                         'psql',
                         [
@@ -72,9 +75,7 @@ class CreateDb {
                             '-f', path.join(__dirname, '..', 'database', 'schema.sql'),
                         ],
                         {},
-                        {
-                            'assword.*:': this._config.get('postgres.main.password'),
-                        }
+                        expect
                     );
                     proc.cmd.on('data', data => {
                         process.stdout.write(data);

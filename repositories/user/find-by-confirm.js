@@ -48,8 +48,8 @@ module.exports = function (token, pg) {
         .then(rows => {
             let models = [];
             for (let row of rows) {
-                let model = this.create();
-                this._postgres.constructor.unserializeModel(model, row);
+                let model = this.getModel('user');
+                model._unserialize(row);
                 models.push(model);
             }
 

@@ -3,12 +3,12 @@
  * @module repositories/connection
  */
 const path = require('path');
-const Repository = require('./base');
+const BaseRepository = require('./base');
 
 /**
  * Connection repository class
  */
-class ConnectionRepository extends Repository {
+class ConnectionRepository extends BaseRepository {
     /**
      * Create repository
      * @param {App} app                             The application
@@ -16,10 +16,9 @@ class ConnectionRepository extends Repository {
      * @param {Postgres} postgres                   Postgres service
      * @param {Cacher} cacher                       Cacher service
      * @param {Util} util                           Util service
-     * @param {ConnectionModel} model                     Connection model
      */
-    constructor(app, config, postgres, cacher, util, model) {
-        super(app, postgres, util, model);
+    constructor(app, config, postgres, cacher, util) {
+        super(app, postgres, util);
         this._config = config;
         this._cacher = cacher;
 
@@ -39,7 +38,7 @@ class ConnectionRepository extends Repository {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'postgres', 'cacher', 'util', 'models.connection' ];
+        return [ 'app', 'config', 'postgres', 'cacher', 'util' ];
     }
 
     /**

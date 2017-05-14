@@ -3,12 +3,12 @@
  * @module repositories/daemon
  */
 const path = require('path');
-const Repository = require('./base');
+const BaseRepository = require('./base');
 
 /**
  * Daemon repository class
  */
-class DaemonRepository extends Repository {
+class DaemonRepository extends BaseRepository {
     /**
      * Create repository
      * @param {App} app                             The application
@@ -16,10 +16,9 @@ class DaemonRepository extends Repository {
      * @param {Postgres} postgres                   Postgres service
      * @param {Cacher} cacher                       Cacher service
      * @param {Util} util                           Util service
-     * @param {DaemonModel} model                   Daemon model
      */
-    constructor(app, config, postgres, cacher, util, model) {
-        super(app, postgres, util, model);
+    constructor(app, config, postgres, cacher, util) {
+        super(app, postgres, util);
         this._config = config;
         this._cacher = cacher;
 
@@ -39,7 +38,7 @@ class DaemonRepository extends Repository {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'postgres', 'cacher', 'util', 'models.daemon' ];
+        return [ 'app', 'config', 'postgres', 'cacher', 'util' ];
     }
 }
 

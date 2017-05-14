@@ -2,17 +2,20 @@
  * Daemon model
  * @module models/daemon
  */
-const Model = require('./base');
+const moment = require('moment-timezone');
+const BaseModel = require('./base');
 
 /**
  * Daemon model class
  */
-class DaemonModel extends Model {
+class DaemonModel extends BaseModel {
     /**
      * Create model
+     * @param {Postgres} postgres       Postgres service
+     * @param {Util} util               Util service
      */
-    constructor() {
-        super();
+    constructor(postgres, util) {
+        super(postgres, util);
 
         this.id = undefined;
         this.userId = undefined;
@@ -32,11 +35,19 @@ class DaemonModel extends Model {
     }
 
     /**
+     * Dependencies as constructor arguments
+     * @type {string[]}
+     */
+    static get requires() {
+        return [ 'postgres', 'util' ];
+    }
+
+    /**
      * ID setter
      * @type {undefined|number}
      */
     set id(id) {
-        this._setField('id', id);
+        return this._setField('id', id);
     }
 
     /**
@@ -52,7 +63,7 @@ class DaemonModel extends Model {
      * @type {undefined|number}
      */
     set userId(id) {
-        this._setField('user_id', id);
+        return this._setField('user_id', id);
     }
 
     /**
@@ -68,7 +79,7 @@ class DaemonModel extends Model {
      * @type {undefined|string|null}
      */
     set name(name) {
-        this._setField('name', name);
+        return this._setField('name', name);
     }
 
     /**
@@ -84,7 +95,7 @@ class DaemonModel extends Model {
      * @type {undefined|string}
      */
     set actingAs(type) {
-        this._setField('acting_as', type);
+        return this._setField('acting_as', type);
     }
 
     /**
@@ -100,7 +111,7 @@ class DaemonModel extends Model {
      * @type {undefined|string}
      */
     set token(token) {
-        this._setField('token', token);
+        return this._setField('token', token);
     }
 
     /**
@@ -116,7 +127,7 @@ class DaemonModel extends Model {
      * @type {undefined|object}
      */
     set createdAt(createdAt) {
-        this._setField('created_at', createdAt);
+        return this._setField('created_at', createdAt && moment(createdAt));
     }
 
     /**
@@ -132,7 +143,7 @@ class DaemonModel extends Model {
      * @type {undefined|object|null}
      */
     set blockedAt(blockedAt) {
-        this._setField('blocked_at', blockedAt);
+        return this._setField('blocked_at', blockedAt && moment(blockedAt));
     }
 
     /**

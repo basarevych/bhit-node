@@ -23,7 +23,7 @@ module.exports = function (path, pg) {
             return this._postgres.connect(pg);
         })
         .then(client => {
-            let connectionRepo = this.getRepository('repositories.connection');
+            let connectionRepo = this.getRepository('connection');
             return client.transaction({ name: 'path_delete' }, rollback => {
                     return connectionRepo.findByPath(path, client)
                         .then(paths => {

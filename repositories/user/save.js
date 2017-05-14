@@ -25,7 +25,7 @@ module.exports = function (user, pg) {
         .then(client => {
             return Promise.resolve()
                 .then(() => {
-                    let data = this._postgres.constructor.serializeModel(user);
+                    let data = user._serialize();
                     let fields = Object.keys(data)
                         .filter(field => {
                             return field !== 'id';

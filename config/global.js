@@ -120,6 +120,7 @@ module.exports = {
             path: '/var/log/bhit',
             interval: '1d',
             mode: 0o640,
+            maxFiles: 3,
         },
     },
 

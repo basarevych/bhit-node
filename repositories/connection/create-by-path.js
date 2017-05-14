@@ -24,7 +24,7 @@ module.exports = function (path, connection, pg) {
             return this._postgres.connect(pg);
         })
         .then(client => {
-            let pathRepo = this.getRepository('repositories.path');
+            let pathRepo = this.getRepository('path');
             let createPath = path => {
                 return pathRepo.findByUserAndPath(connection.userId, path, client)
                     .then(paths => {

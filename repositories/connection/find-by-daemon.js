@@ -65,8 +65,8 @@ module.exports = function (daemon, pg) {
         .then(rows => {
             let models = [];
             for (let row of rows) {
-                let model = this.create();
-                this._postgres.constructor.unserializeModel(model, row);
+                let model = this.getModel('connection');
+                model._unserialize(row);
                 models.push(model);
             }
 

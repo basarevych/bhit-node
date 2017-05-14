@@ -9,19 +9,33 @@ const WError = require('verror').WError;
 /**
  * Repository base class
  */
-class Repository {
+class BaseRepository {
     /**
      * Create repository
      * @param {App} app                             The application
      * @param {Postgres} postgres                   Postgres service
      * @param {Util} util                           Util service
-     * @param {Model} model                         Model instance
      */
-    constructor(app, postgres, util, model) {
+    constructor(app, postgres, util) {
         this._app = app;
         this._postgres = postgres;
         this._util = util;
-        this._model = model;
+    }
+
+    /**
+     * Service name is 'repositories.base'
+     * @type {string}
+     */
+    static get provides() {
+        return 'repositories.base';
+    }
+
+    /**
+     * Dependencies as constructor arguments
+     * @type {string[]}
+     */
+    static get requires() {
+        return [ 'app', 'postgres', 'util' ];
     }
 
     /**
@@ -30,16 +44,16 @@ class Repository {
      * @return {object}
      */
     getRepository(name) {
-        return this._app.get(name);
+        return this._app.get(`repositories.${name}`);
     }
 
     /**
-     * Create new instance of the model
+     * Get model
+     * @param {string} name                         Model service name
      * @return {Object}
      */
-    create() {
-        let className = this._model.constructor;
-        return new className();
+    getModel(name) {
+        return this._app.get(`models.${name}`);
     }
 
     /**
@@ -48,7 +62,7 @@ class Repository {
      * @param {string[]} fields                     Fields to retrieve
      * @param {object} [options]
      * @param {string[]} [options.where]            SQL WHERE clause: will be joined with 'AND'
-     * @param {Array} [options.params]              Bound parameters (referenced as $1, $2, ... in SQL)
+     * @param {Array} [options.params]              Bound parameters of WHERE (referenced as $1, $2, ... in SQL)
      * @param {string} [options.sortKey=null]       Used in ORDER BY if provided
      * @param {string} [options.sortOrder='asc']    Used in ORDER BY if provided with sort_key
      * @param {number} [options.pageSize=0]         Used in LIMIT, 0 = all records
@@ -68,19 +82,16 @@ class Repository {
      * }
      * </code>
      */
-    search(
-        table,
-        fields,
-        {
+    search(table, fields, options = {}, pg = undefined) {
+        let {
             where = [],
             params = [],
             sortKey = null,
             sortOrder = 'asc',
             pageSize = 0,
             pageNumber = 1
-        } = {},
-        pg = undefined
-    ) {
+        } = options;
+
         return Promise.resolve()
             .then(() => {
                 if (typeof pg === 'object')
@@ -165,4 +176,4 @@ class Repository {
     }
 }
 
-module.exports = Repository;
+module.exports = BaseRepository;

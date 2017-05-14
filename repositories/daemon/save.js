@@ -25,7 +25,7 @@ module.exports = function (daemon, pg) {
         .then(client => {
             return Promise.resolve()
                 .then(() => {
-                    let data = this._postgres.constructor.serializeModel(daemon);
+                    let data = daemon._serialize();
                     let fields = Object.keys(data)
                         .filter(field => {
                             return field !== 'id' && field !== 'acting_as';

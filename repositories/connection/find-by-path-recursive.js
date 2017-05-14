@@ -23,7 +23,7 @@ module.exports = function (path, pg) {
             return this._postgres.connect(pg);
         })
         .then(client => {
-            let pathRepo = this.getRepository('repositories.path');
+            let pathRepo = this.getRepository('path');
             let load = path => {
                 let found = [];
                 return client.query(
@@ -73,8 +73,8 @@ module.exports = function (path, pg) {
         .then(rows => {
             let models = [];
             for (let row of rows) {
-                let model = this.create();
-                this._postgres.constructor.unserializeModel(model, row);
+                let model = this.getModel('connection');
+                model._unserialize(row);
                 models.push(model);
             }
 

@@ -2,17 +2,19 @@
  * Connection model
  * @module models/connection
  */
-const Model = require('./base');
+const BaseModel = require('./base');
 
 /**
  * Connection model class
  */
-class ConnectionModel extends Model {
+class ConnectionModel extends BaseModel {
     /**
      * Create model
+     * @param {Postgres} postgres       Postgres service
+     * @param {Util} util               Util service
      */
-    constructor() {
-        super();
+    constructor(postgres, util) {
+        super(postgres, util);
 
         this.id = undefined;
         this.userId = undefined;
@@ -38,11 +40,19 @@ class ConnectionModel extends Model {
     }
 
     /**
+     * Dependencies as constructor arguments
+     * @type {string[]}
+     */
+    static get requires() {
+        return [ 'postgres', 'util' ];
+    }
+
+    /**
      * ID setter
      * @type {undefined|number}
      */
     set id(id) {
-        this._setField('id', id);
+        return this._setField('id', id);
     }
 
     /**
@@ -58,7 +68,7 @@ class ConnectionModel extends Model {
      * @type {undefined|number}
      */
     set userId(id) {
-        this._setField('user_id', id);
+        return this._setField('user_id', id);
     }
 
     /**
@@ -74,7 +84,7 @@ class ConnectionModel extends Model {
      * @type {undefined|number}
      */
     set pathId(id) {
-        this._setField('path_id', id);
+        return this._setField('path_id', id);
     }
 
     /**
@@ -90,7 +100,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string}
      */
     set token(token) {
-        this._setField('token', token);
+        return this._setField('token', token);
     }
 
     /**
@@ -106,7 +116,7 @@ class ConnectionModel extends Model {
      * @type {undefined|boolean}
      */
     set encrypted(encrypted) {
-        this._setField('encrypted', encrypted);
+        return this._setField('encrypted', encrypted);
     }
 
     /**
@@ -122,7 +132,7 @@ class ConnectionModel extends Model {
      * @type {undefined|boolean}
      */
     set fixed(fixed) {
-        this._setField('fixed', fixed);
+        return this._setField('fixed', fixed);
     }
 
     /**
@@ -138,7 +148,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string|null}
      */
     set connectAddress(address) {
-        this._setField('connect_address', address);
+        return this._setField('connect_address', address);
     }
 
     /**
@@ -154,7 +164,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string}
      */
     set connectPort(port) {
-        this._setField('connect_port', port);
+        return this._setField('connect_port', port);
     }
 
     /**
@@ -170,7 +180,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string|null}
      */
     set listenAddress(address) {
-        this._setField('listen_address', address);
+        return this._setField('listen_address', address);
     }
 
     /**
@@ -186,7 +196,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string|null}
      */
     set listenPort(port) {
-        this._setField('listen_port', port);
+        return this._setField('listen_port', port);
     }
 
     /**
@@ -202,7 +212,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string}
      */
     set actingAs(type) {
-        this._setField('acting_as', type);
+        return this._setField('acting_as', type);
     }
 
     /**
@@ -218,7 +228,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string|null}
      */
     set addressOverride(address) {
-        this._setField('address_override', address);
+        return this._setField('address_override', address);
     }
 
     /**
@@ -234,7 +244,7 @@ class ConnectionModel extends Model {
      * @type {undefined|string|null}
      */
     set portOverride(port) {
-        this._setField('port_override', port);
+        return this._setField('port_override', port);
     }
 
     /**
