@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "argv": "~0.0.2",
-    "arpen": "~0.0.22",
+    "arpen": "~0.0.23",
     "daemon": "~1.1.0",
     "express": "~4.15.2",
     "fs-ext": "~0.6.0",
