@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find paths by parent
@@ -57,6 +57,6 @@ module.exports = function (path, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.findByParent()');
+            throw new NError(error, { path }, 'PathRepository.findByParent()');
         });
 };

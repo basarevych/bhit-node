@@ -2,8 +2,7 @@
  * Address Response event
  * @module tracker/events/address-response
  */
-const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Address Response event class
@@ -14,11 +13,13 @@ class AddressResponse {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      */
-    constructor(app, config, logger) {
+    constructor(app, config, logger, registry) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
     }
 
     /**
@@ -34,37 +35,22 @@ class AddressResponse {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger' ];
+        return [ 'app', 'config', 'logger', 'registry' ];
     }
 
     /**
      * Event handler
-     * @param {object} info         Info as in dgram
+     * @param {object} info         rinfo as in dgram
      * @param {object} message      The message
      */
     handle(info, message) {
-        let pair = this.tracker.pairs.get(message.addressResponse.requestId);
+        this._logger.debug('address-response', `Got ADDRESS RESPONSE from ${info.address}:${info.port}`);
+
+        let pair = this._registry.updatePair(message.addressResponse.requestId, info.address, info.port.toString());
         if (!pair)
             return;
 
-        this._logger.debug('address-response', `Got ADDRESS RESPONSE from ${info.address}:${info.port}`);
-        if (pair.clientRequestId === message.addressResponse.requestId) {
-            pair.clientAddress = info.address;
-            pair.clientPort = info.port.toString();
-        } else if (pair.serverRequestId === message.addressResponse.requestId) {
-            pair.serverAddress = info.address;
-            pair.serverPort = info.port.toString();
-        }
-
-        if (!pair.clientPort || !pair.serverPort)
-            return;
-
-        this.tracker.pairs.delete(pair.clientRequestId);
-        this.tracker.pairs.delete(pair.serverRequestId);
-
-        let server = this.tracker.clients.get(pair.serverId);
-        let client = this.tracker.clients.get(pair.clientId);
-        if (!server || !client)
+        if (!this._registry.clients.has(pair.serverId) || !this._registry.clients.has(pair.clientId))
             return;
 
         try {
@@ -78,7 +64,7 @@ class AddressResponse {
                 peerAvailable: peer,
             });
             let data = this.tracker.ServerMessage.encode(msg).finish();
-            this._logger.debug('address-response', `Sending PEER AVAILABLE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+            this._logger.debug('address-response', `Sending PEER AVAILABLE to ${pair.clientId}`);
             this.tracker.send(pair.clientId, data);
 
             peer = this.tracker.PeerAvailable.create({
@@ -91,10 +77,10 @@ class AddressResponse {
                 peerAvailable: peer,
             });
             data = this.tracker.ServerMessage.encode(msg).finish();
-            this._logger.debug('address-response', `Sending PEER AVAILABLE to ${server.socket.remoteAddress}:${server.socket.remotePort}`);
+            this._logger.debug('address-response', `Sending PEER AVAILABLE to ${pair.serverId}`);
             return this.tracker.send(pair.serverId, data);
         } catch (error) {
-            this._logger.error(new WError(error, 'AddressResponse.handle()'));
+            this._logger.error(new NError(error, 'AddressResponse.handle()'));
         }
     }
 

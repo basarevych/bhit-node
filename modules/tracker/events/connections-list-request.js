@@ -3,7 +3,7 @@
  * @module tracker/events/connections-list-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Connections List Request event class
@@ -14,15 +14,15 @@ class ConnectionsListRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {DaemonRepository} daemonRepo             Daemon repository
-     * @param {ConnectionsList} connectionsList         ConnectionsList service
      */
-    constructor(app, config, logger, daemonRepo, connectionsList) {
+    constructor(app, config, logger, registry, daemonRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._daemonRepo = daemonRepo;
-        this._connectionsList = connectionsList;
     }
 
     /**
@@ -38,7 +38,7 @@ class ConnectionsListRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.daemon', 'connectionsList' ];
+        return [ 'app', 'config', 'logger', 'registry', 'repositories.daemon' ];
     }
 
     /**
@@ -47,11 +47,11 @@ class ConnectionsListRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('connections-list-request', `Got CONNECTIONS LIST REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('connections-list-request', `Got CONNECTIONS LIST REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -71,11 +71,11 @@ class ConnectionsListRequest {
                         connectionsListResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('connections-list-request', `Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('connections-list-request', `Sending REJECTED CONNECTIONS LIST RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
-                return this._connectionsList.getList(daemon.id)
+                return this._daemonRepo.getConnectionsList(daemon)
                     .then(list => {
                         if (!list) {
                             let response = this.tracker.ConnectionsListResponse.create({
@@ -87,13 +87,22 @@ class ConnectionsListRequest {
                                 connectionsListResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('connections-list-request', `Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('connections-list-request', `Sending REJECTED CONNECTIONS LIST RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
+                        let prepared = this.tracker.ConnectionsList.create({
+                            serverConnections: [],
+                            clientConnections: [],
+                        });
+                        for (let item of list.serverConnections)
+                            prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
+                        for (let item of list.clientConnections)
+                            prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+
                         let response = this.tracker.ConnectionsListResponse.create({
                             response: this.tracker.ConnectionsListResponse.Result.ACCEPTED,
-                            list: list,
+                            list: prepared,
                         });
                         let reply = this.tracker.ServerMessage.create({
                             type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST_RESPONSE,
@@ -101,12 +110,12 @@ class ConnectionsListRequest {
                             connectionsListResponse: response,
                         });
                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                        this._logger.debug('connections-list-request', `Sending CONNECTIONS LIST RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this._logger.debug('connections-list-request', `Sending ACCEPTED CONNECTIONS LIST RESPONSE to ${id}`);
                         this.tracker.send(id, data);
                     })
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'ConnectionsListRequest.handle()'));
+                this._logger.error(new NError(error, 'ConnectionsListRequest.handle()'));
             });
     }
 

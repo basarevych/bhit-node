@@ -3,7 +3,7 @@
  * @module tracker/events/delete-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Delete Request event class
@@ -14,19 +14,19 @@ class DeleteRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
-     * @param {ConnectionsList} connectionsList         ConnectionsList service
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionsList) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
-        this._connectionsList = connectionsList;
     }
 
     /**
@@ -46,10 +46,10 @@ class DeleteRequest {
             'app',
             'config',
             'logger',
+            'registry',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
-            'connectionsList'
         ];
     }
 
@@ -59,11 +59,11 @@ class DeleteRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('delete-request', `Got DELETE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('delete-request', `Got DELETE REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -83,10 +83,12 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('delete-request', `Sending REJECTED DELETE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
-                if (!this.tracker.validatePath(message.deleteRequest.path)) {
+
+                let path = this._registry.validatePath(message.deleteRequest.path);
+                if (!path || path.email) {
                     let response = this.tracker.DeleteResponse.create({
                         response: this.tracker.DeleteResponse.Result.INVALID_PATH,
                     });
@@ -96,12 +98,13 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('delete-request', `Sending INVALID_PATH DELETE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
+                path = path.path;
 
                 return Promise.all([
-                        this._pathRepo.findByUserAndPath(daemon.userId, message.deleteRequest.path),
+                        this._pathRepo.findByUserAndPath(daemon.userId, path),
                         this._userRepo.find(daemon.userId),
                     ])
                     .then(([ paths, users ]) => {
@@ -117,41 +120,18 @@ class DeleteRequest {
                                 deleteResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('delete-request', `Sending PATH_NOT_FOUND DELETE RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
                         return this._pathRepo.findByUserAndPathRecursive(user, path.path)
                             .then(paths => {
-                                let updateClients = [];
-                                for (let [ thisClientId, thisClient ] of this.tracker.clients) {
-                                    if (thisClient.status) {
-                                        for (let path of paths) {
-                                            let name = user.email + path.path;
-                                            if (thisClient.status.has(name)) {
-                                                if (updateClients.indexOf(thisClientId) === -1)
-                                                    updateClients.push(thisClientId);
-                                                thisClient.status.delete(name);
-                                            }
-                                        }
-                                    }
-                                }
+                                let updatedClients = [];
                                 for (let path of paths) {
-                                    let name = user.email + path.path;
-                                    let waiting = this.tracker.waiting.get(name);
-                                    if (waiting) {
-                                        if (waiting.server) {
-                                            let thisServer = this.tracker.clients.get(waiting.server);
-                                            if (!thisServer || !thisServer.status || !thisServer.status.has(name)) {
-                                                waiting.server = null;
-                                                waiting.internalAddresses = [];
-                                            }
-                                        }
-                                        for (let thisClientId of waiting.clients) {
-                                            let thisClient = this.tracker.clients.get(thisClientId);
-                                            if (!thisClient || !thisClient.status || !thisClient.status.has(name))
-                                                waiting.clients.delete(thisClientId);
-                                        }
+                                    let clients = this._registry.removeConnection(user.email + path.path);
+                                    for (let clientId of clients) {
+                                        if (updatedClients.indexOf(clientId) === -1)
+                                            updatedClients.push(clientId);
                                     }
                                 }
 
@@ -166,28 +146,37 @@ class DeleteRequest {
                                             deleteResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        this._logger.debug('delete-request', `Sending DELETE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        this._logger.debug('delete-request', `Sending ACCEPTED DELETE RESPONSE to ${id}`);
                                         this.tracker.send(id, data);
 
                                         let promises = [];
-                                        for (let thisId of updateClients) {
-                                            let client = this.tracker.clients.get(thisId);
+                                        for (let clientId of updatedClients) {
+                                            let client = this._registry.clients.get(clientId);
                                             if (!client || !client.daemonId)
                                                 continue;
 
                                             promises.push(
-                                                this._connectionsList.getList(client.daemonId)
+                                                this._daemonRepo.getConnectionsList(client.daemonId)
                                                     .then(list => {
                                                         if (!list)
                                                             return;
 
+                                                        let prepared = this.tracker.ConnectionsList.create({
+                                                            serverConnections: [],
+                                                            clientConnections: [],
+                                                        });
+                                                        for (let item of list.serverConnections)
+                                                            prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
+                                                        for (let item of list.clientConnections)
+                                                            prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+
                                                         let reply = this.tracker.ServerMessage.create({
                                                             type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
-                                                            connectionsList: list,
+                                                            connectionsList: prepared,
                                                         });
                                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                        this._logger.debug('delete-request', `Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                                        this.tracker.send(thisId, data);
+                                                        this._logger.debug('delete-request', `Sending CONNECTIONS LIST to ${clientId}`);
+                                                        this.tracker.send(clientId, data);
                                                     })
                                             );
                                         }
@@ -199,7 +188,7 @@ class DeleteRequest {
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'DeleteRequest.handle()'));
+                this._logger.error(new NError(error, 'DeleteRequest.handle()'));
             });
     }
 

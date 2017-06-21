@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Delete a path recursively
@@ -67,6 +67,6 @@ module.exports = function (path, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.deleteRecursive()');
+            throw new NError(error, { path }, 'PathRepository.deleteRecursive()');
         });
 };

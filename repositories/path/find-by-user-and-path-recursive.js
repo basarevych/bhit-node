@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find paths by user and path recursively
@@ -78,6 +78,6 @@ module.exports = function (user, path, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.findByUserAndPathRecursive()');
+            throw new NError(error, { user, path }, 'PathRepository.findByUserAndPathRecursive()');
         });
 };

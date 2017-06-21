@@ -14,12 +14,10 @@ class Start {
      * Create the service
      * @param {App} app                 The application
      * @param {object} config           Configuration
-     * @param {Install} install         Install command
      */
-    constructor(app, config, install) {
+    constructor(app, config) {
         this._app = app;
         this._config = config;
-        this._install = install;
     }
 
     /**
@@ -35,7 +33,7 @@ class Start {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'commands.install' ];
+        return [ 'app', 'config' ];
     }
 
     /**
@@ -57,7 +55,7 @@ class Start {
                 process.exit(rc);
             })
             .catch(error => {
-                return this.error(error.message);
+                return this.error(error);
             })
     }
 
@@ -115,7 +113,14 @@ class Start {
      * @param {...*} args
      */
     error(...args) {
-        return this._app.error(...args)
+        return args.reduce(
+            (prev, cur) => {
+                return prev.then(() => {
+                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
+                });
+            },
+            Promise.resolve()
+            )
             .then(
                 () => {
                     process.exit(1);

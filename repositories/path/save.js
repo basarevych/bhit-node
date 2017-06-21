@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Save path
@@ -81,6 +81,6 @@ module.exports = function (path, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.save()');
+            throw new NError(error, { path }, 'PathRepository.save()');
         });
 };

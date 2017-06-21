@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find a path by ID
@@ -71,6 +71,6 @@ module.exports = function (id, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.find()');
+            throw new NError(error, { id }, 'PathRepository.find()');
         });
 };

@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Save user
@@ -81,6 +81,6 @@ module.exports = function (user, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'UserRepository.save()');
+            throw new NError(error, { user }, 'UserRepository.save()');
         });
 };

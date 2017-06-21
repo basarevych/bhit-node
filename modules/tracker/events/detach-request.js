@@ -3,7 +3,7 @@
  * @module tracker/events/detach-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Detach Request event class
@@ -14,21 +14,21 @@ class DetachRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
-     * @param {ConnectionsList} connectionsList         ConnectionsList service
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo, connectionsList) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
         this._connectionRepo = connectionRepo;
-        this._connectionsList = connectionsList;
     }
 
     /**
@@ -48,11 +48,11 @@ class DetachRequest {
             'app',
             'config',
             'logger',
+            'registry',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
             'repositories.connection',
-            'connectionsList'
         ];
     }
 
@@ -62,25 +62,23 @@ class DetachRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        let userEmail, userPath;
-        let parts = message.detachRequest.path.split('/');
-        if (parts.length && parts[0].length) {
-            userEmail = parts.shift();
-            parts.unshift('');
+        let userEmail, userPath, target = this._registry.validatePath(message.detachRequest.path);
+        if (target) {
+            userEmail = target.email;
+            userPath = target.path;
         }
-        userPath = parts.join('/');
 
-        this._logger.debug('detach-request', `Got DETACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('detach-request', `Got DETACH REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
                     return [];
 
-                let info = this.tracker.daemons.get(client.daemonId);
+                let info = this._registry.daemons.get(client.daemonId);
                 if (!info)
                     return [];
 
@@ -101,10 +99,10 @@ class DetachRequest {
                         detachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('detach-request', `Sending REJECTED DETACH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
-                if (!this.tracker.validatePath(userPath)) {
+                if (!target) {
                     let response = this.tracker.DetachResponse.create({
                         response: this.tracker.DetachResponse.Result.INVALID_PATH,
                     });
@@ -114,7 +112,7 @@ class DetachRequest {
                         detachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('detach-request', `Sending INVALID_PATH DETACH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -141,7 +139,7 @@ class DetachRequest {
                                         detachResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('detach-request', `Sending PATH_NOT_FOUND DETACH RESPONSE to ${id}`);
                                     return this.tracker.send(id, data);
                                 }
 
@@ -158,7 +156,7 @@ class DetachRequest {
                                                 detachResponse: response,
                                             });
                                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                                            this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                            this._logger.debug('detach-request', `Sending PATH_NOT_FOUND DETACH RESPONSE to ${id}`);
                                             return this.tracker.send(id, data);
                                         }
 
@@ -166,29 +164,9 @@ class DetachRequest {
 
                                         return this._daemonRepo.disconnect(daemon, connection)
                                             .then(count => {
-                                                let info = this.tracker.daemons.get(daemon.id);
-                                                if (info) {
-                                                    for (let thisClientId of info.clients) {
-                                                        let thisClient = this.tracker.clients.get(thisClientId);
-                                                        if (thisClient && thisClient.status)
-                                                            thisClient.status.delete(name);
-                                                    }
-                                                    let waiting = this.tracker.waiting.get(name);
-                                                    if (waiting) {
-                                                        if (waiting.server) {
-                                                            let thisServer = this.tracker.clients.get(waiting.server);
-                                                            if (!thisServer || !thisServer.status || !thisServer.status.has(name)) {
-                                                                waiting.server = null;
-                                                                waiting.internalAddresses = [];
-                                                            }
-                                                        }
-                                                        for (let thisClientId of waiting.clients) {
-                                                            let thisClient = this.tracker.clients.get(thisClientId);
-                                                            if (!thisClient || !thisClient.status || !thisClient.status.has(name))
-                                                                waiting.clients.delete(thisClientId);
-                                                        }
-                                                    }
-                                                }
+                                                let info = this._registry.daemons.get(daemon.id);
+                                                if (info && info.clients.size)
+                                                    this._registry.removeConnection(name, Array.from(info.clients));
 
                                                 let response = this.tracker.DetachResponse.create({
                                                     response: (count > 0 ?
@@ -201,29 +179,35 @@ class DetachRequest {
                                                     detachResponse: response,
                                                 });
                                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                this._logger.debug('detach-request', `Sending DETACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                this._logger.debug('detach-request', `Sending SUCCESS DETACH RESPONSE to ${id}`);
                                                 this.tracker.send(id, data);
 
-                                                if (count > 0) {
-                                                    return this._connectionsList.getList(daemon.id)
+                                                if (count > 0 && info && info.clients.size) {
+                                                    return this._daemonRepo.getConnectionsList(daemon)
                                                         .then(list => {
                                                             if (!list)
                                                                 return;
 
+                                                            let prepared = this.tracker.ConnectionsList.create({
+                                                                serverConnections: [],
+                                                                clientConnections: [],
+                                                            });
+                                                            for (let item of list.serverConnections)
+                                                                prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
+                                                            for (let item of list.clientConnections)
+                                                                prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+
                                                             let notification = this.tracker.ServerMessage.create({
                                                                 type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
-                                                                connectionsList: list,
+                                                                connectionsList: prepared,
                                                             });
                                                             let data = this.tracker.ServerMessage.encode(notification).finish();
 
-                                                            let info = this.tracker.daemons.get(daemon.id);
-                                                            if (info) {
-                                                                for (let thisId of info.clients) {
-                                                                    let client = this.tracker.clients.get(thisId);
-                                                                    if (client) {
-                                                                        this._logger.debug('detach-request', `Sending CONNECTIONS LIST to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                                                                        this.tracker.send(thisId, data);
-                                                                    }
+                                                            for (let thisId of info.clients) {
+                                                                let client = this._registry.clients.get(thisId);
+                                                                if (client) {
+                                                                    this._logger.debug('detach-request', `Sending CONNECTIONS LIST to ${thisId}`);
+                                                                    this.tracker.send(thisId, data);
                                                                 }
                                                             }
                                                         });
@@ -234,7 +218,7 @@ class DetachRequest {
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'DetachRequest.handle()'));
+                this._logger.error(new NError(error, 'DetachRequest.handle()'));
             });
     }
 

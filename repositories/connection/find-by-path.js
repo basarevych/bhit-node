@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find connections by path
@@ -56,6 +56,6 @@ module.exports = function (path, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'ConnectionRepository.findByPath()');
+            throw new NError(error, { path }, 'ConnectionRepository.findByPath()');
         });
 };

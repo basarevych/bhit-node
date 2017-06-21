@@ -3,7 +3,7 @@
  * @module tracker/events/status
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Status event class
@@ -14,15 +14,17 @@ class Status {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -46,6 +48,7 @@ class Status {
             'app',
             'config',
             'logger',
+            'registry',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
@@ -59,11 +62,11 @@ class Status {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('status', `Got STATUS from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('status', `Got STATUS from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -76,11 +79,11 @@ class Status {
                 if (!daemon)
                     return;
 
-                let parts = message.status.connectionName.split('/');
-                let emailPart = parts.shift();
-                let pathPart = parts.length ? '/' + parts.join('/') : null;
-                if (!emailPart || !pathPart)
+                let parts = this._registry.validateConnectionName(message.status.connectionName);
+                if (!parts)
                     return;
+
+                let { email: emailPart, path: pathPart } = parts;
 
                 return this._userRepo.findByEmail(emailPart)
                     .then(users => {
@@ -105,79 +108,40 @@ class Status {
                                                 if (!actingAs)
                                                     return;
 
-                                                if (message.status.active) {
-                                                    let status = client.status.get(message.status.connectionName);
-                                                    if (!status) {
-                                                        status = {
-                                                            server: actingAs === 'server',
-                                                            connected: 0,
-                                                        };
-                                                        client.status.set(message.status.connectionName, status);
-                                                    }
-                                                    status.connected = message.status.connected;
-                                                    this._logger.info(`${status.connected} connected to ${client.daemonName} (${actingAs}) in ${message.status.connectionName}`);
-                                                } else {
-                                                    client.status.delete(message.status.connectionName);
-                                                    this._logger.info(`Daemon ${client.daemonName} (${actingAs}) removed from ${message.status.connectionName}`);
-                                                }
+                                                this._registry.updateConnection(
+                                                    message.status.connectionName,
+                                                    id,
+                                                    actingAs,
+                                                    message.status.active,
+                                                    message.status.connected,
+                                                    message.status.internalAddresses
+                                                );
 
-                                                let waiting = this.tracker.waiting.get(message.status.connectionName);
-                                                if (!waiting) {
-                                                    waiting = {
-                                                        server: null,
-                                                        internalAddresses: [],
-                                                        clients: new Set(),
-                                                    };
-                                                    this.tracker.waiting.set(message.status.connectionName, waiting);
-                                                }
-                                                if (actingAs === 'server') {
-                                                    waiting.server = message.status.active ? client.id : null;
-                                                    waiting.internalAddresses = message.status.active ? message.status.internalAddresses : [];
-                                                } else {
-                                                    if (message.status.active) {
-                                                        if (message.status.connected)
-                                                            waiting.clients.delete(client.id);
-                                                        else
-                                                            waiting.clients.add(client.id);
-                                                    } else {
-                                                        waiting.clients.delete(client.id);
-                                                    }
-                                                }
+                                                let ready = this._registry.checkWaiting(message.status.connectionName);
+                                                if (!ready)
+                                                    return;
 
-                                                if (waiting.internalAddresses.length && waiting.clients.size) {
-                                                    let serverInfo = this.tracker.clients.get(waiting.server);
-                                                    if (serverInfo) {
-                                                        for (let client of waiting.clients) {
-                                                            let clientInfo = this.tracker.clients.get(client);
-                                                            if (!clientInfo)
-                                                                continue;
+                                                for (let clientId of ready.targets) {
+                                                    let clientInfo = this._registry.clients.get(clientId);
+                                                    if (!clientInfo)
+                                                        continue;
 
-                                                            let server = this.tracker.ServerAvailable.create({
-                                                                connectionName: message.status.connectionName,
-                                                                daemonName: serverInfo.daemonName,
-                                                                internalAddresses: waiting.internalAddresses,
-                                                            });
-                                                            let msg = this.tracker.ServerMessage.create({
-                                                                type: this.tracker.ServerMessage.Type.SERVER_AVAILABLE,
-                                                                serverAvailable: server,
-                                                            });
-                                                            let data = this.tracker.ServerMessage.encode(msg).finish();
-                                                            this._logger.debug('status', `Sending SERVER AVAILABLE to ${clientInfo.socket.remoteAddress}:${clientInfo.socket.remotePort}`);
-                                                            this.tracker.send(client, data);
-                                                        }
-                                                    }
-                                                    waiting.clients.clear();
+                                                    let server = this.tracker.ServerAvailable.create(ready.info);
+                                                    let msg = this.tracker.ServerMessage.create({
+                                                        type: this.tracker.ServerMessage.Type.SERVER_AVAILABLE,
+                                                        serverAvailable: server,
+                                                    });
+                                                    let data = this.tracker.ServerMessage.encode(msg).finish();
+                                                    this._logger.debug('status', `Sending SERVER AVAILABLE to ${clientId}`);
+                                                    this.tracker.send(clientId, data);
                                                 }
-
-                                                if (!waiting.internalAddresses.length && !waiting.clients.size)
-                                                    this.tracker.waiting.delete(message.status.connectionName);
                                             });
                                     });
                             });
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'Status.handle()'));
+                this._logger.error(new NError(error, 'Status.handle()'));
             });
     }
 

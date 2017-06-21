@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Create connection by path and new model
@@ -93,6 +93,6 @@ module.exports = function (path, connection, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'ConnectionRepository.createByPath()');
+            throw new NError(error, { path, connection }, 'ConnectionRepository.createByPath()');
         });
 };

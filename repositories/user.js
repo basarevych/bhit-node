@@ -40,6 +40,14 @@ class UserRepository extends BaseRepository {
     static get requires() {
         return [ 'app', 'config', 'postgres', 'cacher', 'util' ];
     }
+
+    /**
+     * Generate user token
+     * @return {string}
+     */
+    generateToken() {
+        return this._util.getRandomString(32, { lower: true, upper: true, digits: true });
+    }
 }
 
 module.exports = UserRepository;

@@ -3,7 +3,7 @@
  * @module tracker/events/tree-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Tree Request event class
@@ -14,14 +14,16 @@ class TreeRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, registry, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
         this._connectionRepo = connectionRepo;
@@ -40,7 +42,15 @@ class TreeRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.daemon', 'repositories.path', 'repositories.connection' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'registry',
+            'repositories.daemon',
+            'repositories.path',
+            'repositories.connection',
+        ];
     }
 
     /**
@@ -49,11 +59,11 @@ class TreeRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('tree-request', `Got TREE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('tree-request', `Got TREE REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -73,21 +83,28 @@ class TreeRequest {
                         treeResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('tree-request', `Sending REJECTED TREE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
-                if (message.treeRequest.path.length && !this.tracker.validatePath(message.treeRequest.path)) {
-                    let response = this.tracker.TreeResponse.create({
-                        response: this.tracker.TreeResponse.Result.INVALID_PATH,
-                    });
-                    let reply = this.tracker.ServerMessage.create({
-                        type: this.tracker.ServerMessage.Type.TREE_RESPONSE,
-                        messageId: message.messageId,
-                        treeResponse: response,
-                    });
-                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-                    return this.tracker.send(id, data);
+
+                let target;
+                if (message.treeRequest.path.length) {
+                    target = this.tracker.validatePath(message.treeRequest.path);
+                    if (target && !target.email) {
+                        target = target.path;
+                    } else {
+                        let response = this.tracker.TreeResponse.create({
+                            response: this.tracker.TreeResponse.Result.INVALID_PATH,
+                        });
+                        let reply = this.tracker.ServerMessage.create({
+                            type: this.tracker.ServerMessage.Type.TREE_RESPONSE,
+                            messageId: message.messageId,
+                            treeResponse: response,
+                        });
+                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                        this._logger.debug('tree-request', `Sending INVALID_PATH TREE RESPONSE to ${id}`);
+                        return this.tracker.send(id, data);
+                    }
                 }
 
                 let treeRoots = [];
@@ -159,8 +176,8 @@ class TreeRequest {
 
                 return Promise.resolve()
                     .then(() => {
-                        if (message.treeRequest.path.length)
-                            return this._pathRepo.findByUserAndPath(daemon.userId, message.treeRequest.path);
+                        if (target)
+                            return this._pathRepo.findByUserAndPath(daemon.userId, target);
 
                         return this._pathRepo.findUserRoots(daemon.userId);
                     })
@@ -175,7 +192,7 @@ class TreeRequest {
                                 treeResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('tree-request', `Sending PATH_NOT_FOUND TREE RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -190,7 +207,7 @@ class TreeRequest {
                                     connection: false,
                                     type: this.tracker.Tree.Type.NOT_CONNECTED,
                                     name: 'tree',
-                                    path: message.treeRequest.path || '/',
+                                    path: target || '/',
                                 });
                                 let response = this.tracker.TreeResponse.create({
                                     response: this.tracker.TreeResponse.Result.ACCEPTED,
@@ -202,13 +219,13 @@ class TreeRequest {
                                     treeResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                this._logger.debug('tree-request', `Sending TREE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('tree-request', `Sending ACCEPTED TREE RESPONSE to ${id}`);
                                 return this.tracker.send(id, data);
                             });
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'TreeRequest.handle()'));
+                this._logger.error(new NError(error, 'TreeRequest.handle()'));
             });
     }
 

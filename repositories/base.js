@@ -4,7 +4,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Repository base class
@@ -154,7 +154,7 @@ class BaseRepository {
                     );
             })
             .catch(error => {
-                throw new WError(error, 'Repository.search()');
+                throw new NError(error, 'Repository.search()');
             });
     }
 
@@ -170,7 +170,7 @@ class BaseRepository {
             try {
                 this[methodName] = require(file).bind(this);
             } catch (error) {
-                throw new WError(error, `Repository._loadMethods() - processing: ${name}`);
+                throw new NError(error, `Repository._loadMethods() - processing: ${name}`);
             }
         }
     }

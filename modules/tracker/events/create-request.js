@@ -3,7 +3,7 @@
  * @module tracker/events/create-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Create Request event class
@@ -14,14 +14,16 @@ class CreateRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, userRepo, daemonRepo, connectionRepo) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._connectionRepo = connectionRepo;
@@ -44,6 +46,7 @@ class CreateRequest {
             'app',
             'config',
             'logger',
+            'registry',
             'repositories.user',
             'repositories.daemon',
             'repositories.connection',
@@ -56,11 +59,11 @@ class CreateRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('create-request', `Got CREATE REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('create-request', `Got CREATE REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -80,10 +83,12 @@ class CreateRequest {
                         createResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('create-request', `Sending REJECTED CREATE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
-                if (!this.tracker.validatePath(message.createRequest.path)) {
+
+                let path = this._registry.validatePath(message.createRequest.path);
+                if (!path || path.email) {
                     let response = this.tracker.CreateResponse.create({
                         response: this.tracker.CreateResponse.Result.INVALID_PATH,
                     });
@@ -93,11 +98,12 @@ class CreateRequest {
                         createResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('create-request', `Sending INVALID_PATH CREATE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
+                path = path.path;
 
-                let connection = this._connectionRepo.create();
+                let connection = this._connectionRepo.getModel('connection');
                 connection.userId = daemon.userId;
                 connection.token = this._connectionRepo.generateToken();
                 connection.encrypted = message.createRequest.encrypted;
@@ -106,7 +112,7 @@ class CreateRequest {
                 connection.connectPort = message.createRequest.connectPort;
                 connection.listenAddress = message.createRequest.listenPort ? message.createRequest.listenAddress || null : null;
                 connection.listenPort = message.createRequest.listenPort || null;
-                return this._connectionRepo.createByPath(message.createRequest.path, connection)
+                return this._connectionRepo.createByPath(path, connection)
                     .then(result => {
                         if (!result.path || !result.connection) {
                             let response = this.tracker.CreateResponse.create({
@@ -118,7 +124,7 @@ class CreateRequest {
                                 createResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('create-request', `Sending PATH_EXISTS CREATE RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -131,12 +137,10 @@ class CreateRequest {
                                 return this._daemonRepo.connect(
                                         daemon,
                                         connection,
-                                        message.createRequest.type === this.tracker.CreateRequest.Type.SERVER ?
-                                            'server' :
-                                            'client'
+                                        message.createRequest.type === this.tracker.CreateRequest.Type.SERVER ? 'server' : 'client'
                                     )
                                     .then(numConnections => {
-                                        if (!numConnections || message.createRequest.daemonName)
+                                        if (!numConnections)
                                             return;
 
                                         return this._userRepo.find(connection.userId)
@@ -147,19 +151,21 @@ class CreateRequest {
 
                                                 if (message.createRequest.type === this.tracker.CreateRequest.Type.SERVER) {
                                                     serverConnections.push(this.tracker.ServerConnection.create({
-                                                        name: user.email + message.createRequest.path,
+                                                        name: user.email + path,
                                                         connectAddress: connection.connectAddress,
                                                         connectPort: connection.connectPort,
                                                         encrypted: connection.encrypted,
                                                         fixed: connection.fixed,
+                                                        clients: [],
                                                     }));
                                                 } else {
                                                     clientConnections.push(this.tracker.ClientConnection.create({
-                                                        name: user.email + message.createRequest.path,
+                                                        name: user.email + path,
                                                         listenAddress: connection.listenAddress,
                                                         listenPort: connection.listenPort,
                                                         encrypted: connection.encrypted,
                                                         fixed: connection.fixed,
+                                                        server: '',
                                                     }));
                                                 }
                                             });
@@ -182,13 +188,13 @@ class CreateRequest {
                                     createResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                this._logger.debug('create-request', `Sending CREATE RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('create-request', `Sending ACCEPTED CREATE RESPONSE to ${id}`);
                                 this.tracker.send(id, data);
                             });
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'CreateRequest.handle()'));
+                this._logger.error(new NError(error, 'CreateRequest.handle()'));
             });
     }
 

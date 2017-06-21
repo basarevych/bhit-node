@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Associate daemon with a connection
@@ -97,6 +97,6 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.connect()');
+            throw new NError(error, { daemon, connection, actingAs, addressOverride, portOverride }, 'DaemonRepository.connect()');
         });
 };

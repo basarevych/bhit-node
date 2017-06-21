@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find out daemon role in the connection
@@ -56,6 +56,6 @@ module.exports = function (daemon, connection, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.getActingAs()');
+            throw new NError(error, { daemon, connection }, 'DaemonRepository.getActingAs()');
         });
 };

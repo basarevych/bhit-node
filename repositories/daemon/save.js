@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Save daemon
@@ -81,6 +81,6 @@ module.exports = function (daemon, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.save()');
+            throw new NError(error, { daemon }, 'DaemonRepository.save()');
         });
 };

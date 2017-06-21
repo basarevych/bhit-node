@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find all root level nodes by user
@@ -75,6 +75,6 @@ module.exports = function (user, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.findUserRoots()');
+            throw new NError(error, { user }, 'PathRepository.findUserRoots()');
         });
 };

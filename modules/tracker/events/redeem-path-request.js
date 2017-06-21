@@ -3,7 +3,7 @@
  * @module tracker/events/redeem-path-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Redeem Path Request event class
@@ -14,16 +14,18 @@ class RedeemPathRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
-     * @param {Util} util                               Util
+     * @param {Util} util                               Util service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, util, userRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, util, registry, userRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._util = util;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._pathRepo = pathRepo;
         this._connectionRepo = connectionRepo;
@@ -47,6 +49,7 @@ class RedeemPathRequest {
             'config',
             'logger',
             'util',
+            'registry',
             'repositories.user',
             'repositories.path',
             'repositories.connection'
@@ -59,11 +62,11 @@ class RedeemPathRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('redeem-path-request', `Got REDEEM PATH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('redeem-path-request', `Got REDEEM PATH REQUEST from ${id}`);
         this._userRepo.findByToken(message.redeemPathRequest.token)
             .then(users => {
                 let user = users.length && users[0];
@@ -77,7 +80,7 @@ class RedeemPathRequest {
                         redeemPathResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('redeem-path-request', `Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('redeem-path-request', `Sending REJECTED REDEEM PATH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -94,19 +97,16 @@ class RedeemPathRequest {
                                 redeemPathResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('redeem-path-request', `Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('redeem-path-request', `Sending REJECTED REDEEM PATH RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
                         return Promise.resolve()
                             .then(() => {
                                 if (message.redeemPathRequest.type === this.tracker.RedeemPathRequest.Type.CLIENT) {
-                                    path.token = this.tracker.generateToken();
+                                    path.token = this._pathRepo.generateToken();
                                     return this._pathRepo.save(path)
-                                        .then(pathId => {
-                                            if (!pathId)
-                                                throw new Error('Could not update path');
-
+                                        .then(() => {
                                             return path.token;
                                         });
                                 }
@@ -117,12 +117,9 @@ class RedeemPathRequest {
                                         if (!connection)
                                             return null;
 
-                                        connection.token = this.tracker.generateToken();
+                                        connection.token = this._connectionRepo.generateToken();
                                         return this._connectionRepo.save(connection)
-                                            .then(connectionId => {
-                                                if (!connectionId)
-                                                    throw new Error('Could not update connection');
-
+                                            .then(() => {
                                                 return connection.token;
                                             });
                                     });
@@ -145,13 +142,13 @@ class RedeemPathRequest {
                                     redeemPathResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                this._logger.debug('redeem-path-request', `Sending REDEEM PATH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('redeem-path-request', `Sending RESULTING REDEEM PATH RESPONSE to ${id}`);
                                 this.tracker.send(id, data);
                             });
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'RedeemPathRequest.handle()'));
+                this._logger.error(new NError(error, 'RedeemPathRequest.handle()'));
             });
     }
 

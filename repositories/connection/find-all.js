@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find all connections
@@ -54,6 +54,6 @@ module.exports = function (pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'ConnectionRepository.findAll()');
+            throw new NError(error, 'ConnectionRepository.findAll()');
         });
 };

@@ -3,7 +3,7 @@
  * @module tracker/events/redeem-master-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Redeem Master Request event class
@@ -16,14 +16,16 @@ class RedeemMasterRequest {
      * @param {Logger} logger                   Logger service
      * @param {Emailer} emailer                 Emailer
      * @param {Util} util                       Util
+     * @param {Registry} registry               Registry
      * @param {UserRepository} userRepo         User repository
      */
-    constructor(app, config, logger, emailer, util, userRepo) {
+    constructor(app, config, logger, emailer, util, registry, userRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._emailer = emailer;
         this._util = util;
+        this._registry = registry;
         this._userRepo = userRepo;
     }
 
@@ -40,7 +42,7 @@ class RedeemMasterRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'emailer', 'util', 'repositories.user' ];
+        return [ 'app', 'config', 'logger', 'emailer', 'util', 'registry', 'repositories.user' ];
     }
 
     /**
@@ -49,11 +51,11 @@ class RedeemMasterRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('redeem-master-request', `Got REDEEM MASTER REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('redeem-master-request', `Got REDEEM MASTER REQUEST from ${id}`);
         this._userRepo.findByEmail(message.redeemMasterRequest.email)
             .then(users => {
                 let user = users.length && users[0];
@@ -67,17 +69,14 @@ class RedeemMasterRequest {
                         redeemMasterResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('redeem-master-request', `Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('redeem-master-request', `Sending REJECTED REDEEM MASTER RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
-                user.confirm = this.tracker.generateToken();
+                user.confirm = this._userRepo.generateToken();
 
                 return this._userRepo.save(user)
-                    .then(userId => {
-                        if (!userId)
-                            throw new Error('Could not update user');
-
+                    .then(() => {
                         let emailText = 'Breedhub Interconnect\n\n' +
                             'Someone has requested master token regeneration of ' + user.email + '.\n\n' +
                             'If this was you then please run the following command on the daemon:\n\n' +
@@ -86,7 +85,7 @@ class RedeemMasterRequest {
                         return this._emailer.send({
                                 to: user.email,
                                 from: this._config.get('email.from'),
-                                subject: 'Please confirm master token regeneration',
+                                subject: 'Interconnect master token regeneration',
                                 text: emailText,
                             })
                             .then(
@@ -100,7 +99,7 @@ class RedeemMasterRequest {
                                         redeemMasterResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    this._logger.debug('redeem-master-request', `Sending REDEEM MASTER RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('redeem-master-request', `Sending ACCEPTED REDEEM MASTER RESPONSE to ${id}`);
                                     this.tracker.send(id, data);
                                 },
                                 error => {
@@ -110,7 +109,7 @@ class RedeemMasterRequest {
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'RedeemMasterRequest.handle()'));
+                this._logger.error(new NError(error, 'RedeemMasterRequest.handle()'));
             });
     }
 

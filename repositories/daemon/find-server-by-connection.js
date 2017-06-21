@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find server of a connection
@@ -62,6 +62,6 @@ module.exports = function (connection, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.findServerByConnection()');
+            throw new NError(error, { connection }, 'DaemonRepository.findServerByConnection()');
         });
 };

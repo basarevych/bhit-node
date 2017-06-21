@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Save connection
@@ -81,6 +81,6 @@ module.exports = function (connection, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'ConnectionRepository.save()');
+            throw new NError(error, { connection }, 'ConnectionRepository.save()');
         });
 };

@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Delete a path
@@ -80,6 +80,6 @@ module.exports = function (path, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.delete()');
+            throw new NError(error, { path }, 'PathRepository.delete()');
         });
 };

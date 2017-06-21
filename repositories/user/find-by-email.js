@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find users by email
@@ -71,6 +71,6 @@ module.exports = function (email, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'UserRepository.findByEmail()');
+            throw new NError(error, { email }, 'UserRepository.findByEmail()');
         });
 };

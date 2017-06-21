@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find connections by daemon
@@ -73,6 +73,6 @@ module.exports = function (daemon, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'ConnectionRepository.findByDaemon()');
+            throw new NError(error, { daemon }, 'ConnectionRepository.findByDaemon()');
         });
 };

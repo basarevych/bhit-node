@@ -2,8 +2,7 @@
  * Lookup Identity Request event
  * @module tracker/events/lookup-identity-request
  */
-const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Lookup Identity Request event class
@@ -14,11 +13,13 @@ class LookupIdentityRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      */
-    constructor(app, config, logger) {
+    constructor(app, config, logger, registry) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
     }
 
     /**
@@ -34,7 +35,7 @@ class LookupIdentityRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger' ];
+        return [ 'app', 'config', 'logger', 'registry' ];
     }
 
     /**
@@ -43,21 +44,36 @@ class LookupIdentityRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
-        if (!client || !client.daemonId)
+        let client = this._registry.clients.get(id);
+        if (!client)
             return;
 
-        this._logger.debug('lookup-identity-request', `Got LOOKUP IDENTITY REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('lookup-identity-request', `Got LOOKUP IDENTITY REQUEST from ${id}`);
         try {
-            let info = this.tracker.identities.get(message.lookupIdentityRequest.identity);
-            if (info && info.clients.size) {
-                let iter = info.clients.values();
-                let found = iter.next().value;
-                info = this.tracker.clients.get(found);
-            } else {
-                info = null;
+            if (!client.daemonId) {
+                let response = this.tracker.LookupIdentityResponse.create({
+                    response: this.tracker.LookupIdentityResponse.Result.REJECTED,
+                });
+                let msg = this.tracker.ServerMessage.create({
+                    type: this.tracker.ServerMessage.Type.LOOKUP_IDENTITY_RESPONSE,
+                    messageId: message.messageId,
+                    lookupIdentityResponse: response,
+                });
+                let data = this.tracker.ServerMessage.encode(msg).finish();
+                this._logger.debug('lookup-identity-request', `Sending REJECTED LOOKUP IDENTITY RESPONSE to ${id}`);
+                return this.tracker.send(id, data);
             }
-            if (!info) {
+
+            let info, daemon, identity = this._registry.identities.get(message.lookupIdentityRequest.identity);
+            if (identity && identity.clients.size) {
+                let iter = identity.clients.values();
+                let found = iter.next().value;
+                info = this._registry.clients.get(found);
+                if (info && info.daemonId)
+                    daemon = this._registry.daemons.get(info.daemonId);
+            }
+
+            if (!info || !daemon) {
                 let response = this.tracker.LookupIdentityResponse.create({
                     response: this.tracker.LookupIdentityResponse.Result.NOT_FOUND,
                 });
@@ -67,13 +83,13 @@ class LookupIdentityRequest {
                     lookupIdentityResponse: response,
                 });
                 let data = this.tracker.ServerMessage.encode(msg).finish();
-                this._logger.debug('lookup-identity-request', `Sending LOOKUP IDENTITY RESPONSE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
+                this._logger.debug('lookup-identity-request', `Sending NOT_FOUND LOOKUP IDENTITY RESPONSE to ${id}`);
                 return this.tracker.send(id, data);
             }
 
             let response = this.tracker.LookupIdentityResponse.create({
                 response: this.tracker.LookupIdentityResponse.Result.FOUND,
-                name: info.daemonName,
+                name: daemon.name,
                 key: info.key,
             });
             let msg = this.tracker.ServerMessage.create({
@@ -82,10 +98,10 @@ class LookupIdentityRequest {
                 lookupIdentityResponse: response,
             });
             let data = this.tracker.ServerMessage.encode(msg).finish();
-            this._logger.debug('lookup-identity-request', `Sending LOOKUP IDENTITY RESPONSE to ${info.socket.remoteAddress}:${info.socket.remotePort}`);
+            this._logger.debug('lookup-identity-request', `Sending FOUND LOOKUP IDENTITY RESPONSE to ${id}`);
             return this.tracker.send(id, data);
         } catch (error) {
-            this._logger.error(new WError(error, 'LookupIdentityRequest.handle()'));
+            this._logger.error(new NError(error, 'LookupIdentityRequest.handle()'));
         }
     }
 

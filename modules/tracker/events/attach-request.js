@@ -3,7 +3,7 @@
  * @module tracker/events/attach-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Attach Request event class
@@ -14,15 +14,17 @@ class AttachRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -46,6 +48,7 @@ class AttachRequest {
             'app',
             'config',
             'logger',
+            'registry',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
@@ -59,25 +62,23 @@ class AttachRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        let userId, userEmail, userPath;
-        let parts = message.attachRequest.path.split('/');
-        if (parts.length && parts[0].length) {
-            userEmail = parts.shift();
-            parts.unshift('');
+        let userEmail, userPath, target = this._registry.validatePath(message.attachRequest.path);
+        if (target) {
+            userEmail = target.email;
+            userPath = target.path;
         }
-        userPath = parts.join('/');
 
-        this._logger.debug('attach-request', `Got ATTACH REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('attach-request', `Got ATTACH REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
                     return [];
 
-                let info = this.tracker.daemons.get(client.daemonId);
+                let info = this._registry.daemons.get(client.daemonId);
                 if (!info)
                     return [];
 
@@ -98,10 +99,10 @@ class AttachRequest {
                         attachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('attach-request', `Sending REJECTED ATTACH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
-                if (!this.tracker.validatePath(userPath)) {
+                if (!target) {
                     let response = this.tracker.AttachResponse.create({
                         response: this.tracker.AttachResponse.Result.INVALID_PATH,
                     });
@@ -111,10 +112,11 @@ class AttachRequest {
                         attachResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('attach-request', `Sending INVALID_PATH ATTACH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
+                let userId;
                 return Promise.all([
                         this._pathRepo.findByToken(message.attachRequest.token),
                         this._connectionRepo.findByToken(message.attachRequest.token),
@@ -146,7 +148,7 @@ class AttachRequest {
                                 attachResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('attach-request', `Sending PATH_NOT_FOUND ATTACH RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -207,12 +209,12 @@ class AttachRequest {
                                         attachResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                    this._logger.debug('attach-request', `Sending PATH_NOT_FOUND ATTACH RESPONSE to ${id}`);
                                     return this.tracker.send(id, data);
                                 }
 
-                                let connection = result && result[0];
-                                let path = result && result[1];
+                                let connection = result[0];
+                                let path = result[1];
 
                                 return this._daemonRepo.connect(
                                         daemon,
@@ -308,7 +310,7 @@ class AttachRequest {
                                                     attachResponse: response,
                                                 });
                                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                this._logger.debug('attach-request', `Sending ATTACH RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                                this._logger.debug('attach-request', `Sending SUCCESS ATTACH RESPONSE to ${id}`);
                                                 this.tracker.send(id, data);
                                             });
                                     });
@@ -316,7 +318,7 @@ class AttachRequest {
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'AttachRequest.handle()'));
+                this._logger.error(new NError(error, 'AttachRequest.handle()'));
             });
     }
 

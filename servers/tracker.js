@@ -10,7 +10,7 @@ const dgram = require('dgram');
 const uuid = require('uuid');
 const protobuf = require('protobufjs');
 const EventEmitter = require('events');
-const WError = require('verror').WError;
+const NError = require('nerror');
 const SocketWrapper = require('socket-wrapper');
 
 /**
@@ -22,26 +22,21 @@ class Tracker extends EventEmitter {
      * @param {App} app                             Application
      * @param {object} config                       Configuration
      * @param {Logger} logger                       Logger service
-     * @param {Filer} filer                         Filer service
-     * @param {Util} util                           Util service
-     * @param {InvalidateCache} invalidateCache     InvalidateCache service
+     * @param {Registry} registry                   Registry service
      */
-    constructor(app, config, logger, filer, util, invalidateCache) {
+    constructor(app, config, logger, registry) {
         super();
 
-        this.clients = new Map();
-        this.daemons = new Map();
-        this.identities = new Map();
-        this.waiting = new Map();
-        this.pairs = new Map();
+        this.tcp = null;                    // servers
+        this.udp = null;
+
+        this.clients = new Map();           // socketId -> { id: socketId, socket, wrapper }) }
 
         this._name = null;
         this._app = app;
         this._config = config;
         this._logger = logger;
-        this._filer = filer;
-        this._util = util;
-        this._invalidateCache = invalidateCache;
+        this._registry = registry;
         this._timeouts = new Map();
     }
 
@@ -58,7 +53,7 @@ class Tracker extends EventEmitter {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'filer', 'util', 'invalidateCache' ];
+        return [ 'app', 'config', 'logger', 'registry' ];
     }
 
     /**
@@ -78,14 +73,6 @@ class Tracker extends EventEmitter {
     }
 
     /**
-     * Address request respond timeout
-     * @type {number}
-     */
-    static get addressTimeout() {
-        return 5 * 1000; // ms
-    }
-
-    /**
      * Initialize the server
      * @param {string} name                     Config section name
      * @return {Promise}
@@ -97,7 +84,7 @@ class Tracker extends EventEmitter {
                 this._logger.debug('tracker', 'Loading protocol');
                 protobuf.load(path.join(this._config.base_path, 'proto', 'tracker.proto'), (error, root) => {
                     if (error)
-                        return reject(new WError(error, 'Tracker.init()'));
+                        return reject(new NError(error, 'Tracker.init()'));
 
                     try {
                         this.proto = root;
@@ -145,25 +132,19 @@ class Tracker extends EventEmitter {
                         this.ServerMessage = this.proto.lookup('tracker.ServerMessage');
                         resolve();
                     } catch (error) {
-                        reject(new WError(error, 'Tracker.init()'));
+                        reject(new NError(error, 'Tracker.init()'));
                     }
                 })
             })
             .then(() => {
                 let configPath = (os.platform() === 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');
                 let key = this._config.get(`servers.${name}.ssl.key`);
-                if (key)
-                    key = key.trim();
                 if (key && key[0] !== '/')
                     key = path.join(configPath, 'certs', key);
                 let cert = this._config.get(`servers.${name}.ssl.cert`);
-                if (cert)
-                    cert = cert.trim();
                 if (cert && cert[0] !== '/')
                     cert = path.join(configPath, 'certs', cert);
                 let ca = this._config.get(`server.${name}.ssl.ca`);
-                if (ca)
-                    ca = ca.trim();
                 if (ca && ca[0] !== '/')
                     ca = path.join(configPath, 'certs', ca);
 
@@ -196,13 +177,11 @@ class Tracker extends EventEmitter {
                 udpServer.on('error', this.onUdpError.bind(this));
                 udpServer.on('listening', this.onUdpListening.bind(this));
                 udpServer.on('message', this.onUdpMessage.bind(this));
-                this._app.registerInstance(udpServer, 'udp');
+                this.udp = udpServer;
 
                 tcpServer.on('error', this.onTcpError.bind(this));
                 tcpServer.on('listening', this.onTcpListening.bind(this));
-                this._app.registerInstance(tcpServer, 'tcp');
-
-                this._app.registerInstance(this.clients, 'clients');
+                this.tcp = tcpServer;
             });
     }
 
@@ -230,64 +209,19 @@ class Tracker extends EventEmitter {
                 Promise.resolve()
             )
             .then(() => {
-                return this._invalidateCache.register();
-            })
-            .then(() => {
                 this._logger.debug('tracker', 'Starting the server');
-                let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
-                let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${this._name}.host`));
-                let udpServer = this._app.get('udp');
-                let tcpServer = this._app.get('tcp');
+                let port = this._normalizePort(this._config.get(`servers.${name}.port`));
+                let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${name}.host`));
 
-
-                this._logger.debug('tracker', 'Initiating tracker sockets');
                 try {
-                    this._timeoutTimer = setInterval(() => { this._checkTimeout(); }, 500);
+                    this._timeoutTimer = setInterval(this._checkTimeout.bind(this), 500);
 
-                    udpServer.bind(port, host);
-                    tcpServer.listen(port, host);
+                    this.udp.bind(port, host);
+                    this.tcp.listen(port, host);
                 } catch (error) {
-                    throw new WError(error, 'Tracker.start()');
+                    throw new NError(error, 'Tracker.start()');
                 }
             });
-    }
-
-    /**
-     * Generate user/daemon token
-     * @return {string}
-     */
-    generateToken() {
-        return this._util.getRandomString(32, { lower: true, upper: true, digits: true });
-    }
-
-    /**
-     * Validate name
-     * @param {string} name                 Name to check
-     * @return {boolean}
-     */
-    validateName(name) {
-        if (!name.length)
-            return false;
-
-        return /^[-._0-9a-zA-Z]+$/.test(name);
-    }
-
-    /**
-     * Validate path
-     * @param {string} path                 Path to check
-     * @return {boolean}
-     */
-    validatePath(path) {
-        if (!path.length || path[0] !== '/')
-            return false;
-
-        let parts = path.split('/');
-        parts.shift();
-        for (let node of parts) {
-            if (!this.validateName(node))
-                return false;
-        }
-        return true;
     }
 
     /**
@@ -307,7 +241,7 @@ class Tracker extends EventEmitter {
                 });
                 data = this.ServerMessage.encode(message).finish();
             } catch (error) {
-                this._logger.error(new WError(error, `Tracker.send()`));
+                this._logger.error(new NError(error, `Tracker.send()`));
                 return;
             }
         }
@@ -321,7 +255,7 @@ class Tracker extends EventEmitter {
      */
     onUdpError(error) {
         if (error.syscall !== 'listen')
-            return this._logger.error(new WError(error, 'Tracker.onUdpError()'));
+            return this._logger.error(new NError(error, 'Tracker.onUdpError()'));
 
         let msg;
         switch (error.code) {
@@ -343,7 +277,7 @@ class Tracker extends EventEmitter {
      */
     onTcpError(error) {
         if (error.syscall !== 'listen')
-            return this._logger.error(new WError(error, 'Tracker.onTcpError()'));
+            return this._logger.error(new NError(error, 'Tracker.onTcpError()'));
 
         let msg;
         switch (error.code) {
@@ -395,15 +329,11 @@ class Tracker extends EventEmitter {
 
         let client = {
             id: id,
-            identity: null,
-            key: null,
-            daemonId: null,
-            daemonName: null,
             socket: socket,
             wrapper: new SocketWrapper(socket),
-            status: new Map(),
         };
         this.clients.set(id, client);
+        this._registry.addClient(id);
 
         this._timeouts.set(
             id,
@@ -417,7 +347,7 @@ class Tracker extends EventEmitter {
             'receive',
             data => {
                 if (!this.onMessage(id, data)) {
-                    socket.end();
+                    client.socket.end();
                     client.wrapper.detach();
                 }
             }
@@ -525,7 +455,7 @@ class Tracker extends EventEmitter {
                     break;
             }
         } catch (error) {
-            this._logger.error(new WError(error, 'Tracker.onMessage()'));
+            this._logger.error(new NError(error, 'Tracker.onMessage()'));
         }
 
         return true;
@@ -538,7 +468,7 @@ class Tracker extends EventEmitter {
      */
     onError(id, error) {
         if (error.code !== 'ECONNRESET')
-            this._logger.error(`Client socket error (TCP): ${error.message}`);
+            this._logger.error(`Client socket error (TCP): ${error.message} (id: ${id})`);
     }
 
     /**
@@ -549,8 +479,6 @@ class Tracker extends EventEmitter {
         let client = this.clients.get(id);
         if (client) {
             this._logger.debug('tracker', `Client disconnected`);
-            let names = client.status.keys();
-
             if (client.socket) {
                 if (!client.socket.destroyed)
                     client.socket.destroy();
@@ -559,41 +487,10 @@ class Tracker extends EventEmitter {
                 client.wrapper = null;
             }
             this.clients.delete(id);
-
-            if (client.identity) {
-                let info = this.identities.get(client.identity);
-                if (info)
-                    info.clients.delete(id);
-            }
-
-            if (client.daemonId) {
-                let info = this.daemons.get(client.daemonId);
-                if (info) {
-                    info.clients.delete(id);
-                    if (!info.clients.size)
-                        this.daemons.delete(client.daemonId);
-                }
-
-                for (let name of names) {
-                    let waiting = this.waiting.get(name);
-                    if (waiting) {
-                        if (waiting.server === id) {
-                            waiting.server = null;
-                            waiting.internalAddresses = [];
-                            this._logger.debug('tracker', `No server for ${name} anymore`);
-                        }
-                        for (let thisClientId of waiting.clients) {
-                            if (thisClientId === id) {
-                                waiting.clients.delete(thisClientId);
-                                this._logger.debug('tracker', `One client less for ${name}`);
-                            }
-                        }
-                    }
-                }
-            }
         }
 
         this._timeouts.delete(id);
+        this._registry.removeClient(id);
     }
 
     /**
@@ -635,7 +532,7 @@ class Tracker extends EventEmitter {
                     break;
             }
         } catch (error) {
-            this._logger.error(new WError(error, 'Tracker.onUdpMessage()'));
+            this._logger.error(new NError(error, 'Tracker.onUdpMessage()'));
         }
     }
 
@@ -659,13 +556,6 @@ class Tracker extends EventEmitter {
             } else if (timestamp.send !== 0 && now >= timestamp.send) {
                 timestamp.send = 0;
                 this.send(id, null);
-            }
-        }
-
-        for (let [ id, info ] of this.pairs) {
-            if (now >= info.timestamp) {
-                this.pairs.delete(info.clientRequestId);
-                this.pairs.delete(info.serverRequestId);
             }
         }
     }

@@ -3,7 +3,7 @@
  * @module tracker/events/redeem-daemon-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Redeem Daemon Request event class
@@ -14,15 +14,17 @@ class RedeemDaemonRequest {
      * @param {App} app                         The application
      * @param {object} config                   Configuration
      * @param {Logger} logger                   Logger service
-     * @param {Util} util                       Util
+     * @param {Util} util                       Util service
+     * @param {Registry} registry               Registry service
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(app, config, logger, util, userRepo, daemonRepo) {
+    constructor(app, config, logger, util, registry, userRepo, daemonRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._util = util;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
     }
@@ -40,7 +42,7 @@ class RedeemDaemonRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'util', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'util', 'registry', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -49,11 +51,11 @@ class RedeemDaemonRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('redeem-daemon-request', `Got REDEEM DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('redeem-daemon-request', `Got REDEEM DAEMON REQUEST from ${id}`);
         this._userRepo.findByToken(message.redeemDaemonRequest.token)
             .then(users => {
                 let user = users.length && users[0];
@@ -67,7 +69,7 @@ class RedeemDaemonRequest {
                         redeemDaemonResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('redeem-daemon-request', `Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('redeem-daemon-request', `Sending REJECTED REDEEM DAEMON RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -84,17 +86,14 @@ class RedeemDaemonRequest {
                                 redeemDaemonResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('redeem-daemon-request', `Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('redeem-daemon-request', `Sending REJECTED REDEEM DAEMON RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
-                        daemon.token = this.tracker.generateToken();
+                        daemon.token = this._daemonRepo.generateToken();
 
                         return this._daemonRepo.save(daemon)
-                            .then(daemonId => {
-                                if (!daemonId)
-                                    throw new Error('Could not update daemon');
-
+                            .then(() => {
                                 let response = this.tracker.RedeemDaemonResponse.create({
                                     response: this.tracker.RedeemDaemonResponse.Result.ACCEPTED,
                                     token: daemon.token,
@@ -105,13 +104,13 @@ class RedeemDaemonRequest {
                                     redeemDaemonResponse: response,
                                 });
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
-                                this._logger.debug('redeem-daemon-request', `Sending REDEEM DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                this._logger.debug('redeem-daemon-request', `Sending ACCEPTED REDEEM DAEMON RESPONSE to ${id}`);
                                 this.tracker.send(id, data);
                             });
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'RedeemDaemonRequest.handle()'));
+                this._logger.error(new NError(error, 'RedeemDaemonRequest.handle()'));
             });
     }
 

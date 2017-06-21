@@ -3,7 +3,7 @@
  * @module tracker/events/register-daemon-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Register Daemon Request event class
@@ -14,13 +14,15 @@ class RegisterDaemonRequest {
      * @param {App} app                         The application
      * @param {object} config                   Configuration
      * @param {Logger} logger                   Logger service
+     * @param {Registry} registry               Registry service
      * @param {UserRepository} userRepo         User repository
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
-    constructor(app, config, logger, userRepo, daemonRepo) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
     }
@@ -38,7 +40,7 @@ class RegisterDaemonRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'repositories.user', 'repositories.daemon' ];
+        return [ 'app', 'config', 'logger', 'registry', 'repositories.user', 'repositories.daemon' ];
     }
 
     /**
@@ -47,20 +49,20 @@ class RegisterDaemonRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('register-daemon-request', `Got REGISTER DAEMON REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('register-daemon-request', `Got REGISTER DAEMON REQUEST from ${id}`);
         return this._daemonRepo.findByToken(message.registerDaemonRequest.token)
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
                 if (daemon) {
-                    let info = this.tracker.identities.get(message.registerDaemonRequest.identity);
-                    if (info && info.clients.size) {
-                        let iter = info.clients.values();
+                    let identity = this._registry.identities.get(message.registerDaemonRequest.identity);
+                    if (identity && identity.clients.size) {
+                        let iter = identity.clients.values();
                         let found = iter.next().value;
-                        info = this.tracker.clients.get(found);
+                        let info = this._registry.clients.get(found);
                         if (info && info.daemonId !== daemon.id)
                             daemon = null;
                     }
@@ -74,8 +76,17 @@ class RegisterDaemonRequest {
                         return this._userRepo.find(daemon.userId);
                     })
                     .then(users => {
-                        let user = users.length && users[0];
+                        let success, user = users.length && users[0];
                         if (!daemon || !user) {
+                            success = false;
+                        } else {
+                            success = this._registry.registerDaemon(id, daemon.id, daemon.name,
+                                message.registerDaemonRequest.identity, message.registerDaemonRequest.key,
+                                user.id, user.email
+                            );
+                        }
+
+                        if (!success) {
                             let response = this.tracker.RegisterDaemonResponse.create({
                                 response: this.tracker.RegisterDaemonResponse.Result.REJECTED,
                             });
@@ -85,42 +96,14 @@ class RegisterDaemonRequest {
                                 registerDaemonResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('register-daemon-request',`Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('register-daemon-request',`Sending REJECTED REGISTER DAEMON RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
-
-                        client.daemonId = daemon.id;
-                        client.daemonName = user.email + '?' + daemon.name;
-                        client.identity = message.registerDaemonRequest.identity;
-                        client.key = message.registerDaemonRequest.key;
-
-                        let info = this.tracker.identities.get(client.identity);
-                        if (!info) {
-                            info = {
-                                clients: new Set(),
-                            };
-                            this.tracker.identities.set(client.identity, info);
-                        }
-                        info.clients.add(client.id);
-
-                        info = this.tracker.daemons.get(daemon.id);
-                        if (!info) {
-                            info = {
-                                id: daemon.id,
-                                name: daemon.name,
-                                userId: daemon.userId,
-                                userEmail: user.email,
-                                clients: new Set(),
-                            };
-                            this.tracker.daemons.set(daemon.id, info);
-                        }
-                        info.clients.add(client.id);
-                        this.tracker.emit('registration', id);
 
                         let response = this.tracker.RegisterDaemonResponse.create({
                             response: this.tracker.RegisterDaemonResponse.Result.ACCEPTED,
                             email: user.email,
-                            name: client.daemonName,
+                            name: daemon.name,
                         });
                         let reply = this.tracker.ServerMessage.create({
                             type: this.tracker.ServerMessage.Type.REGISTER_DAEMON_RESPONSE,
@@ -128,12 +111,14 @@ class RegisterDaemonRequest {
                             registerDaemonResponse: response,
                         });
                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                        this._logger.debug('register-daemon-request', `Sending REGISTER DAEMON RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                        this._logger.debug('register-daemon-request', `Sending ACCEPTED REGISTER DAEMON RESPONSE to ${id}`);
                         this.tracker.send(id, data);
+
+                        this.tracker.emit('registration', id);
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'RegisterDaemonRequest.handle()'));
+                this._logger.error(new NError(error, 'RegisterDaemonRequest.handle()'));
             });
     }
 

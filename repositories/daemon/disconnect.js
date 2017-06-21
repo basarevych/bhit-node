@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Disassociate daemon with a connection
@@ -51,6 +51,6 @@ module.exports = function (daemon, connection, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.disconnect()');
+            throw new NError(error, { daemon, connection }, 'DaemonRepository.disconnect()');
         });
 };

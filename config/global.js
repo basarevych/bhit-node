@@ -15,7 +15,7 @@ try {
 
 module.exports = {
     // Project name (alphanumeric)
-    project: 'arpen',
+    project: 'interconnect',
 
     // Server instance name (alphanumeric)
     instance: (userConfig.tracker && userConfig.tracker.instance) || 'tracker',
@@ -29,7 +29,6 @@ module.exports = {
         'commands',
         'servers',
         'services',
-        'subscribers',
         'models',
         'repositories',
     ],
@@ -52,11 +51,6 @@ module.exports = {
             },
         },
     },
-
-    // PUBSUB
-    subscribers: [ // service names
-        'subscribers.invalidateCache',
-    ],
 
     // SMTP servers
     smtp: {

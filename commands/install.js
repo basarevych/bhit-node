@@ -190,7 +190,7 @@ class Install {
                     });
             })
             .catch(error => {
-                return this.error(error.message);
+                return this.error(error);
             });
     }
 
@@ -199,7 +199,14 @@ class Install {
      * @param {...*} args
      */
     error(...args) {
-        return this._app.error(...args)
+        return args.reduce(
+            (prev, cur) => {
+                return prev.then(() => {
+                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
+                });
+            },
+            Promise.resolve()
+            )
             .then(
                 () => {
                     process.exit(1);

@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find users by confirmation token
@@ -56,6 +56,6 @@ module.exports = function (token, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'UserRepository.findByConfirm()');
+            throw new NError(error, { token }, 'UserRepository.findByConfirm()');
         });
 };

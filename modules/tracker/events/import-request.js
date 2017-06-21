@@ -3,7 +3,7 @@
  * @module tracker/events/import-request
  */
 const moment = require('moment-timezone');
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Import Request event class
@@ -14,15 +14,17 @@ class ImportRequest {
      * @param {App} app                                 The application
      * @param {object} config                           Configuration
      * @param {Logger} logger                           Logger service
+     * @param {Registry} registry                       Registry service
      * @param {UserRepository} userRepo                 User repository
      * @param {DaemonRepository} daemonRepo             Daemon repository
      * @param {PathRepository} pathRepo                 Path repository
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
-    constructor(app, config, logger, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
+        this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -46,6 +48,7 @@ class ImportRequest {
             'app',
             'config',
             'logger',
+            'registry',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
@@ -59,11 +62,11 @@ class ImportRequest {
      * @param {object} message      The message
      */
     handle(id, message) {
-        let client = this.tracker.clients.get(id);
+        let client = this._registry.clients.get(id);
         if (!client)
             return;
 
-        this._logger.debug('import-request', `Got IMPORT REQUEST from ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this._logger.debug('import-request', `Got IMPORT REQUEST from ${id}`);
         return Promise.resolve()
             .then(() => {
                 if (!client.daemonId)
@@ -73,17 +76,6 @@ class ImportRequest {
             })
             .then(daemons => {
                 let daemon = daemons.length && daemons[0];
-                if (!daemon)
-                    return null;
-                if (!message.importRequest.daemonName)
-                    return daemon;
-
-                return this._daemonRepo.findByUserAndName(daemon.userId, message.importRequest.daemonName)
-                    .then(daemons => {
-                        return daemons.length && daemons[0];
-                    });
-            })
-            .then(daemon => {
                 if (!daemon) {
                     let response = this.tracker.ImportResponse.create({
                         response: this.tracker.ImportResponse.Result.REJECTED,
@@ -94,7 +86,7 @@ class ImportRequest {
                         importResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('import-request', `Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                    this._logger.debug('import-request', `Sending REJECTED IMPORT RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -124,7 +116,7 @@ class ImportRequest {
                                 importResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('import-request', `Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                            this._logger.debug('import-request', `Sending REJECTED IMPORT RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
@@ -273,14 +265,14 @@ class ImportRequest {
                                             importResponse: response,
                                         });
                                         let data = this.tracker.ServerMessage.encode(reply).finish();
-                                        this._logger.debug('import-request', `Sending IMPORT RESPONSE to ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+                                        this._logger.debug('import-request', `Sending RESULTING IMPORT RESPONSE to ${id}`);
                                         this.tracker.send(id, data);
                                     });
                             });
                     });
             })
             .catch(error => {
-                this._logger.error(new WError(error, 'ImportRequest.handle()'));
+                this._logger.error(new NError(error, 'ImportRequest.handle()'));
             });
     }
 

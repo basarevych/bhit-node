@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find paths by token
@@ -71,6 +71,6 @@ module.exports = function (token, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.findByToken()');
+            throw new NError(error, { token }, 'PathRepository.findByToken()');
         });
 };

@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Delete a user
@@ -46,6 +46,6 @@ module.exports = function (user, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'UserRepository.delete()');
+            throw new NError(error, { user }, 'UserRepository.delete()');
         });
 };

@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find paths by user and path
@@ -75,6 +75,6 @@ module.exports = function (user, path, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'PathRepository.findByUserAndPath()');
+            throw new NError(error, { user, path }, 'PathRepository.findByUserAndPath()');
         });
 };

@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Delete a daemon
@@ -46,6 +46,6 @@ module.exports = function (daemon, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.delete()');
+            throw new NError(error, { daemon }, 'DaemonRepository.delete()');
         });
 };

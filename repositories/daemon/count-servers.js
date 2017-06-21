@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Count servers of a connection
@@ -52,6 +52,6 @@ module.exports = function (connection, pg) {
                 );
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.countServers()');
+            throw new NError(error, { connection }, 'DaemonRepository.countServers()');
         });
 };

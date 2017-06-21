@@ -3,7 +3,7 @@
  */
 'use strict';
 
-const WError = require('verror').WError;
+const NError = require('nerror');
 
 /**
  * Find daemons by user and name
@@ -57,6 +57,6 @@ module.exports = function (user, name, pg) {
             return models;
         })
         .catch(error => {
-            throw new WError(error, 'DaemonRepository.findByUserAndName()');
+            throw new NError(error, { user, name }, 'DaemonRepository.findByUserAndName()');
         });
 };
