@@ -114,6 +114,7 @@ module.exports = {
             interval: '1d',
             mode: 0o640,
             maxFiles: 3,
+            history: 'bhit.log.history',
         },
     },
 

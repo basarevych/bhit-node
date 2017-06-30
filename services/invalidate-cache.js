@@ -6,7 +6,7 @@
 class InvalidateCache {
     /**
      * Create the service
-     * @param {PubSub} pubsub                   PubSub service
+     * @param {PubSub} pubsub                   PostgresPubSub service
      * @param {Cacher} cacher                   Cacher service
      * @param {Logger} logger                   Logger service
      */
@@ -30,7 +30,7 @@ class InvalidateCache {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'pubsub', 'cacher', 'logger' ];
+        return [ 'postgresPubSub', 'cacher', 'logger' ];
     }
 
     /**
@@ -50,7 +50,7 @@ class InvalidateCache {
             return Promise.resolve();
 
         this._started = true;
-        return this._pubsub.connect('InvalidateCache', 'postgres.main')
+        return this._pubsub.connect('main', 'InvalidateCache')
             .then(client => {
                 return client.subscribe("invalidate_cache", this.onMessage.bind(this));
             });
