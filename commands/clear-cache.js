@@ -57,7 +57,7 @@ class ClearCache {
                 return client.query('FLUSHDB')
                     .then(() => {
                         client.done();
-                    })
+                    });
             })
             .then(() => {
                 process.exit(0);

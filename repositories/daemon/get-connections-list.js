@@ -110,7 +110,7 @@ module.exports = function (daemon, pg) {
                                                                     })
                                                                     .then(() => {
                                                                         return info;
-                                                                    })
+                                                                    });
                                                             })
                                                             .then(info => {
                                                                 if (info)
@@ -154,7 +154,7 @@ module.exports = function (daemon, pg) {
                                         .then(() => {
                                             return list;
                                         });
-                                })
+                                });
                         });
                 })
                 .then(
@@ -171,6 +171,6 @@ module.exports = function (daemon, pg) {
                 );
         })
         .catch(error => {
-            throw new NError(error, { daemon, connection }, 'DaemonRepository.getConnectionsList()');
+            throw new NError(error, { daemon }, 'DaemonRepository.getConnectionsList()');
         });
 };

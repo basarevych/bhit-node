@@ -134,7 +134,7 @@ class Tracker extends EventEmitter {
                     } catch (error) {
                         reject(new NError(error, 'Tracker.init()'));
                     }
-                })
+                });
             })
             .then(() => {
                 let configPath = (os.platform() === 'freebsd' ? '/usr/local/etc/bhit' : '/etc/bhit');

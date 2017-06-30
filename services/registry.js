@@ -4,6 +4,9 @@
  */
 const uuid = require('uuid');
 
+/**
+ * Server state registry
+ */
 class Registry {
     /**
      * Create the service

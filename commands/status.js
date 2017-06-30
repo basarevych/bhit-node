@@ -57,7 +57,7 @@ class Status {
             })
             .catch(error => {
                 return this.error(error);
-            })
+            });
     }
 
     /**

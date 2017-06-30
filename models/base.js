@@ -83,7 +83,10 @@ class BaseModel {
             let value = (desc && desc.set) ? desc.set.call(this, data[field]) : this._setField(field, data[field]);
             if (moment.isMoment(value)) {
                 value = moment.tz(value.format(this._postgres.constructor.datetimeFormat), 'UTC').local();
-                (desc && desc.set) ? desc.set.call(this, value) : this._setField(field, value);
+                if (desc && desc.set)
+                    desc.set.call(this, value);
+                else
+                    this._setField(field, value);
             }
         }
         this._dirty = false;

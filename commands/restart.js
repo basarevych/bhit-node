@@ -68,7 +68,7 @@ class Restart {
             })
             .catch(error => {
                 return this.error(error);
-            })
+            });
     }
 
     /**

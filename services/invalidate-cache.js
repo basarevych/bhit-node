@@ -3,6 +3,9 @@
  * @module services/invalidate-cache
  */
 
+/**
+ * Service to invalidate cache on RDBMS command
+ */
 class InvalidateCache {
     /**
      * Create the service

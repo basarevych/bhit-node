@@ -174,7 +174,7 @@ class AttachRequest {
 
                                                     return null;
                                                 });
-                                        })
+                                        });
                                 });
                         };
 

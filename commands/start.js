@@ -56,7 +56,7 @@ class Start {
             })
             .catch(error => {
                 return this.error(error);
-            })
+            });
     }
 
     /**

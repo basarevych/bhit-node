@@ -63,7 +63,7 @@ module.exports = function (path, pg) {
                                                     return result.rowCount + count;
                                                 });
                                         });
-                                })
+                                });
                         });
                 })
                 .then(

@@ -1,0 +1,8 @@
+{
+  "source": {
+    "excludePattern": "/config/"
+  },
+  "templates": {
+    "sort": false
+  }
+}

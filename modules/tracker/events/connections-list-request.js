@@ -112,7 +112,7 @@ class ConnectionsListRequest {
                         let data = this.tracker.ServerMessage.encode(reply).finish();
                         this._logger.debug('connections-list-request', `Sending ACCEPTED CONNECTIONS LIST RESPONSE to ${id}`);
                         this.tracker.send(id, data);
-                    })
+                    });
             })
             .catch(error => {
                 this._logger.error(new NError(error, 'ConnectionsListRequest.handle()'));

@@ -141,7 +141,7 @@ class ImportRequest {
 
                                                     return result;
                                                 });
-                                        })
+                                        });
                                 });
                         };
 

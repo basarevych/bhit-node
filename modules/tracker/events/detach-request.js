@@ -212,7 +212,7 @@ class DetachRequest {
                                                             }
                                                         });
                                                 }
-                                            })
+                                            });
                                     });
                             });
                     });

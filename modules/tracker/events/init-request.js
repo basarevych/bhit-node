@@ -130,7 +130,7 @@ class InitRequest {
                                         }
                                     );
                             });
-                    })
+                    });
             })
             .catch(error => {
                 this._logger.error(new NError(error, 'InitRequest.handle()'));

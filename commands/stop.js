@@ -59,7 +59,7 @@ class Stop {
             })
             .catch(error => {
                 return this.error(error);
-            })
+            });
     }
 
     /**
@@ -93,7 +93,7 @@ class Stop {
                     };
                     waitExit();
                 });
-            })
+            });
     }
 
     /**
