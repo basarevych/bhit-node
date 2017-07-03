@@ -225,6 +225,32 @@ class Tracker extends EventEmitter {
     }
 
     /**
+     * Stop the server
+     * @param {string} name                     Config section name
+     * @return {Promise}
+     */
+    stop(name) {
+        if (name !== this._name)
+            return Promise.reject(new Error(`Server ${name} was not properly bootstrapped`));
+
+        this.udp.close();
+        this.udp = null;
+
+        this.tcp.close();
+        this.tcp = null;
+
+        return new Promise((resolve, reject) => {
+            try {
+                let port = this._normalizePort(this._config.get(`servers.${name}.port`));
+                let host = this._config.get(`servers.${this._name}.host`);
+                this._logger.info(`Tracker TCP/UDP servers are no longer listening on ${host}:${port}`, () => { resolve(); });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    /**
      * Send message
      * @param {string} id                   Client ID
      * @param {Buffer|null} data            Data to send
@@ -298,12 +324,8 @@ class Tracker extends EventEmitter {
      */
     onUdpListening() {
         let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
-        this._logger.info(
-            'Tracker UDP server listening on ' +
-            (typeof port === 'string' ?
-                port :
-                this._config.get(`servers.${this._name}.host`) + ':' + port)
-        );
+        let host = this._config.get(`servers.${this._name}.host`);
+        this._logger.info(`Tracker UDP server listening on ${host}:${port}`);
     }
 
     /**
@@ -311,12 +333,8 @@ class Tracker extends EventEmitter {
      */
     onTcpListening() {
         let port = this._normalizePort(this._config.get(`servers.${this._name}.port`));
-        this._logger.info(
-            'Tracker TCP server listening on ' +
-            (typeof port === 'string' ?
-                port :
-                this._config.get(`servers.${this._name}.host`) + ':' + port)
-        );
+        let host = this._config.get(`servers.${this._name}.host`);
+        this._logger.info(`Tracker TCP server listening on ${host}:${port}`);
     }
 
     /**
@@ -567,11 +585,9 @@ class Tracker extends EventEmitter {
      */
     _normalizePort(val) {
         let port = parseInt(val, 10);
-        if (isNaN(port))
-            return val;
-        if (port >= 0)
-            return port;
-        return false;
+        if (!port || isNaN(port))
+            throw new Error(`Invalid port in config: ${val}`);
+        return port;
     }
 }
 
