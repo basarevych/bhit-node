@@ -149,27 +149,12 @@ class Tracker extends EventEmitter {
                     ca = path.join(configPath, 'certs', ca);
 
                 let options = {};
-                try {
-                    if (key)
-                        options.key = fs.readFileSync(key);
-                } catch (error) {
-                    this._logger.error(error.message);
-                    process.exit(1);
-                }
-                try {
-                    if (cert)
-                        options.cert = fs.readFileSync(cert);
-                } catch (error) {
-                    this._logger.error(error.message);
-                    process.exit(1);
-                }
-                try {
-                    if (ca)
-                        options.ca = fs.readFileSync(ca);
-                } catch (error) {
-                    this._logger.error(error.message);
-                    process.exit(1);
-                }
+                if (key)
+                    options.key = fs.readFileSync(key);
+                if (cert)
+                    options.cert = fs.readFileSync(cert);
+                if (ca)
+                    options.ca = fs.readFileSync(ca);
 
                 return [ dgram.createSocket('udp4'), tls.createServer(options, this.onConnection.bind(this)) ];
             })
@@ -182,7 +167,12 @@ class Tracker extends EventEmitter {
                 tcpServer.on('error', this.onTcpError.bind(this));
                 tcpServer.on('listening', this.onTcpListening.bind(this));
                 this.tcp = tcpServer;
-            });
+            })
+            .catch(error => {
+                return new Promise(() => {
+                    this._logger.error(error.messages || error.message, () => { process.exit(255); });
+                });
+            })
     }
 
     /**
@@ -192,7 +182,7 @@ class Tracker extends EventEmitter {
      */
     start(name) {
         if (name !== this._name)
-            return Promise.reject(new Error(`Server ${name} was not properly bootstrapped`));
+            return Promise.reject(new Error(`Server ${name} was not properly initialized`));
 
         return Array.from(this._app.get('modules')).reduce(
                 (prev, [ curName, curModule ]) => {
@@ -210,17 +200,30 @@ class Tracker extends EventEmitter {
             )
             .then(() => {
                 this._logger.debug('tracker', 'Starting the server');
-                let port = this._normalizePort(this._config.get(`servers.${name}.port`));
-                let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${name}.host`));
+                return new Promise((resolve, reject) => {
+                    let counter = 0;
+                    function done() {
+                        if (++counter === 2)
+                            resolve();
+                    }
 
-                try {
-                    this._timeoutTimer = setInterval(this._checkTimeout.bind(this), 500);
+                    let port = this._normalizePort(this._config.get(`servers.${name}.port`));
+                    let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${name}.host`));
 
+                    this.udp.once('listening', done);
                     this.udp.bind(port, host);
+
+                    this.tcp.once('listening', done);
                     this.tcp.listen(port, host);
-                } catch (error) {
-                    throw new NError(error, 'Tracker.start()');
-                }
+                });
+            })
+            .then(() => {
+                this._timeoutTimer = setInterval(this._checkTimeout.bind(this), 500);
+            })
+            .catch(error => {
+                return new Promise(() => {
+                    this._logger.error(error.messages || error.message, () => { process.exit(255); });
+                });
             });
     }
 
@@ -231,7 +234,7 @@ class Tracker extends EventEmitter {
      */
     stop(name) {
         if (name !== this._name)
-            return Promise.reject(new Error(`Server ${name} was not properly bootstrapped`));
+            return Promise.reject(new Error(`Server ${name} was not properly initialized`));
 
         this.udp.close();
         this.udp = null;
