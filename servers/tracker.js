@@ -207,14 +207,18 @@ class Tracker extends EventEmitter {
                             resolve();
                     }
 
-                    let port = this._normalizePort(this._config.get(`servers.${name}.port`));
-                    let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${name}.host`));
+                    try {
+                        let port = this._normalizePort(this._config.get(`servers.${name}.port`));
+                        let host = (typeof port === 'string' ? undefined : this._config.get(`servers.${name}.host`));
 
-                    this.udp.once('listening', done);
-                    this.udp.bind(port, host);
+                        this.udp.once('listening', done);
+                        this.udp.bind(port, host);
 
-                    this.tcp.once('listening', done);
-                    this.tcp.listen(port, host);
+                        this.tcp.once('listening', done);
+                        this.tcp.listen(port, host);
+                    } catch (error) {
+                        reject(error);
+                    }
                 });
             })
             .then(() => {
