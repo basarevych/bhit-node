@@ -240,6 +240,11 @@ class Tracker extends EventEmitter {
         if (name !== this._name)
             return Promise.reject(new Error(`Server ${name} was not properly initialized`));
 
+        if (this._timeoutTimer) {
+            clearInterval(this._timeoutTimer);
+            this._timeoutTimer = null;
+        }
+
         this.udp.close();
         this.udp = null;
 
