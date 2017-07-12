@@ -64,16 +64,10 @@ class CreateRequest {
             return;
 
         this._logger.debug('create-request', `Got CREATE REQUEST from ${id}`);
-        return Promise.resolve()
-            .then(() => {
-                if (!client.daemonId)
-                    return [];
-
-                return this._daemonRepo.find(client.daemonId);
-            })
-            .then(daemons => {
-                let daemon = daemons.length && daemons[0];
-                if (!daemon) {
+        this._userRepo.findByToken(message.createRequest.token)
+            .then(users => {
+                let user = users.length && users[0];
+                if (!user) {
                     let response = this.tracker.CreateResponse.create({
                         response: this.tracker.CreateResponse.Result.REJECTED,
                     });
@@ -83,40 +77,24 @@ class CreateRequest {
                         createResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('create-request', `Sending REJECTED CREATE RESPONSE to ${id}`);
+                    this._logger.debug('redeem-path-request', `Sending REJECTED CREATE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
-                let path = this._registry.validatePath(message.createRequest.path);
-                if (!path || path.email) {
-                    let response = this.tracker.CreateResponse.create({
-                        response: this.tracker.CreateResponse.Result.INVALID_PATH,
-                    });
-                    let reply = this.tracker.ServerMessage.create({
-                        type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
-                        messageId: message.messageId,
-                        createResponse: response,
-                    });
-                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('create-request', `Sending INVALID_PATH CREATE RESPONSE to ${id}`);
-                    return this.tracker.send(id, data);
-                }
-                path = path.path;
+                return Promise.resolve()
+                    .then(() => {
+                        if (!client.daemonId)
+                            return [];
 
-                let connection = this._connectionRepo.getModel('connection');
-                connection.userId = daemon.userId;
-                connection.token = this._connectionRepo.generateToken();
-                connection.encrypted = message.createRequest.encrypted;
-                connection.fixed = message.createRequest.fixed;
-                connection.connectAddress = message.createRequest.connectAddress || null;
-                connection.connectPort = message.createRequest.connectPort;
-                connection.listenAddress = message.createRequest.listenPort ? message.createRequest.listenAddress || null : null;
-                connection.listenPort = message.createRequest.listenPort || null;
-                return this._connectionRepo.createByPath(path, connection)
-                    .then(result => {
-                        if (!result.path || !result.connection) {
+                        return this._daemonRepo.find(client.daemonId);
+                    })
+                    .then(daemons => {
+                        let daemon = daemons.length && daemons[0];
+
+                        let path = this._registry.validatePath(message.createRequest.path);
+                        if (!path || path.email) {
                             let response = this.tracker.CreateResponse.create({
-                                response: this.tracker.CreateResponse.Result.PATH_EXISTS,
+                                response: this.tracker.CreateResponse.Result.INVALID_PATH,
                             });
                             let reply = this.tracker.ServerMessage.create({
                                 type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
@@ -124,29 +102,49 @@ class CreateRequest {
                                 createResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('create-request', `Sending PATH_EXISTS CREATE RESPONSE to ${id}`);
+                            this._logger.debug('create-request', `Sending INVALID_PATH CREATE RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
+                        path = path.path;
 
-                        let serverConnections = [], clientConnections = [];
-                        return Promise.resolve()
-                            .then(() => {
-                                if (message.createRequest.type === this.tracker.CreateRequest.Type.NOT_CONNECTED)
-                                    return;
+                        let connection = this._connectionRepo.getModel('connection');
+                        connection.userId = user.id;
+                        connection.token = this._connectionRepo.generateToken();
+                        connection.encrypted = message.createRequest.encrypted;
+                        connection.fixed = message.createRequest.fixed;
+                        connection.connectAddress = message.createRequest.connectAddress || null;
+                        connection.connectPort = message.createRequest.connectPort;
+                        connection.listenAddress = message.createRequest.listenPort ? message.createRequest.listenAddress || null : null;
+                        connection.listenPort = message.createRequest.listenPort || null;
+                        return this._connectionRepo.createByPath(path, connection)
+                            .then(result => {
+                                if (!result.path || !result.connection) {
+                                    let response = this.tracker.CreateResponse.create({
+                                        response: this.tracker.CreateResponse.Result.PATH_EXISTS,
+                                    });
+                                    let reply = this.tracker.ServerMessage.create({
+                                        type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
+                                        messageId: message.messageId,
+                                        createResponse: response,
+                                    });
+                                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                                    this._logger.debug('create-request', `Sending PATH_EXISTS CREATE RESPONSE to ${id}`);
+                                    return this.tracker.send(id, data);
+                                }
 
-                                return this._daemonRepo.connect(
-                                        daemon,
-                                        connection,
-                                        message.createRequest.type === this.tracker.CreateRequest.Type.SERVER ? 'server' : 'client'
-                                    )
-                                    .then(numConnections => {
-                                        if (!numConnections)
+                                let serverConnections = [], clientConnections = [];
+                                return Promise.resolve()
+                                    .then(() => {
+                                        if (!daemon || message.createRequest.type === this.tracker.CreateRequest.Type.NOT_CONNECTED)
                                             return;
 
-                                        return this._userRepo.find(connection.userId)
-                                            .then(users => {
-                                                let user = users.length && users[0];
-                                                if (!user)
+                                        return this._daemonRepo.connect(
+                                                daemon,
+                                                connection,
+                                                message.createRequest.type === this.tracker.CreateRequest.Type.SERVER ? 'server' : 'client'
+                                            )
+                                            .then(numConnections => {
+                                                if (!numConnections)
                                                     return;
 
                                                 if (message.createRequest.type === this.tracker.CreateRequest.Type.SERVER) {
@@ -169,27 +167,27 @@ class CreateRequest {
                                                     }));
                                                 }
                                             });
+                                    })
+                                    .then(() => {
+                                        let list = this.tracker.ConnectionsList.create({
+                                            serverConnections: serverConnections,
+                                            clientConnections: clientConnections,
+                                        });
+                                        let response = this.tracker.CreateResponse.create({
+                                            response: this.tracker.CreateResponse.Result.ACCEPTED,
+                                            serverToken: result.connection.token,
+                                            clientToken: result.path.token,
+                                            updates: list,
+                                        });
+                                        let reply = this.tracker.ServerMessage.create({
+                                            type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
+                                            messageId: message.messageId,
+                                            createResponse: response,
+                                        });
+                                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                                        this._logger.debug('create-request', `Sending ACCEPTED CREATE RESPONSE to ${id}`);
+                                        this.tracker.send(id, data);
                                     });
-                            })
-                            .then(() => {
-                                let list = this.tracker.ConnectionsList.create({
-                                    serverConnections: serverConnections,
-                                    clientConnections: clientConnections,
-                                });
-                                let response = this.tracker.CreateResponse.create({
-                                    response: this.tracker.CreateResponse.Result.ACCEPTED,
-                                    serverToken: result.connection.token,
-                                    clientToken: result.path.token,
-                                    updates: list,
-                                });
-                                let reply = this.tracker.ServerMessage.create({
-                                    type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
-                                    messageId: message.messageId,
-                                    createResponse: response,
-                                });
-                                let data = this.tracker.ServerMessage.encode(reply).finish();
-                                this._logger.debug('create-request', `Sending ACCEPTED CREATE RESPONSE to ${id}`);
-                                this.tracker.send(id, data);
                             });
                     });
             })

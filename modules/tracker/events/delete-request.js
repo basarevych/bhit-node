@@ -64,16 +64,10 @@ class DeleteRequest {
             return;
 
         this._logger.debug('delete-request', `Got DELETE REQUEST from ${id}`);
-        return Promise.resolve()
-            .then(() => {
-                if (!client.daemonId)
-                    return [];
-
-                return this._daemonRepo.find(client.daemonId);
-            })
-            .then(daemons => {
-                let daemon = daemons.length && daemons[0];
-                if (!daemon) {
+        this._userRepo.findByToken(message.deleteRequest.token)
+            .then(users => {
+                let user = users.length && users[0];
+                if (!user) {
                     let response = this.tracker.DeleteResponse.create({
                         response: this.tracker.DeleteResponse.Result.REJECTED,
                     });
@@ -83,7 +77,7 @@ class DeleteRequest {
                         deleteResponse: response,
                     });
                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                    this._logger.debug('delete-request', `Sending REJECTED DELETE RESPONSE to ${id}`);
+                    this._logger.debug('redeem-path-request', `Sending REJECTED DELETE RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
 
@@ -103,14 +97,10 @@ class DeleteRequest {
                 }
                 path = path.path;
 
-                return Promise.all([
-                        this._pathRepo.findByUserAndPath(daemon.userId, path),
-                        this._userRepo.find(daemon.userId),
-                    ])
-                    .then(([ paths, users ]) => {
+                return this._pathRepo.findByUserAndPath(user.id, path)
+                    .then(paths => {
                         let path = paths.length && paths[0];
-                        let user = users.length && users[0];
-                        if (!path || !user) {
+                        if (!path) {
                             let response = this.tracker.DeleteResponse.create({
                                 response: this.tracker.DeleteResponse.Result.PATH_NOT_FOUND,
                             });
