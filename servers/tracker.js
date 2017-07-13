@@ -172,7 +172,7 @@ class Tracker extends EventEmitter {
                 return new Promise(() => {
                     this._logger.error(error.messages || error.message, () => { process.exit(255); });
                 });
-            })
+            });
     }
 
     /**
