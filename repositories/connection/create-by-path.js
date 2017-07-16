@@ -41,7 +41,7 @@ module.exports = function (path, connection, pg) {
                                 return createPath(parts.join('/'));
                             })
                             .then(parent => {
-                                let node = pathRepo.create();
+                                let node = pathRepo.getModel('path');
                                 node.parentId = parent ? parent.id : null;
                                 node.userId = connection.userId;
                                 node.name = name.trim();
