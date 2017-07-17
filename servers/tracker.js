@@ -61,7 +61,7 @@ class Tracker extends EventEmitter {
      * @type {number}
      */
     static get pingTimeout() {
-        return 2 * 1000; // ms
+        return 7 * 1000; // ms
     }
 
     /**
@@ -69,7 +69,7 @@ class Tracker extends EventEmitter {
      * @type {number}
      */
     static get pongTimeout() {
-        return 5 * 1000; // ms
+        return 10 * 1000; // ms
     }
 
     /**
