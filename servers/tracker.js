@@ -498,7 +498,7 @@ class Tracker extends EventEmitter {
      */
     onError(id, error) {
         if (error.code !== 'ECONNRESET')
-            this._logger.error(`Client socket error (TCP): ${error.message} (id: ${id})`);
+            this._logger.error(`Client socket error (TCP, ${id}): ${error.fullStack || error.stack}`);
     }
 
     /**
