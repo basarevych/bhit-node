@@ -239,7 +239,7 @@ class Registry {
                 client.connections.set(connectionName, connections);
             }
             connections.connected = connected;
-            this._logger.info(`${connected} peer(s) connected to ${daemon.name} (${actingAs}) in ${connectionName}`);
+            this._logger.info(`${daemon.name} (${actingAs}) has ${connected} peer(s) connected in ${connectionName}`);
         } else {
             client.connections.delete(connectionName);
             this._logger.info(`Daemon ${daemon.name} (${actingAs}) removed from ${connectionName}`);
