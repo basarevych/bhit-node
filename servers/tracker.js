@@ -383,14 +383,6 @@ class Tracker extends EventEmitter {
             }
         );
         client.wrapper.on(
-            'read',
-            data => {
-                let timeout = this._timeouts.get(id);
-                if (timeout)
-                    timeout.receive = Date.now() + this.constructor.pongTimeout;
-            }
-        );
-        client.wrapper.on(
             'flush',
             data => {
                 let timeout = this._timeouts.get(id);
@@ -399,9 +391,11 @@ class Tracker extends EventEmitter {
             }
         );
 
+        socket.setTimeout(this.constructor.pongTimeout);
         socket.on('error', error => { this.onError(id, error); });
         socket.on('close', () => { this.onClose(id); });
         socket.on('end', () => { client.wrapper.detach(); });
+        socket.on('timeout', () => { this.onTimeout(id); });
 
         this.emit('connection', id);
     }
@@ -498,8 +492,12 @@ class Tracker extends EventEmitter {
      * @param {Error} error                 Error
      */
     onError(id, error) {
+        let client = this.clients.get(id);
+        if (!client)
+            return;
+
         if (error.code !== 'ECONNRESET')
-            this._logger.error(`Client socket error (TCP, ${id}): ${error.fullStack || error.stack}`);
+            this._logger.error(`Client socket error (TCP, ${client.socket.remoteAddress}:${client.socket.remotePort}): ${error.fullStack || error.stack}`);
     }
 
     /**
@@ -509,7 +507,7 @@ class Tracker extends EventEmitter {
     onClose(id) {
         let client = this.clients.get(id);
         if (client) {
-            this._logger.debug('tracker', `Client disconnected`);
+            this._logger.debug('tracker', `Client disconnected ${client.socket.remoteAddress}:${client.socket.remotePort}`);
             if (client.socket) {
                 if (!client.socket.destroyed)
                     client.socket.destroy();
@@ -529,12 +527,12 @@ class Tracker extends EventEmitter {
      * @param {string} id                   Client ID
      */
     onTimeout(id) {
-        this._logger.debug('tracker', `Client timeout`);
         let client = this.clients.get(id);
-        if (client && client.socket) {
-            client.socket.destroy();
-            client.wrapper.detach();
-        }
+        if (!client)
+            return;
+
+        this._logger.debug('tracker', `Client timeout ${client.socket.remoteAddress}:${client.socket.remotePort}`);
+        this.onClose(id);
     }
 
     /**
@@ -573,18 +571,12 @@ class Tracker extends EventEmitter {
     _checkTimeout() {
         let now = Date.now();
         for (let [ id, timestamp ] of this._timeouts) {
-            if (!id)
-                continue;
             if (!this.clients.has(id)) {
                 this._timeouts.delete(id);
                 continue;
             }
 
-            if (timestamp.receive !== 0 && now >= timestamp.receive) {
-                timestamp.receive = 0;
-                timestamp.send = 0;
-                this.onTimeout(id);
-            } else if (timestamp.send !== 0 && now >= timestamp.send) {
+            if (timestamp.send !== 0 && now >= timestamp.send) {
                 timestamp.send = 0;
                 this.send(id, null);
             }
