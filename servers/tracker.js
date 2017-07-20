@@ -369,7 +369,6 @@ class Tracker extends EventEmitter {
             id,
             {
                 send: Date.now() + this.constructor.pingTimeout,
-                receive: Date.now() + this.constructor.pongTimeout,
             }
         );
 
