@@ -269,7 +269,7 @@ class Tracker extends EventEmitter {
      */
     send(id, data) {
         let client = this.clients.get(id);
-        if (!client || !client.socket || !client.wrapper)
+        if (!client)
             return;
 
         if (!data) {
@@ -369,6 +369,7 @@ class Tracker extends EventEmitter {
             id,
             {
                 send: Date.now() + this.constructor.pingTimeout,
+                receive: Date.now() + this.constructor.pongTimeout,
             }
         );
 
@@ -382,6 +383,14 @@ class Tracker extends EventEmitter {
             }
         );
         client.wrapper.on(
+            'read',
+            data => {
+                let timeout = this._timeouts.get(id);
+                if (timeout)
+                    timeout.receive = Date.now() + this.constructor.pongTimeout;
+            }
+        );
+        client.wrapper.on(
             'flush',
             data => {
                 let timeout = this._timeouts.get(id);
@@ -390,7 +399,6 @@ class Tracker extends EventEmitter {
             }
         );
 
-        socket.setTimeout(this.constructor.pongTimeout);
         socket.on('error', error => { this.onError(id, error); });
         socket.on('close', () => { this.onClose(id); });
         socket.on('end', () => { client.wrapper.detach(); });
@@ -507,13 +515,8 @@ class Tracker extends EventEmitter {
         let client = this.clients.get(id);
         if (client) {
             this._logger.debug('tracker', `Client disconnected ${client.socket.remoteAddress}:${client.socket.remotePort}`);
-            if (client.socket) {
-                if (!client.socket.destroyed)
-                    client.socket.destroy();
-                client.socket = null;
-                client.wrapper.destroy();
-                client.wrapper = null;
-            }
+            client.socket.destroy();
+            client.wrapper.destroy();
             this.clients.delete(id);
         }
 
@@ -572,6 +575,12 @@ class Tracker extends EventEmitter {
         for (let [ id, timestamp ] of this._timeouts) {
             if (!this.clients.has(id)) {
                 this._timeouts.delete(id);
+                continue;
+            }
+
+            if (timestamp.receive !== 0 && now >= timestamp.receive) {
+                timestamp.receive = 0;
+                this.onTimeout(id);
                 continue;
             }
 
