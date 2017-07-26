@@ -135,9 +135,9 @@
       "resolved": "https://registry.npmjs.org/argv/-/argv-0.0.2.tgz"
     },
     "arpen": {
-      "version": "0.0.38",
-      "from": "arpen@>=0.0.38 <0.1.0",
-      "resolved": "https://registry.npmjs.org/arpen/-/arpen-0.0.38.tgz"
+      "version": "0.0.40",
+      "from": "arpen@>=0.0.40 <0.1.0",
+      "resolved": "https://registry.npmjs.org/arpen/-/arpen-0.0.40.tgz"
     },
     "array-flatten": {
       "version": "1.1.1",
@@ -384,9 +384,9 @@
       "resolved": "https://registry.npmjs.org/ee-first/-/ee-first-1.1.1.tgz"
     },
     "emailjs": {
-      "version": "1.0.10",
-      "from": "emailjs@>=1.0.9 <1.1.0",
-      "resolved": "https://registry.npmjs.org/emailjs/-/emailjs-1.0.10.tgz",
+      "version": "1.0.11",
+      "from": "emailjs@>=1.0.11 <1.1.0",
+      "resolved": "https://registry.npmjs.org/emailjs/-/emailjs-1.0.11.tgz",
       "dependencies": {
         "moment": {
           "version": "2.11.2",
@@ -505,11 +505,6 @@
           "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-3.0.1.tgz"
         }
       }
-    },
-    "generic-pool": {
-      "version": "2.4.3",
-      "from": "generic-pool@2.4.3",
-      "resolved": "https://registry.npmjs.org/generic-pool/-/generic-pool-2.4.3.tgz"
     },
     "getpass": {
       "version": "0.1.7",
@@ -880,9 +875,9 @@
       "resolved": "https://registry.npmjs.org/performance-now/-/performance-now-0.2.0.tgz"
     },
     "pg": {
-      "version": "6.4.0",
-      "from": "pg@>=6.4.0 <6.5.0",
-      "resolved": "https://registry.npmjs.org/pg/-/pg-6.4.0.tgz",
+      "version": "7.0.2",
+      "from": "pg@>=7.0.2 <7.1.0",
+      "resolved": "https://registry.npmjs.org/pg/-/pg-7.0.2.tgz",
       "dependencies": {
         "semver": {
           "version": "4.3.2",
@@ -902,16 +897,9 @@
       "resolved": "https://registry.npmjs.org/pg-format/-/pg-format-1.0.4.tgz"
     },
     "pg-pool": {
-      "version": "1.8.0",
-      "from": "pg-pool@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/pg-pool/-/pg-pool-1.8.0.tgz",
-      "dependencies": {
-        "object-assign": {
-          "version": "4.1.0",
-          "from": "object-assign@4.1.0",
-          "resolved": "https://registry.npmjs.org/object-assign/-/object-assign-4.1.0.tgz"
-        }
-      }
+      "version": "2.0.1",
+      "from": "pg-pool@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/pg-pool/-/pg-pool-2.0.1.tgz"
     },
     "pg-pubsub": {
       "version": "0.3.0",
