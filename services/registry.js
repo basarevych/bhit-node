@@ -14,7 +14,7 @@ class Registry {
      */
     constructor(logger) {
         // open sockets
-        this.clients = new Map();           // socketId -> { id, identity: key hash, key: public key, daemonId,
+        this.clients = new Map();           // socketId -> { id, identity: key hash, key: public key, hostname, daemonId, ips: Set(of internal ips),
                                             //               connections: Map(name -> { server: bool, connected: counter }) }
 
         // connected daemons
@@ -119,6 +119,11 @@ class Registry {
         return { email, path: '/' + parts.join('/') };
     }
 
+    /**
+     * Validate connections name
+     * @param {string} name                 Name
+     * @return {object|boolean}
+     */
     validateConnectionName(name) {
         let parts = name.split('/');
         if (parts.length < 2)
@@ -133,17 +138,27 @@ class Registry {
         return { email: emailPart, path: pathPart };
     }
 
+    /**
+     * Register new client
+     * @param {string} id
+     */
     addClient(id) {
         let client = {
             id: id,
             identity: null,
             key: null,
+            hostname: '',
+            ips: new Set(),
             daemonId: null,
             connections: new Map(),
         };
         this.clients.set(id, client);
     }
 
+    /**
+     * Forget a client
+     * @param {string} id
+     */
     removeClient(id) {
         let client = this.clients.get(id);
         if (!client)
@@ -186,7 +201,19 @@ class Registry {
         this.clients.delete(id);
     }
 
-    registerDaemon(clientId, daemonId, daemonName, identity, key, userId, userEmail) {
+    /**
+     * Identify client as a daemon
+     * @param {string} clientId
+     * @param {number} daemonId
+     * @param {string} daemonName
+     * @param {string} identity
+     * @param {string} key
+     * @param {string} hostname
+     * @param {number} userId
+     * @param {string} userEmail
+     * @return {boolean}
+     */
+    registerDaemon(clientId, daemonId, daemonName, identity, key, hostname, userId, userEmail) {
         let client = this.clients.get(clientId);
         if (!client)
             return false;
@@ -194,6 +221,7 @@ class Registry {
         client.daemonId = daemonId;
         client.identity = identity;
         client.key = key;
+        client.hostname = hostname;
 
         let info = this.identities.get(identity);
         if (!info) {
@@ -220,10 +248,22 @@ class Registry {
         return true;
     }
 
+    /**
+     * Update status of a connection of a daemon
+     * @param {string} connectionName
+     * @param {string} clientId
+     * @param {string} actingAs
+     * @param {boolean} active
+     * @param {number} connected
+     * @param {object} internalAddresses
+     */
     updateConnection(connectionName, clientId, actingAs, active, connected, internalAddresses = []) {
         let client = this.clients.get(clientId);
         if (!client || !client.daemonId)
             return;
+
+        for (let item of internalAddresses)
+            client.ips.add(item.address);
 
         let daemon = this.daemons.get(client.daemonId);
         if (!daemon)
@@ -270,6 +310,11 @@ class Registry {
         }
     }
 
+    /**
+     * Get ready server of a connection and all the clients that's been waiting for it
+     * @param {string} connectionName
+     * @return {object}
+     */
     checkWaiting(connectionName) {
         let waiting = this.waiting.get(connectionName);
         if (!waiting)
@@ -302,6 +347,12 @@ class Registry {
         return result;
     }
 
+    /**
+     * Remove all or specific clients from a connection
+     * @param {string} connectionName
+     * @param {string[]} clients
+     * @return {Array}
+     */
     removeConnection(connectionName, clients = []) {
         let updatedClients = [];
         for (let id of clients.length ? clients : Array.from(this.clients.keys())) {
@@ -334,6 +385,13 @@ class Registry {
         return updatedClients;
     }
 
+    /**
+     * Create pair of clients waiting for each other external address
+     * @param {string} connectionName
+     * @param {string} serverId
+     * @param {string} clientId
+     * @return {object}
+     */
     createPair(connectionName, serverId, clientId) {
         let clientRequestId = uuid.v1(), serverRequestId = uuid.v1();
         let pair = {
@@ -355,6 +413,13 @@ class Registry {
         return pair;
     }
 
+    /**
+     * Update a party of a pair possibly returning ready to use pair
+     * @param {string} requestId
+     * @param {string} address
+     * @param {string} port
+     * @return {object|null}
+     */
     updatePair(requestId, address, port) {
         let pair = this.pairs.get(requestId);
         if (!pair)

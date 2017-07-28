@@ -114,6 +114,9 @@ class Tracker extends EventEmitter {
                         this.ConnectionsList = this.proto.lookup('tracker.ConnectionsList');
                         this.ConnectionsListRequest = this.proto.lookup('tracker.ConnectionsListRequest');
                         this.ConnectionsListResponse = this.proto.lookup('tracker.ConnectionsListResponse');
+                        this.Daemon = this.proto.lookup('tracker.Daemon');
+                        this.DaemonsListRequest = this.proto.lookup('tracker.DaemonsListRequest');
+                        this.DaemonsListResponse = this.proto.lookup('tracker.DaemonsListResponse');
                         this.Status = this.proto.lookup('tracker.Status');
                         this.ServerAvailable = this.proto.lookup('tracker.ServerAvailable');
                         this.LookupIdentityRequest = this.proto.lookup('tracker.LookupIdentityRequest');
@@ -466,6 +469,9 @@ class Tracker extends EventEmitter {
                     break;
                 case this.ClientMessage.Type.CONNECTIONS_LIST_REQUEST:
                     this.emit('connections_list_request', id, message);
+                    break;
+                case this.ClientMessage.Type.DAEMONS_LIST_REQUEST:
+                    this.emit('daemons_list_request', id, message);
                     break;
                 case this.ClientMessage.Type.STATUS:
                     this.emit('status', id, message);

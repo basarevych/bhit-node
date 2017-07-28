@@ -24,6 +24,7 @@ class Tracker {
      * @param {DetachRequest} detachRequest
      * @param {TreeRequest} treeRequest
      * @param {ConnectionsListRequest} connectionsListRequest
+     * @param {DaemonsListRequest} daemonsListRequest
      * @param {Status} status
      * @param {LookupIdentityRequest} lookupIdentityRequest
      * @param {PunchRequest} punchRequest
@@ -33,7 +34,7 @@ class Tracker {
      * @param {RedeemPathRequest} redeemPathRequest
      */
     constructor(app, config, invalidateCache, initRequest, confirmRequest, createDaemonRequest, registerDaemonRequest,
-        createRequest, deleteRequest, importRequest, attachRequest, detachRequest, treeRequest, connectionsListRequest,
+        createRequest, deleteRequest, importRequest, attachRequest, detachRequest, treeRequest, connectionsListRequest, daemonsListRequest,
         status, lookupIdentityRequest, punchRequest, addressResponse, redeemMasterRequest, redeemDaemonRequest, redeemPathRequest)
     {
         this._app = app;
@@ -50,6 +51,7 @@ class Tracker {
         this._detachRequest = detachRequest;
         this._treeRequest = treeRequest;
         this._connectionsListRequest = connectionsListRequest;
+        this._daemonsListRequest = daemonsListRequest;
         this._status = status;
         this._lookupIdentityRequest = lookupIdentityRequest;
         this._punchRequest = punchRequest;
@@ -87,6 +89,7 @@ class Tracker {
             'modules.tracker.events.detachRequest',
             'modules.tracker.events.treeRequest',
             'modules.tracker.events.connectionsListRequest',
+            'modules.tracker.events.daemonsListRequest',
             'modules.tracker.events.status',
             'modules.tracker.events.lookupIdentityRequest',
             'modules.tracker.events.punchRequest',
@@ -126,6 +129,7 @@ class Tracker {
         server.on('detach_request', this._detachRequest.handle.bind(this._detachRequest));
         server.on('tree_request', this._treeRequest.handle.bind(this._treeRequest));
         server.on('connections_list_request', this._connectionsListRequest.handle.bind(this._connectionsListRequest));
+        server.on('daemons_list_request', this._daemonsListRequest.handle.bind(this._daemonsListRequest));
         server.on('status', this._status.handle.bind(this._status));
         server.on('lookup_identity_request', this._lookupIdentityRequest.handle.bind(this._lookupIdentityRequest));
         server.on('punch_request', this._punchRequest.handle.bind(this._punchRequest));

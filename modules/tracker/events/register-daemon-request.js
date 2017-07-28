@@ -82,7 +82,7 @@ class RegisterDaemonRequest {
                         } else {
                             success = this._registry.registerDaemon(id, daemon.id, daemon.name,
                                 message.registerDaemonRequest.identity, message.registerDaemonRequest.key,
-                                user.id, user.email
+                                message.registerDaemonRequest.hostname, user.id, user.email
                             );
                         }
 
