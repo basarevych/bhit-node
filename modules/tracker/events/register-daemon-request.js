@@ -59,12 +59,26 @@ class RegisterDaemonRequest {
                 let daemon = daemons.length && daemons[0];
                 if (daemon) {
                     let identity = this._registry.identities.get(message.registerDaemonRequest.identity);
-                    if (identity && identity.clients.size) {
-                        let iter = identity.clients.values();
-                        let found = iter.next().value;
-                        let info = this._registry.clients.get(found);
-                        if (info && info.daemonId !== daemon.id)
-                            daemon = null;
+                    if (identity) {
+                        for (let clientId of identity.clients) {
+                            let info = this._registry.clients.get(clientId);
+                            if (!info) {
+                                identity.clients.delete(clientId);
+                                continue;
+                            }
+                            if (info.daemonId !== daemon.id) {
+                                daemon = null;
+                                break;
+                            }
+                            if (info.identity !== message.registerDaemonRequest.identity) {
+                                daemon = null;
+                                break;
+                            }
+                            if (info.key !== message.registerDaemonRequest.key) {
+                                daemon = null;
+                                break;
+                            }
+                        }
                     }
                 }
 
