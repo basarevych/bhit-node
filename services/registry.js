@@ -14,7 +14,8 @@ class Registry {
      */
     constructor(logger) {
         // open sockets
-        this.clients = new Map();           // socketId -> { id, identity: key hash, key: public key, hostname, daemonId, ips: Set(of internal ips),
+        this.clients = new Map();           // socketId -> { id, identity: key hash, key: public key, hostname, version,
+                                            //               daemonId, ips: Set(of internal ips),
                                             //               connections: Map(name -> { server: bool, connected: counter }) }
 
         // connected daemons
@@ -203,47 +204,50 @@ class Registry {
 
     /**
      * Identify client as a daemon
-     * @param {string} clientId
-     * @param {number} daemonId
-     * @param {string} daemonName
-     * @param {string} identity
-     * @param {string} key
-     * @param {string} hostname
-     * @param {number} userId
-     * @param {string} userEmail
+     * @param {object} info
+     * @param {string} info.clientId
+     * @param {number} info.daemonId
+     * @param {string} info.daemonName
+     * @param {string} info.identity
+     * @param {string} info.key
+     * @param {string} info.hostname
+     * @param {string} info.version
+     * @param {number} info.userId
+     * @param {string} info.userEmail
      * @return {boolean}
      */
-    registerDaemon(clientId, daemonId, daemonName, identity, key, hostname, userId, userEmail) {
-        let client = this.clients.get(clientId);
+    registerDaemon(info) {
+        let client = this.clients.get(info.clientId);
         if (!client)
             return false;
 
-        client.daemonId = daemonId;
-        client.identity = identity;
-        client.key = key;
-        client.hostname = hostname;
+        client.daemonId = info.daemonId;
+        client.identity = info.identity;
+        client.key = info.key;
+        client.hostname = info.hostname;
+        client.version = info.version;
 
-        let info = this.identities.get(identity);
-        if (!info) {
-            info = {
+        let identityInfo = this.identities.get(info.identity);
+        if (!identityInfo) {
+            identityInfo = {
                 clients: new Set(),
             };
-            this.identities.set(identity, info);
+            this.identities.set(info.identity, identityInfo);
         }
-        info.clients.add(clientId);
+        identityInfo.clients.add(info.clientId);
 
-        let daemon = this.daemons.get(daemonId);
+        let daemon = this.daemons.get(info.daemonId);
         if (!daemon) {
             daemon = {
-                id: daemonId,
-                name: daemonName,
-                userId: userId,
-                userEmail: userEmail,
+                id: info.daemonId,
+                name: info.daemonName,
+                userId: info.userId,
+                userEmail: info.userEmail,
                 clients: new Set(),
             };
-            this.daemons.set(daemonId, daemon);
+            this.daemons.set(info.daemonId, daemon);
         }
-        daemon.clients.add(clientId);
+        daemon.clients.add(info.clientId);
 
         return true;
     }

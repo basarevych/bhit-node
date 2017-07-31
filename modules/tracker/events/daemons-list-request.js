@@ -87,38 +87,40 @@ class DaemonsListRequest {
                                 }
                             }
 
-                            let online = false;
-                            let hostnames = [];
-                            let internal = [];
-                            let external = [];
-
-                            if (info && info.clients.size) {
-                                online = true;
-                                for (let clientId of info.clients) {
-                                    let clientInfo = this._registry.clients.get(clientId);
-                                    if (!clientInfo)
-                                        continue;
-
-                                    hostnames.push(clientInfo.hostname);
-
-                                    for (let ip of Array.from(clientInfo.ips)) {
-                                        if (internal.indexOf(ip) === -1)
-                                            internal.push(ip);
-                                    }
-
-                                    let socketInfo = this._tracker.clients.get(clientId);
-                                    if (socketInfo && socketInfo.socket && external.indexOf(socketInfo.socket.remoteAddress) === -1)
-                                        external.push(socketInfo.socket.remoteAddress);
-                                }
+                            if (!info || !info.clients.size) {
+                                list.push(this.tracker.Daemon.create({
+                                    name: daemon.name,
+                                    online: false,
+                                    version: '',
+                                    hostname: '',
+                                    externalAddress: '',
+                                    internalAddresses: [],
+                                }));
+                                continue;
                             }
 
-                            list.push(this.tracker.Daemon.create({
-                                name: daemon.name,
-                                online: online,
-                                hostnames: hostnames,
-                                externalAddresses: external,
-                                internalAddresses: internal,
-                            }));
+                            for (let clientId of info.clients) {
+                                let clientInfo = this._registry.clients.get(clientId);
+                                if (!clientInfo)
+                                    continue;
+
+                                let socketInfo = this._tracker.clients.get(clientId);
+
+                                let internal = [];
+                                for (let ip of Array.from(clientInfo.ips)) {
+                                    if (internal.indexOf(ip) === -1)
+                                        internal.push(ip);
+                                }
+
+                                list.push(this.tracker.Daemon.create({
+                                    name: daemon.name,
+                                    online: true,
+                                    version: clientInfo.version || '',
+                                    hostname: clientInfo.hostname || '',
+                                    externalAddress: (socketInfo && socketInfo.socket.remoteAddress) || '',
+                                    internalAddresses: internal,
+                                }));
+                            }
                         }
 
                         let response = this.tracker.DaemonsListResponse.create({

@@ -80,10 +80,17 @@ class RegisterDaemonRequest {
                         if (!daemon || !user) {
                             success = false;
                         } else {
-                            success = this._registry.registerDaemon(id, daemon.id, daemon.name,
-                                message.registerDaemonRequest.identity, message.registerDaemonRequest.key,
-                                message.registerDaemonRequest.hostname, user.id, user.email
-                            );
+                            success = this._registry.registerDaemon({
+                                clientId: id,
+                                daemonId: daemon.id,
+                                daemonName: daemon.name,
+                                identity: message.registerDaemonRequest.identity,
+                                key: message.registerDaemonRequest.key,
+                                hostname: message.registerDaemonRequest.hostname,
+                                version: message.registerDaemonRequest.version,
+                                userId: user.id,
+                                userEmail: user.email,
+                            });
                         }
 
                         if (!success) {
