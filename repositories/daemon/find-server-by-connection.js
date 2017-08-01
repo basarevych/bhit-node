@@ -9,10 +9,10 @@ const NError = require('nerror');
  * Find server of a connection
  * @method findServerByConnection
  * @memberOf module:repositories/daemon~DaemonRepository
- * @param {object|number} connection        Connection to search by
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
- * @return {Promise}                        Resolves to array of models
+ * @param {ConnectionModel|number} connection   Connection to search by
+ * @param {PostgresClient|string} [pg]          Will reuse the Postgres client provided, or if string then will connect to
+ *                                              this instance of Postgres.
+ * @return {Promise}                            Resolves to array of models
  */
 module.exports = function (connection, pg) {
     return Promise.resolve()

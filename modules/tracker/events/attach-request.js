@@ -11,20 +11,24 @@ const NError = require('nerror');
 class AttachRequest {
     /**
      * Create service
-     * @param {App} app                                 The application
-     * @param {object} config                           Configuration
-     * @param {Logger} logger                           Logger service
-     * @param {Registry} registry                       Registry service
-     * @param {UserRepository} userRepo                 User repository
-     * @param {DaemonRepository} daemonRepo             Daemon repository
-     * @param {PathRepository} pathRepo                 Path repository
-     * @param {ConnectionRepository} connectionRepo     Connection repository
+     * @param {App} app                                         The application
+     * @param {object} config                                   Configuration
+     * @param {Logger} logger                                   Logger service
+     * @param {Registry} registry                               Registry service
+     * @param {RegisterDaemonRequest} registerDaemonRequest     RegisterDaemonRequest event
+     * @param {DetachRequest} detachRequest                     DetachRequest event
+     * @param {UserRepository} userRepo                         User repository
+     * @param {DaemonRepository} daemonRepo                     Daemon repository
+     * @param {PathRepository} pathRepo                         Path repository
+     * @param {ConnectionRepository} connectionRepo             Connection repository
      */
-    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, registry, registerDaemonRequest, detachRequest, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._registry = registry;
+        this._registerDaemonRequest = registerDaemonRequest;
+        this._detachRequest = detachRequest;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -49,6 +53,8 @@ class AttachRequest {
             'config',
             'logger',
             'registry',
+            'modules.tracker.events.registerDaemonRequest',
+            'modules.tracker.events.detachRequest',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
@@ -216,13 +222,57 @@ class AttachRequest {
                                 let connection = result[0];
                                 let path = result[1];
 
-                                return this._daemonRepo.connect(
-                                        daemon,
-                                        connection,
-                                        actingAs,
-                                        message.attachRequest.addressOverride,
-                                        message.attachRequest.portOverride
-                                    )
+                                return this._detachRequest.disconnect(daemon, connection)
+                                    .then(count => {
+                                        if (!count)
+                                            return;
+
+                                        let info = this._registry.daemons.get(daemon.id);
+                                        if (info) {
+                                            let promises = [];
+                                            for (let notifyId of info.clients)
+                                                promises.push(this._registerDaemonRequest.sendConnectionsList(notifyId));
+
+                                            if (promises.length)
+                                                return Promise.all(promises);
+                                        }
+                                    })
+                                    .then(() => {
+                                        if (actingAs !== 'server')
+                                            return;
+
+                                        return this._daemonRepo.findServerByConnection(connection)
+                                            .then(oldDaemons => {
+                                                let oldDaemon = oldDaemons.length && oldDaemons[0];
+                                                if (!oldDaemon)
+                                                    return;
+
+                                                return this._detachRequest.disconnect(oldDaemon, connection)
+                                                    .then(count => {
+                                                        if (!count)
+                                                            return;
+
+                                                        let info = this._registry.daemons.get(oldDaemon.id);
+                                                        if (info) {
+                                                            let promises = [];
+                                                            for (let notifyId of info.clients)
+                                                                promises.push(this._registerDaemonRequest.sendConnectionsList(notifyId));
+
+                                                            if (promises.length)
+                                                                return Promise.all(promises);
+                                                        }
+                                                    });
+                                            });
+                                    })
+                                    .then(() => {
+                                        return this._daemonRepo.connect(
+                                            daemon,
+                                            connection,
+                                            actingAs,
+                                            message.attachRequest.addressOverride,
+                                            message.attachRequest.portOverride
+                                        );
+                                    })
                                     .then(count => {
                                         let serverConnections = [], clientConnections = [];
 

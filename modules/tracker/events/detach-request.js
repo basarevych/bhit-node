@@ -165,12 +165,8 @@ class DetachRequest {
 
                                         let name = user.email + path.path;
 
-                                        return this._daemonRepo.disconnect(daemon, connection)
+                                        return this.disconnect(daemon, connection)
                                             .then(count => {
-                                                let info = this._registry.daemons.get(daemon.id);
-                                                if (info && info.clients.size)
-                                                    this._registry.removeConnection(name, Array.from(info.clients));
-
                                                 let response = this.tracker.DetachResponse.create({
                                                     response: (count > 0 ?
                                                         this.tracker.DetachResponse.Result.ACCEPTED :
@@ -188,12 +184,15 @@ class DetachRequest {
                                                 if (!count)
                                                     return;
 
-                                                let promises = [];
-                                                for (let clientId of info.clients)
-                                                    promises.push(this._registerDaemonRequest.sendConnectionsList(clientId));
+                                                let info = this._registry.daemons.get(daemon.id);
+                                                if (info) {
+                                                    let promises = [];
+                                                    for (let clientId of info.clients)
+                                                        promises.push(this._registerDaemonRequest.sendConnectionsList(clientId));
 
-                                                if (promises.length)
-                                                    return Promise.all(promises);
+                                                    if (promises.length)
+                                                        return Promise.all(promises);
+                                                }
                                             });
                                     });
                             });
@@ -204,6 +203,22 @@ class DetachRequest {
             });
     }
 
+    /**
+     * Remove daemon from a connection
+     * @param {DaemonModel} daemon
+     * @param {ConnectionModel} connection
+     * @return {Promise}
+     */
+    disconnect(daemon, connection) {
+        return this._daemonRepo.disconnect(daemon, connection)
+            .then(count => {
+                let info = this._registry.daemons.get(daemon.id);
+                if (info && info.clients.size)
+                    this._registry.removeConnection(name, Array.from(info.clients));
+
+                return count;
+            });
+    }
     /**
      * Retrieve server
      * @return {Tracker}
