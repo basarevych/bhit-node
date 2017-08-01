@@ -92,7 +92,7 @@ class CreateRequest {
                         let daemon = daemons.length && daemons[0];
 
                         let path = this._registry.validatePath(message.createRequest.path);
-                        if (!path || path.email) {
+                        if (!path || (path.email && path.email !== user.email)) {
                             let response = this.tracker.CreateResponse.create({
                                 response: this.tracker.CreateResponse.Result.INVALID_PATH,
                             });
