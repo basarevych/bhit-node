@@ -136,10 +136,46 @@ class RegisterDaemonRequest {
                         this.tracker.send(id, data);
 
                         this.tracker.emit('registration', id);
+
+                        return this.sendConnectionsList(id);
                     });
             })
             .catch(error => {
                 this._logger.error(new NError(error, 'RegisterDaemonRequest.handle()'));
+            });
+    }
+
+    /**
+     * Send connections list to a client
+     * @param {string} clientId
+     * @return {Promise}
+     */
+    sendConnectionsList(clientId) {
+        let client = this._registry.clients.get(clientId);
+        if (!client || !client.daemonId)
+            return Promise.resolve();
+
+        return this._daemonRepo.getConnectionsList(client.daemonId)
+            .then(list => {
+                if (!list)
+                    return Promise.resolve();
+
+                let prepared = this.tracker.ConnectionsList.create({
+                    serverConnections: [],
+                    clientConnections: [],
+                });
+                for (let item of list.serverConnections)
+                    prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
+                for (let item of list.clientConnections)
+                    prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+
+                let reply = this.tracker.ServerMessage.create({
+                    type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
+                    connectionsList: prepared,
+                });
+                let data = this.tracker.ServerMessage.encode(reply).finish();
+                this._logger.debug('status', `Sending CONNECTIONS LIST to ${clientId}`);
+                this.tracker.send(clientId, data);
             });
     }
 

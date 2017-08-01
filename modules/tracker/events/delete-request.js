@@ -11,19 +11,21 @@ const NError = require('nerror');
 class DeleteRequest {
     /**
      * Create service
-     * @param {App} app                                 The application
-     * @param {object} config                           Configuration
-     * @param {Logger} logger                           Logger service
-     * @param {Registry} registry                       Registry service
-     * @param {UserRepository} userRepo                 User repository
-     * @param {DaemonRepository} daemonRepo             Daemon repository
-     * @param {PathRepository} pathRepo                 Path repository
+     * @param {App} app                                         The application
+     * @param {object} config                                   Configuration
+     * @param {Logger} logger                                   Logger service
+     * @param {Registry} registry                               Registry service
+     * @param {RegisterDaemonRequest} registerDaemonRequest     RegisterDaemonRequest event
+     * @param {UserRepository} userRepo                         User repository
+     * @param {DaemonRepository} daemonRepo                     Daemon repository
+     * @param {PathRepository} pathRepo                         Path repository
      */
-    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo) {
+    constructor(app, config, logger, registry, registerDaemonRequest, userRepo, daemonRepo, pathRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._registry = registry;
+        this._registerDaemonRequest = registerDaemonRequest;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -47,6 +49,7 @@ class DeleteRequest {
             'config',
             'logger',
             'registry',
+            'modules.tracker.events.registerDaemonRequest',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
@@ -140,36 +143,8 @@ class DeleteRequest {
                                         this.tracker.send(id, data);
 
                                         let promises = [];
-                                        for (let clientId of updatedClients) {
-                                            let client = this._registry.clients.get(clientId);
-                                            if (!client || !client.daemonId)
-                                                continue;
-
-                                            promises.push(
-                                                this._daemonRepo.getConnectionsList(client.daemonId)
-                                                    .then(list => {
-                                                        if (!list)
-                                                            return;
-
-                                                        let prepared = this.tracker.ConnectionsList.create({
-                                                            serverConnections: [],
-                                                            clientConnections: [],
-                                                        });
-                                                        for (let item of list.serverConnections)
-                                                            prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
-                                                        for (let item of list.clientConnections)
-                                                            prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
-
-                                                        let reply = this.tracker.ServerMessage.create({
-                                                            type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
-                                                            connectionsList: prepared,
-                                                        });
-                                                        let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                        this._logger.debug('delete-request', `Sending CONNECTIONS LIST to ${clientId}`);
-                                                        this.tracker.send(clientId, data);
-                                                    })
-                                            );
-                                        }
+                                        for (let clientId of updatedClients)
+                                            promises.push(this._registerDaemonRequest.sendConnectionsList(clientId));
 
                                         if (promises.length)
                                             return Promise.all(promises);
