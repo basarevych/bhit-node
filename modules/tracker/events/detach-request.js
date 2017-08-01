@@ -11,20 +11,22 @@ const NError = require('nerror');
 class DetachRequest {
     /**
      * Create service
-     * @param {App} app                                 The application
-     * @param {object} config                           Configuration
-     * @param {Logger} logger                           Logger service
-     * @param {Registry} registry                       Registry service
-     * @param {UserRepository} userRepo                 User repository
-     * @param {DaemonRepository} daemonRepo             Daemon repository
-     * @param {PathRepository} pathRepo                 Path repository
-     * @param {ConnectionRepository} connectionRepo     Connection repository
+     * @param {App} app                                         The application
+     * @param {object} config                                   Configuration
+     * @param {Logger} logger                                   Logger service
+     * @param {Registry} registry                               Registry service
+     * @param {RegisterDaemonRequest} registerDaemonRequest     RegisterDaemonRequest service
+     * @param {UserRepository} userRepo                         User repository
+     * @param {DaemonRepository} daemonRepo                     Daemon repository
+     * @param {PathRepository} pathRepo                         Path repository
+     * @param {ConnectionRepository} connectionRepo             Connection repository
      */
-    constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
+    constructor(app, config, logger, registry, registerDaemonRequest, userRepo, daemonRepo, pathRepo, connectionRepo) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._registry = registry;
+        this._registerDaemonRequest = registerDaemonRequest;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
         this._pathRepo = pathRepo;
@@ -49,6 +51,7 @@ class DetachRequest {
             'config',
             'logger',
             'registry',
+            'modules.tracker.events.registerDaemonRequest',
             'repositories.user',
             'repositories.daemon',
             'repositories.path',
@@ -182,36 +185,15 @@ class DetachRequest {
                                                 this._logger.debug('detach-request', `Sending SUCCESS DETACH RESPONSE to ${id}`);
                                                 this.tracker.send(id, data);
 
-                                                if (count > 0 && info && info.clients.size) {
-                                                    return this._daemonRepo.getConnectionsList(daemon)
-                                                        .then(list => {
-                                                            if (!list)
-                                                                return;
+                                                if (!count)
+                                                    return;
 
-                                                            let prepared = this.tracker.ConnectionsList.create({
-                                                                serverConnections: [],
-                                                                clientConnections: [],
-                                                            });
-                                                            for (let item of list.serverConnections)
-                                                                prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
-                                                            for (let item of list.clientConnections)
-                                                                prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+                                                let promises = [];
+                                                for (let clientId of info.clients)
+                                                    promises.push(this._registerDaemonRequest.sendConnectionsList(clientId));
 
-                                                            let notification = this.tracker.ServerMessage.create({
-                                                                type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,
-                                                                connectionsList: prepared,
-                                                            });
-                                                            let data = this.tracker.ServerMessage.encode(notification).finish();
-
-                                                            for (let thisId of info.clients) {
-                                                                let client = this._registry.clients.get(thisId);
-                                                                if (client) {
-                                                                    this._logger.debug('detach-request', `Sending CONNECTIONS LIST to ${thisId}`);
-                                                                    this.tracker.send(thisId, data);
-                                                                }
-                                                            }
-                                                        });
-                                                }
+                                                if (promises.length)
+                                                    return Promise.all(promises);
                                             });
                                     });
                             });
