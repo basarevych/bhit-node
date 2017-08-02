@@ -210,13 +210,21 @@ class DetachRequest {
      * @return {Promise}
      */
     disconnect(daemon, connection) {
-        return this._daemonRepo.disconnect(daemon, connection)
-            .then(count => {
-                let info = this._registry.daemons.get(daemon.id);
-                if (info && info.clients.size)
-                    this._registry.removeConnection(name, Array.from(info.clients));
+        return Promise.all([ this._userRepo.find(connection.userId), this._pathRepo.find(connection.pathId) ])
+            .then(([ users, paths ]) => {
+                let user = users.length && users[0];
+                let path = paths.length && paths[0];
+                if (!user || !path)
+                    return 0;
 
-                return count;
+                return this._daemonRepo.disconnect(daemon, connection)
+                    .then(count => {
+                        let info = this._registry.daemons.get(daemon.id);
+                        if (info && info.clients.size)
+                            this._registry.removeConnection(user.email + path.path, Array.from(info.clients));
+
+                        return count;
+                    });
             });
     }
     /**
