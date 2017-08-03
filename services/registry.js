@@ -10,29 +10,27 @@ const uuid = require('uuid');
 class Registry {
     /**
      * Create the service
+     * @param {App} app                     The application
      * @param {Logger} logger               Logger service
      */
-    constructor(logger) {
+    constructor(app, logger) {
         // open sockets
-        this.clients = new Map();           // socketId -> { id, identity: key hash, key: public key, hostname, version,
-                                            //               daemonId, ips: Set(of internal ips),
-                                            //               connections: Map(name -> { server: bool, connected: counter }) }
+        this.clients = new Map();           // socketId -> RegistryClient(socketId)
+                                            // id is the same as with TrackerClient
 
         // connected daemons
-        this.daemons = new Map();           // daemonId -> { id, name, userId, userEmail, clients: Set(clientId) }
+        this.daemons = new Map();           // daemonId -> RegistryDaemon(daemonId)
 
         // identities lookup map
-        this.identities = new Map();        // identity -> { clients: Set(clientId) }
+        this.identities = new Map();        // identity -> RegistryIdentity(identity)
 
-        // daemons waiting for connection
-        this.waiting = new Map();           // connectionName -> { server: clientId, internalAddresses: [message InternalAddress], clients: Set(clientId) }
+        // daemons waiting for server
+        this.waiting = new Map();           // connectionName -> RegistryWaiting(connectionName)
 
         // daemons waiting for hole punching info
-        this.pairs = new Map();             // clientRequestId/serverRequestId ->
-                                            //      { timeout, connectionName, clientId, clientRequestId,
-                                            //        clientAddress, clientPort, serverId, serverRequestId,
-                                            //        serverAddress, serverPort }
+        this.pairs = new Map();             // serverRequestId and clientRequestId -> the same RegistryPair(serverRequestId, clientRequestId)
 
+        this._app = app;
         this._logger = logger;
         this._timer = setInterval(this._checkTimeout.bind(this), 1000);
     }
@@ -50,7 +48,7 @@ class Registry {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'logger' ];
+        return [ 'app', 'logger' ];
     }
 
     /**
@@ -144,15 +142,7 @@ class Registry {
      * @param {string} id
      */
     addClient(id) {
-        let client = {
-            id: id,
-            identity: null,
-            key: null,
-            hostname: '',
-            ips: new Set(),
-            daemonId: null,
-            connections: new Map(),
-        };
+        let client = this._app.get('entities.registryClient', id);
         this.clients.set(id, client);
     }
 
@@ -224,27 +214,22 @@ class Registry {
         client.daemonId = info.daemonId;
         client.identity = info.identity;
         client.key = info.key;
-        client.hostname = info.hostname;
-        client.version = info.version;
+        client.hostname = info.hostname || '?';
+        client.version = info.version || '?';
 
         let identityInfo = this.identities.get(info.identity);
         if (!identityInfo) {
-            identityInfo = {
-                clients: new Set(),
-            };
+            identityInfo = this._app.get('entities.registryIdentity', info.identity);
             this.identities.set(info.identity, identityInfo);
         }
         identityInfo.clients.add(info.clientId);
 
         let daemon = this.daemons.get(info.daemonId);
         if (!daemon) {
-            daemon = {
-                id: info.daemonId,
-                name: info.daemonName,
-                userId: info.userId,
-                userEmail: info.userEmail,
-                clients: new Set(),
-            };
+            daemon = this._app.get('entities.registryDaemon', info.daemonId);
+            daemon.name = info.daemonName;
+            daemon.userId = info.userId;
+            daemon.userEmail = info.userEmail;
             this.daemons.set(info.daemonId, daemon);
         }
         daemon.clients.add(info.clientId);
@@ -274,15 +259,14 @@ class Registry {
             return;
 
         if (active) {
-            let connections = client.connections.get(connectionName);
-            if (!connections) {
-                connections = {
-                    server: actingAs === 'server',
-                    connected: 0,
-                };
-                client.connections.set(connectionName, connections);
+            let connection = client.connections.get(connectionName);
+            if (!connection) {
+                connection = this._app.get('entities.registryClientConnection', connectionName);
+                connection.server = (actingAs === 'server');
+                connection.connected = 0;
+                client.connections.set(connectionName, connection);
             }
-            connections.connected = connected;
+            connection.connected = connected;
             this._logger.info(`${daemon.name} (${actingAs}) has ${connected} peer(s) connected in ${connectionName}`);
         } else {
             client.connections.delete(connectionName);
@@ -291,11 +275,9 @@ class Registry {
 
         let waiting = this.waiting.get(connectionName);
         if (!waiting) {
-            waiting = {
-                server: null,
-                internalAddresses: [],
-                clients: new Set(),
-            };
+            waiting = this._app.get('entities.registryWaiting', connectionName);
+            waiting.server = null;
+            waiting.internalAddresses = [];
             this.waiting.set(connectionName, waiting);
         }
 
@@ -335,18 +317,8 @@ class Registry {
         if (!serverDaemon)
             return null;
 
-        let result = {
-            info: {
-                connectionName: connectionName,
-                daemonName: serverDaemon.name,
-                internalAddresses: waiting.internalAddresses,
-            },
-            targets: Array.from(waiting.clients)
-        };
+        let result = this._app.get('entities.registryWaitingResult', waiting, serverDaemon.name);
         waiting.clients.clear();
-
-        if (!waiting.internalAddresses.length && !waiting.clients.size)
-            this.waiting.delete(connectionName);
 
         return result;
     }
@@ -398,21 +370,18 @@ class Registry {
      */
     createPair(connectionName, serverId, clientId) {
         let clientRequestId = uuid.v1(), serverRequestId = uuid.v1();
-        let pair = {
-            timestamp: Date.now() + this.constructor.pairTimeout,
-            connectionName: connectionName,
-            clientId: clientId,
-            clientRequestId: clientRequestId,
-            clientAddress: null,
-            clientPort: null,
-            serverId: serverId,
-            serverRequestId: serverRequestId,
-            serverAddress: null,
-            serverPort: null,
-        };
+        let pair = this._app.get('entities.registryPair', serverRequestId, clientRequestId);
+        pair.serverId = serverId;
+        pair.serverAddress = null;
+        pair.serverPort = null;
+        pair.clientId = clientId;
+        pair.clientAddress = null;
+        pair.clientPort = null;
+        pair.timestamp = Date.now() + this.constructor.pairTimeout;
+        pair.connectionName = connectionName;
 
-        this.pairs.set(clientRequestId, pair);
         this.pairs.set(serverRequestId, pair);
+        this.pairs.set(clientRequestId, pair);
 
         return pair;
     }

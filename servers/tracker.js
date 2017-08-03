@@ -27,10 +27,10 @@ class Tracker extends EventEmitter {
     constructor(app, config, logger, registry) {
         super();
 
-        this.tcp = null;                    // servers
+        this.tcp = null;                    // socket servers
         this.udp = null;
 
-        this.clients = new Map();           // socketId -> { id: socketId, socket, wrapper }) }
+        this.clients = new Map();           // socketId -> TrackerClient(socketId)
 
         this._name = null;
         this._app = app;
@@ -360,11 +360,10 @@ class Tracker extends EventEmitter {
         let id = uuid.v1();
         this._logger.debug('tracker', `New socket from ${socket.remoteAddress}:${socket.remotePort}`);
 
-        let client = {
-            id: id,
-            socket: socket,
-            wrapper: new SocketWrapper(socket),
-        };
+        let client = this._app.get('entities.trackerClient', id);
+        client.socket = socket;
+        client.wrapper = new SocketWrapper(socket);
+
         this.clients.set(id, client);
         this._registry.addClient(id);
 
