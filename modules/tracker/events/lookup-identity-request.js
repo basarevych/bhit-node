@@ -89,7 +89,7 @@ class LookupIdentityRequest {
 
             let response = this.tracker.LookupIdentityResponse.create({
                 response: this.tracker.LookupIdentityResponse.Result.FOUND,
-                name: daemon.name,
+                name: daemon.userEmail + '?' + daemon.name,
                 key: info.key,
             });
             let msg = this.tracker.ServerMessage.create({
