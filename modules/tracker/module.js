@@ -16,6 +16,7 @@ class Tracker {
      * @param {InitRequest} initRequest
      * @param {ConfirmRequest} confirmRequest
      * @param {CreateDaemonRequest} createDaemonRequest
+     * @param {DeleteDaemonRequest} deleteDaemonRequest
      * @param {RegisterDaemonRequest} registerDaemonRequest
      * @param {CreateRequest} createRequest
      * @param {DeleteRequest} deleteRequest
@@ -33,7 +34,7 @@ class Tracker {
      * @param {RedeemDaemonRequest} redeemDaemonRequest
      * @param {RedeemPathRequest} redeemPathRequest
      */
-    constructor(app, config, invalidateCache, initRequest, confirmRequest, createDaemonRequest, registerDaemonRequest,
+    constructor(app, config, invalidateCache, initRequest, confirmRequest, createDaemonRequest, deleteDaemonRequest, registerDaemonRequest,
         createRequest, deleteRequest, importRequest, attachRequest, detachRequest, treeRequest, connectionsListRequest, daemonsListRequest,
         status, lookupIdentityRequest, punchRequest, addressResponse, redeemMasterRequest, redeemDaemonRequest, redeemPathRequest)
     {
@@ -43,6 +44,7 @@ class Tracker {
         this._initRequest = initRequest;
         this._confirmRequest = confirmRequest;
         this._createDaemonRequest = createDaemonRequest;
+        this._deleteDaemonRequest = deleteDaemonRequest;
         this._registerDaemonRequest = registerDaemonRequest;
         this._createRequest = createRequest;
         this._deleteRequest = deleteRequest;
@@ -81,6 +83,7 @@ class Tracker {
             'modules.tracker.events.initRequest',
             'modules.tracker.events.confirmRequest',
             'modules.tracker.events.createDaemonRequest',
+            'modules.tracker.events.deleteDaemonRequest',
             'modules.tracker.events.registerDaemonRequest',
             'modules.tracker.events.createRequest',
             'modules.tracker.events.deleteRequest',
@@ -121,6 +124,7 @@ class Tracker {
         server.on('init_request', this._initRequest.handle.bind(this._initRequest));
         server.on('confirm_request', this._confirmRequest.handle.bind(this._confirmRequest));
         server.on('create_daemon_request', this._createDaemonRequest.handle.bind(this._createDaemonRequest));
+        server.on('delete_daemon_request', this._deleteDaemonRequest.handle.bind(this._deleteDaemonRequest));
         server.on('register_daemon_request', this._registerDaemonRequest.handle.bind(this._registerDaemonRequest));
         server.on('create_request', this._createRequest.handle.bind(this._createRequest));
         server.on('delete_request', this._deleteRequest.handle.bind(this._deleteRequest));

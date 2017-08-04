@@ -238,6 +238,19 @@ class Registry {
     }
 
     /**
+     * Remove daemon with clients from all data structures
+     * @param {number} daemonId
+     */
+    removeDaemon(daemonId) {
+        let daemon = this.daemons.get(daemonId);
+        if (daemon) {
+            for (let clientId of daemon.clients)
+                this.removeClient(clientId);
+            this.daemons.delete(daemonId);
+        }
+    }
+
+    /**
      * Update status of a connection of a daemon
      * @param {string} connectionName
      * @param {string} clientId
