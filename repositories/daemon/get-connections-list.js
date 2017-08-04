@@ -123,13 +123,13 @@ module.exports = function (daemon, pg) {
                                                             .then(servers => {
                                                                 let server = servers.length && servers[0];
                                                                 if (!server)
-                                                                    return;
+                                                                    return null;
 
-                                                                return Promise.all([
-                                                                        getFullName(server),
-                                                                        pathRepo.find(connection.pathId),
-                                                                    ])
-                                                                    .then(([name, paths]) => {
+                                                                return getFullName(server);
+                                                            })
+                                                            .then(name => {
+                                                                return pathRepo.find(connection.pathId)
+                                                                    .then(paths => {
                                                                         let path = paths.length && paths[0];
                                                                         if (!path)
                                                                             return;
