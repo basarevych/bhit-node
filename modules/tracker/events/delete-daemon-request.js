@@ -95,7 +95,7 @@ class DeleteDaemonRequest {
                         return this._daemonRepo.delete(daemon)
                             .then(() => {
                                 for (let clientId of clients) {
-                                    let info = this._tracker.clients.get(clientId);
+                                    let info = this.tracker.clients.get(clientId);
                                     if (info) {
                                         info.socket.end();
                                         info.wrapper.detach();
