@@ -104,7 +104,7 @@ class DaemonsListRequest {
                                 if (!clientInfo)
                                     continue;
 
-                                let socketInfo = this._tracker.clients.get(clientId);
+                                let socketInfo = this.tracker.clients.get(clientId);
 
                                 let internal = [];
                                 for (let ip of Array.from(clientInfo.ips)) {
