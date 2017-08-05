@@ -92,8 +92,8 @@ class RemoteDetachRequest {
 
         this._userRepo.findByToken(message.remoteDetachRequest.token)
             .then(users => {
-                let user = users.length && users[0];
-                if (!user || (userEmail && userEmail !== user.email)) {
+                let daemonUser = users.length && users[0];
+                if (!daemonUser) {
                     let response = this.tracker.RemoteDetachResponse.create({
                         response: this.tracker.RemoteDetachResponse.Result.REJECTED,
                     });
@@ -106,14 +106,15 @@ class RemoteDetachRequest {
                     this._logger.debug('remote-detach-request', `Sending REJECTED REMOTE DETACH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
-                userEmail = user.email;
+                if (!userEmail)
+                    userEmail = daemonUser.email;
 
-                return this._daemonRepo.findByUserAndName(user, message.remoteDetachRequest.daemonName)
-                    .then(daemons => {
-                        let daemon = daemons.length && daemons[0];
-                        if (!daemon) {
+                return this._userRepo.findByEmail(userEmail)
+                    .then(users => {
+                        let connUser = users.length && users[0];
+                        if (!connUser) {
                             let response = this.tracker.RemoteDetachResponse.create({
-                                response: this.tracker.RemoteDetachResponse.Result.DAEMON_NOT_FOUND,
+                                response: this.tracker.RemoteDetachResponse.Result.PATH_NOT_FOUND,
                             });
                             let reply = this.tracker.ServerMessage.create({
                                 type: this.tracker.ServerMessage.Type.REMOTE_DETACH_RESPONSE,
@@ -121,16 +122,16 @@ class RemoteDetachRequest {
                                 remoteDetachResponse: response,
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
-                            this._logger.debug('remote-detach-request', `Sending DAEMON_NOT_FOUND REMOTE DETACH RESPONSE to ${id}`);
+                            this._logger.debug('remote-detach-request', `Sending PATH_NOT_FOUND REMOTE DETACH RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 
-                        return this._pathRepo.findByUserAndPath(user, userPath)
-                            .then(paths => {
-                                let path = paths.length && paths[0];
-                                if (!path) {
+                        return this._daemonRepo.findByUserAndName(daemonUser, message.remoteDetachRequest.daemonName)
+                            .then(daemons => {
+                                let daemon = daemons.length && daemons[0];
+                                if (!daemon) {
                                     let response = this.tracker.RemoteDetachResponse.create({
-                                        response: this.tracker.RemoteDetachResponse.Result.PATH_NOT_FOUND,
+                                        response: this.tracker.RemoteDetachResponse.Result.DAEMON_NOT_FOUND,
                                     });
                                     let reply = this.tracker.ServerMessage.create({
                                         type: this.tracker.ServerMessage.Type.REMOTE_DETACH_RESPONSE,
@@ -138,14 +139,14 @@ class RemoteDetachRequest {
                                         remoteDetachResponse: response,
                                     });
                                     let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    this._logger.debug('remote-detach-request', `Sending PATH_NOT_FOUND REMOTE DETACH RESPONSE to ${id}`);
+                                    this._logger.debug('remote-detach-request', `Sending DAEMON_NOT_FOUND REMOTE DETACH RESPONSE to ${id}`);
                                     return this.tracker.send(id, data);
                                 }
 
-                                return this._connectionRepo.findByPath(path)
-                                    .then(() => {
-                                        let connection = connections.length && connections[0];
-                                        if (!connection) {
+                                return this._pathRepo.findByUserAndPath(connUser, userPath)
+                                    .then(paths => {
+                                        let path = paths.length && paths[0];
+                                        if (!path) {
                                             let response = this.tracker.RemoteDetachResponse.create({
                                                 response: this.tracker.RemoteDetachResponse.Result.PATH_NOT_FOUND,
                                             });
@@ -159,38 +160,56 @@ class RemoteDetachRequest {
                                             return this.tracker.send(id, data);
                                         }
 
-                                        return this._detachRequest.disconnect(daemon, connection)
-                                            .then(count => {
-                                                let response = this.tracker.RemoteDetachResponse.create({
-                                                    response: (count > 0 ?
-                                                        this.tracker.RemoteDetachResponse.Result.ACCEPTED :
-                                                        this.tracker.RemoteDetachResponse.Result.NOT_ATTACHED),
-                                                });
-                                                let reply = this.tracker.ServerMessage.create({
-                                                    type: this.tracker.ServerMessage.Type.REMOTE_DETACH_RESPONSE,
-                                                    messageId: message.messageId,
-                                                    remoteDetachResponse: response,
-                                                });
-                                                let data = this.tracker.ServerMessage.encode(reply).finish();
-                                                this._logger.debug('remote-detach-request', `Sending SUCCESS REMOTE DETACH RESPONSE to ${id}`);
-                                                this.tracker.send(id, data);
-
-                                                if (!count)
-                                                    return;
-
-                                                let info = this._registry.daemons.get(daemon.id);
-                                                if (info) {
-                                                    let promises = [];
-                                                    for (let clientId of info.clients)
-                                                        promises.push(this._registerDaemonRequest.sendConnectionsList(clientId));
-
-                                                    if (promises.length)
-                                                        return Promise.all(promises);
+                                        return this._connectionRepo.findByPath(path)
+                                            .then(() => {
+                                                let connection = connections.length && connections[0];
+                                                if (!connection) {
+                                                    let response = this.tracker.RemoteDetachResponse.create({
+                                                        response: this.tracker.RemoteDetachResponse.Result.PATH_NOT_FOUND,
+                                                    });
+                                                    let reply = this.tracker.ServerMessage.create({
+                                                        type: this.tracker.ServerMessage.Type.REMOTE_DETACH_RESPONSE,
+                                                        messageId: message.messageId,
+                                                        remoteDetachResponse: response,
+                                                    });
+                                                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                                                    this._logger.debug('remote-detach-request', `Sending PATH_NOT_FOUND REMOTE DETACH RESPONSE to ${id}`);
+                                                    return this.tracker.send(id, data);
                                                 }
+
+                                                return this._detachRequest.disconnect(daemon, connection)
+                                                    .then(count => {
+                                                        let response = this.tracker.RemoteDetachResponse.create({
+                                                            response: (count > 0 ?
+                                                                this.tracker.RemoteDetachResponse.Result.ACCEPTED :
+                                                                this.tracker.RemoteDetachResponse.Result.NOT_ATTACHED),
+                                                        });
+                                                        let reply = this.tracker.ServerMessage.create({
+                                                            type: this.tracker.ServerMessage.Type.REMOTE_DETACH_RESPONSE,
+                                                            messageId: message.messageId,
+                                                            remoteDetachResponse: response,
+                                                        });
+                                                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                                                        this._logger.debug('remote-detach-request', `Sending SUCCESS REMOTE DETACH RESPONSE to ${id}`);
+                                                        this.tracker.send(id, data);
+
+                                                        if (!count)
+                                                            return;
+
+                                                        let info = this._registry.daemons.get(daemon.id);
+                                                        if (info) {
+                                                            let promises = [];
+                                                            for (let clientId of info.clients)
+                                                                promises.push(this._registerDaemonRequest.sendConnectionsList(clientId));
+
+                                                            if (promises.length)
+                                                                return Promise.all(promises);
+                                                        }
+                                                    });
                                             });
                                     });
                             });
-                    });
+                    })
             })
             .catch(error => {
                 this._logger.error(new NError(error, 'RemoteDetachRequest.handle()'));
