@@ -56,6 +56,6 @@ module.exports = function (user, pg) {
             return models;
         })
         .catch(error => {
-            throw new NError(error, { user, name }, 'DaemonRepository.findByUser()');
+            throw new NError(error, { user }, 'DaemonRepository.findByUser()');
         });
 };

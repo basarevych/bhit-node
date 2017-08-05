@@ -9,7 +9,7 @@ const NError = require('nerror');
  * Find daemons by user and name
  * @method findByUserAndName
  * @memberOf module:repositories/daemon~DaemonRepository
- * @param {UserModel} user                  User model or ID
+ * @param {UserModel|number} user           User model or ID
  * @param {string} name                     Daemon name to search by
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
  *                                          this instance of Postgres.

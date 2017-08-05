@@ -72,6 +72,11 @@ class AttachRequest {
         if (!client)
             return;
 
+        if (message.attachRequest.addressOverride === '*')
+            message.attachRequest.addressOverride = '';
+        if (message.attachRequest.portOverride === '*')
+            message.attachRequest.portOverride = '';
+
         let userEmail, userPath, target = this._registry.validatePath(message.attachRequest.path);
         if (target) {
             userEmail = target.email;
@@ -187,11 +192,6 @@ class AttachRequest {
                         return Promise.resolve()
                             .then(() => {
                                 if (actingAs === 'server') {
-                                    if (message.attachRequest.addressOverride === '*')
-                                        message.attachRequest.addressOverride = '';
-                                    if (message.attachRequest.portOverride === '*')
-                                        message.attachRequest.portOverride = '';
-
                                     return this._pathRepo.find(connection.pathId)
                                         .then(paths => {
                                             let path = paths.length && paths[0];
@@ -265,13 +265,7 @@ class AttachRequest {
                                             });
                                     })
                                     .then(() => {
-                                        return this._daemonRepo.connect(
-                                            daemon,
-                                            connection,
-                                            actingAs,
-                                            message.attachRequest.addressOverride,
-                                            message.attachRequest.portOverride
-                                        );
+                                        return this.connect(daemon, connection, actingAs, message.attachRequest.addressOverride, message.attachRequest.portOverride);
                                     })
                                     .then(count => {
                                         let serverConnections = [], clientConnections = [];
@@ -279,7 +273,7 @@ class AttachRequest {
                                         return Promise.resolve()
                                             .then(() => {
                                                 if (count === 0)
-                                                    return this.tracker.AttachResponse.Result.ALREADY_CONNECTED;
+                                                    return this.tracker.AttachResponse.Result.ALREADY_ATTACHED;
 
                                                 if (actingAs === 'server') {
                                                     return this._daemonRepo.findByConnection(connection)
@@ -370,6 +364,19 @@ class AttachRequest {
             .catch(error => {
                 this._logger.error(new NError(error, 'AttachRequest.handle()'));
             });
+    }
+
+    /**
+     * Add daemon to a connection
+     * @param {DaemonModel} daemon
+     * @param {ConnectionModel} connection
+     * @param {string} actingAs
+     * @param {string} addressOverride
+     * @param {string} portOverride
+     * @return {Promise}
+     */
+    connect(daemon, connection, actingAs, addressOverride, portOverride) {
+        return this._daemonRepo.connect(daemon, connection, actingAs, addressOverride, portOverride);
     }
 
     /**

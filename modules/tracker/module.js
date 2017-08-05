@@ -22,7 +22,9 @@ class Tracker {
      * @param {DeleteRequest} deleteRequest
      * @param {ImportRequest} importRequest
      * @param {AttachRequest} attachRequest
+     * @param {RemoteAttachRequest} remoeteAttachRequest
      * @param {DetachRequest} detachRequest
+     * @param {RemoteDetachRequest} remoteDetachRequest
      * @param {TreeRequest} treeRequest
      * @param {ConnectionsListRequest} connectionsListRequest
      * @param {DaemonsListRequest} daemonsListRequest
@@ -35,8 +37,9 @@ class Tracker {
      * @param {RedeemPathRequest} redeemPathRequest
      */
     constructor(app, config, invalidateCache, initRequest, confirmRequest, createDaemonRequest, deleteDaemonRequest, registerDaemonRequest,
-        createRequest, deleteRequest, importRequest, attachRequest, detachRequest, treeRequest, connectionsListRequest, daemonsListRequest,
-        status, lookupIdentityRequest, punchRequest, addressResponse, redeemMasterRequest, redeemDaemonRequest, redeemPathRequest)
+        createRequest, deleteRequest, importRequest, attachRequest, remoteAttachRequest, detachRequest, remoteDetachRequest, treeRequest,
+        connectionsListRequest, daemonsListRequest, status, lookupIdentityRequest, punchRequest, addressResponse, redeemMasterRequest,
+        redeemDaemonRequest, redeemPathRequest)
     {
         this._app = app;
         this._config = config;
@@ -50,7 +53,9 @@ class Tracker {
         this._deleteRequest = deleteRequest;
         this._importRequest = importRequest;
         this._attachRequest = attachRequest;
+        this._remoteAttachRequest = remoteAttachRequest;
         this._detachRequest = detachRequest;
+        this._remoteDetachRequest = remoteDetachRequest;
         this._treeRequest = treeRequest;
         this._connectionsListRequest = connectionsListRequest;
         this._daemonsListRequest = daemonsListRequest;
@@ -89,7 +94,9 @@ class Tracker {
             'modules.tracker.events.deleteRequest',
             'modules.tracker.events.importRequest',
             'modules.tracker.events.attachRequest',
+            'modules.tracker.events.remoteAttachRequest',
             'modules.tracker.events.detachRequest',
+            'modules.tracker.events.remoteDetachRequest',
             'modules.tracker.events.treeRequest',
             'modules.tracker.events.connectionsListRequest',
             'modules.tracker.events.daemonsListRequest',
@@ -130,7 +137,9 @@ class Tracker {
         server.on('delete_request', this._deleteRequest.handle.bind(this._deleteRequest));
         server.on('import_request', this._importRequest.handle.bind(this._importRequest));
         server.on('attach_request', this._attachRequest.handle.bind(this._attachRequest));
+        server.on('remote_attach_request', this._remoteAttachRequest.handle.bind(this._remoteAttachRequest));
         server.on('detach_request', this._detachRequest.handle.bind(this._detachRequest));
+        server.on('remote_detach_request', this._remoteDetachRequest.handle.bind(this._remoteDetachRequest));
         server.on('tree_request', this._treeRequest.handle.bind(this._treeRequest));
         server.on('connections_list_request', this._connectionsListRequest.handle.bind(this._connectionsListRequest));
         server.on('daemons_list_request', this._daemonsListRequest.handle.bind(this._daemonsListRequest));

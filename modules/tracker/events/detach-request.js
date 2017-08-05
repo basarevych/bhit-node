@@ -122,6 +122,19 @@ class DetachRequest {
                 return this._userRepo.findByEmail(userEmail)
                     .then(users => {
                         let user = users.length && users[0];
+                        if (!user) {
+                            let response = this.tracker.DetachResponse.create({
+                                response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
+                            });
+                            let reply = this.tracker.ServerMessage.create({
+                                type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
+                                messageId: message.messageId,
+                                detachResponse: response,
+                            });
+                            let data = this.tracker.ServerMessage.encode(reply).finish();
+                            this._logger.debug('detach-request', `Sending PATH_NOT_FOUND DETACH RESPONSE to ${id}`);
+                            return this.tracker.send(id, data);
+                        }
 
                         return Promise.resolve()
                             .then(() => {
@@ -132,7 +145,7 @@ class DetachRequest {
                             })
                             .then(paths => {
                                 let path = paths.length && paths[0];
-                                if (!path || !user) {
+                                if (!path || path.userId !== user.id) {
                                     let response = this.tracker.DetachResponse.create({
                                         response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
                                     });
@@ -149,7 +162,7 @@ class DetachRequest {
                                 return this._connectionRepo.findByPath(path)
                                     .then(connections => {
                                         let connection = connections.length && connections[0];
-                                        if (!connection) {
+                                        if (!connection || connection.userId !== user.id) {
                                             let response = this.tracker.DetachResponse.create({
                                                 response: this.tracker.DetachResponse.Result.PATH_NOT_FOUND,
                                             });
@@ -163,14 +176,12 @@ class DetachRequest {
                                             return this.tracker.send(id, data);
                                         }
 
-                                        let name = user.email + path.path;
-
                                         return this.disconnect(daemon, connection)
                                             .then(count => {
                                                 let response = this.tracker.DetachResponse.create({
                                                     response: (count > 0 ?
                                                         this.tracker.DetachResponse.Result.ACCEPTED :
-                                                        this.tracker.DetachResponse.Result.NOT_CONNECTED),
+                                                        this.tracker.DetachResponse.Result.NOT_ATTACHED),
                                                 });
                                                 let reply = this.tracker.ServerMessage.create({
                                                     type: this.tracker.ServerMessage.Type.DETACH_RESPONSE,
@@ -227,6 +238,7 @@ class DetachRequest {
                     });
             });
     }
+
     /**
      * Retrieve server
      * @return {Tracker}

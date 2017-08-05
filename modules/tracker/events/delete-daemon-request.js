@@ -113,7 +113,7 @@ class DeleteDaemonRequest {
                                 let data = this.tracker.ServerMessage.encode(reply).finish();
                                 this._logger.debug('delete-daemon-request', `Sending ACCEPTED DELETE DAEMON RESPONSE to ${id}`);
                                 this.tracker.send(id, data);
-                            })
+                            });
                     });
             })
             .catch(error => {
