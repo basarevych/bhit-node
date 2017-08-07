@@ -42,8 +42,7 @@ module.exports = function (path, pg) {
                                 for (let path of paths)
                                     promises.push(load(path));
 
-                                if (promises.length)
-                                    return Promise.all(promises);
+                                return promises.length ? Promise.all(promises) : [];
                             })
                             .then(results => {
                                 for (let result of results)

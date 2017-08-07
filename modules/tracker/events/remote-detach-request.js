@@ -209,7 +209,7 @@ class RemoteDetachRequest {
                                             });
                                     });
                             });
-                    })
+                    });
             })
             .catch(error => {
                 this._logger.error(new NError(error, 'RemoteDetachRequest.handle()'));
