@@ -69,7 +69,8 @@ class Help {
                 'Commands:\n' +
                 '\thelp\t\tPrint help about any other command\n' +
                 '\tinstall\t\tRegister the program in the system\n' +
-                '\tcreate-db\tCreate the schema\n' +
+                '\tcreate-db\tCreate the database and the user\n' +
+                '\tmigrate\t\tMigrate the database schema to current version\n' +
                 '\tclear-cache\tClear the cache\n' +
                 '\tstart\t\tStart the tracker\n' +
                 '\tstop\t\tStop the tracker\n' +
@@ -114,8 +115,21 @@ class Help {
      */
     helpCreateDb(argv) {
         return this._app.info(
-                'Usage:\tbhitctl create-db\n\n' +
-                '\tDrop if present and recreate all the database tables'
+            'Usage:\tbhitctl create-db\n\n' +
+            '\tDrop if present and recreate all the database tables'
+            )
+            .then(() => {
+                process.exit(0);
+            });
+    }
+
+    /**
+     * Migrate DB command
+     */
+    helpMigrate(argv) {
+        return this._app.info(
+            'Usage:\tbhitctl migrate\n\n' +
+            '\tUpdate the schema to make it match the current version'
             )
             .then(() => {
                 process.exit(0);

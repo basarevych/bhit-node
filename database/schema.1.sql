@@ -1,17 +1,4 @@
 --
--- Prepare
---
-
-DROP TABLE IF EXISTS daemon_connections CASCADE;
-DROP TABLE IF EXISTS connections CASCADE;
-DROP TABLE IF EXISTS paths CASCADE;
-DROP TABLE IF EXISTS daemons CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-
-DROP TYPE IF EXISTS daemon_type;
-
-
---
 -- Common functions
 --
 
@@ -32,6 +19,20 @@ $$ LANGUAGE plpgsql;
 
 CREATE TYPE daemon_type AS ENUM ('server', 'client');
 
+
+--
+-- Info
+--
+
+CREATE TABLE _info (
+    id bigserial NOT NULL,
+    name varchar(255) NULL,
+    value json NULL,
+    CONSTRAINT _info_pk PRIMARY KEY (id),
+    CONSTRAINT _info_unique_name UNIQUE (name)
+);
+
+INSERT INTO _info(name, value) VALUES('schema_version', '1'::json);
 
 --
 -- Users
