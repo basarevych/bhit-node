@@ -60,14 +60,14 @@ class Migrate {
         return this._postgres.connect(instance)
             .then(client => {
                 return client.query(
-                        `SELECT value_int 
+                        `SELECT value 
                            FROM _info
                           WHERE name = 'schema_version'`
                     )
                     .then(
                         result => {
                             client.done();
-                            return result.rowCount ? result.rows[0].value_int : 0;
+                            return result.rowCount ? parseInt(result.rows[0].value) : 0;
                         },
                         () => {
                             client.done();
