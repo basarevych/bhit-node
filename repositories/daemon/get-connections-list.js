@@ -10,8 +10,8 @@ const NError = require('nerror');
  * @method getConnectionsList
  * @memberOf module:repositories/daemon~DaemonRepository
  * @param {DaemonModel|number} daemon       Daemon model or ID
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to false, 'server' or 'client'
  */
 module.exports = function (daemon, pg) {

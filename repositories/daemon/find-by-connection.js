@@ -10,12 +10,12 @@ const NError = require('nerror');
  * @method findByConnection
  * @memberOf module:repositories/daemon~DaemonRepository
  * @param {object|number} connection        Connection to search by
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (connection, pg) {
-    let key = `sql:daemon-connections-by-connection-id:${typeof connection === 'object' ? connection.id : connection}`;
+    let key = `sql:${this.constructor.table}-by-connection-id:${typeof connection === 'object' ? connection.id : connection}`;
 
     return this._cacher.get(key)
         .then(value => {

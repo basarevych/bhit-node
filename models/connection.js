@@ -2,7 +2,7 @@
  * Connection model
  * @module models/connection
  */
-const BaseModel = require('./base');
+const BaseModel = require('arpen/src/models/base');
 
 /**
  * Connection model class
@@ -253,6 +253,22 @@ class ConnectionModel extends BaseModel {
      */
     get portOverride() {
         return this._getField('port_override');
+    }
+
+    /**
+     * Convert to object. Dates are converted to strings in UTC timezone
+     * @param {string[]} [fields]       Fields to save
+     * @return {object}                 Returns serialized object
+     */
+    _serialize(fields) {
+        if (!fields) {
+            fields = Array.from(this._fields.keys())
+                .filter(field => {
+                    return [ 'id', 'acting_as', 'address_override', 'port_override' ].indexOf(field) === -1;
+                });
+        }
+
+        return this.prototype._serialize(fields);
     }
 }
 

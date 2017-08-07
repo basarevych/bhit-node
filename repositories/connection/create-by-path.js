@@ -11,8 +11,8 @@ const NError = require('nerror');
  * @memberOf module:repositories/connection~ConnectionRepository
  * @param {string} path                     Path
  * @param {ConnectionModel} connection      Unsaved connection model
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to { connection, path } (but will be null on failure)
  */
 module.exports = function (path, connection, pg) {

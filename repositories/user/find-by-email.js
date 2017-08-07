@@ -10,12 +10,12 @@ const NError = require('nerror');
  * @method findByEmail
  * @memberOf module:repositories/user~UserRepository
  * @param {string} email                    Email to search by
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (email, pg) {
-    let key = `sql:users-by-email:${email}`;
+    let key = `sql:${this.constructor.table}-by-email:${email}`;
 
     return this._cacher.get(key)
         .then(value => {

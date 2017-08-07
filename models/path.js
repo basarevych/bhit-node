@@ -2,7 +2,7 @@
  * Path model
  * @module models/path
  */
-const BaseModel = require('./base');
+const BaseModel = require('arpen/src/models/base');
 
 /**
  * Path model class

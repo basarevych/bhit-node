@@ -10,8 +10,8 @@ const NError = require('nerror');
  * @method findByPathRecursive
  * @memberOf module:repositories/connection~ConnectionRepository
  * @param {PathModel|number} path           Path to search by
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (path, pg) {

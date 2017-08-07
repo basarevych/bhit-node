@@ -135,9 +135,9 @@
       "resolved": "https://registry.npmjs.org/argv/-/argv-0.0.2.tgz"
     },
     "arpen": {
-      "version": "0.0.41",
-      "from": "arpen@>=0.0.41 <0.1.0",
-      "resolved": "https://registry.npmjs.org/arpen/-/arpen-0.0.41.tgz"
+      "version": "0.0.42",
+      "from": "arpen@>=0.0.42 <0.1.0",
+      "resolved": "https://registry.npmjs.org/arpen/-/arpen-0.0.42.tgz"
     },
     "array-flatten": {
       "version": "1.1.1",

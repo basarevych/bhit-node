@@ -10,8 +10,8 @@ const NError = require('nerror');
  * @method findByUser
  * @memberOf module:repositories/daemon~DaemonRepository
  * @param {UserModel} user                  User model or ID
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (user, pg) {

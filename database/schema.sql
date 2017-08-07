@@ -62,7 +62,8 @@ BEGIN
             array[
                 'users-by-id:' || NEW.id,
                 'users-by-email:' || NEW.email,
-                'users-by-token:' || NEW.token
+                'users-by-token:' || NEW.token,
+                'paths-roots-by-user-id:' || NEW.id
             ]
         );
     END IF;
@@ -72,7 +73,8 @@ BEGIN
             array[
                 'users-by-id:' || OLD.id,
                 'users-by-email:' || OLD.email,
-                'users-by-token:' || OLD.token
+                'users-by-token:' || OLD.token,
+                'paths-roots-by-user-id:' || OLD.id
             ]
         );
     END IF;
@@ -119,7 +121,7 @@ BEGIN
             array[
                 'daemons-by-id:' || NEW.id,
                 'daemons-by-token:' || NEW.token,
-                'daemon-connections-by-daemon-id:' || NEW.id
+                'connections-by-daemon-id:' || NEW.id
             ]
         );
     END IF;
@@ -129,7 +131,7 @@ BEGIN
             array[
                 'daemons-by-id:' || OLD.id,
                 'daemons-by-token:' || OLD.token,
-                'daemon-connections-by-daemon-id:' || OLD.id
+                'connections-by-daemon-id:' || OLD.id
             ]
         );
     END IF;
@@ -241,7 +243,7 @@ BEGIN
             cache_keys,
             array[
                 'connections-by-id:' || NEW.id,
-                'daemon-connections-by-connection-id:' || NEW.id
+                'daemons-by-connection-id:' || NEW.id
             ]
         );
     END IF;
@@ -250,7 +252,7 @@ BEGIN
             cache_keys,
             array[
                 'connections-by-id:' || OLD.id,
-                'daemon-connections-by-connection-id:' || OLD.id
+                'daemons-by-connection-id:' || OLD.id
             ]
         );
     END IF;
@@ -296,9 +298,8 @@ BEGIN
         cache_keys = array_cat(
             cache_keys,
             array[
-                'daemon-connections-by-id:' || NEW.id,
-                'daemon-connections-by-daemon-id:' || NEW.daemon_id,
-                'daemon-connections-by-connection-id:' || NEW.connection_id
+                'connections-by-daemon-id:' || NEW.daemon_id,
+                'daemons-by-connection-id:' || NEW.connection_id
             ]
         );
     END IF;
@@ -306,9 +307,8 @@ BEGIN
         cache_keys = array_cat(
             cache_keys,
             array[
-                'daemon-connections-by-id:' || OLD.id,
-                'daemon-connections-by-daemon-id:' || OLD.daemon_id,
-                'daemon-connections-by-connection-id:' || OLD.connection_id
+                'connections-by-daemon-id:' || OLD.daemon_id,
+                'daemons-by-connection-id:' || OLD.connection_id
             ]
         );
     END IF;

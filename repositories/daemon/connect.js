@@ -14,8 +14,8 @@ const NError = require('nerror');
  * @param {string} actingAs                 'server' or 'client'
  * @param {string} addressOverride          Override address
  * @param {string} portOverride             Override port
- * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if string then will connect to
- *                                          this instance of Postgres.
+ * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
+ *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to a number of connections made
  */
 module.exports = function (daemon, connection, actingAs, addressOverride, portOverride, pg) {

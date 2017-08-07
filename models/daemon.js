@@ -3,7 +3,7 @@
  * @module models/daemon
  */
 const moment = require('moment-timezone');
-const BaseModel = require('./base');
+const BaseModel = require('arpen/src/models/base');
 
 /**
  * Daemon model class
@@ -152,6 +152,22 @@ class DaemonModel extends BaseModel {
      */
     get blockedAt() {
         return this._getField('blocked_at');
+    }
+
+    /**
+     * Convert to object. Dates are converted to strings in UTC timezone
+     * @param {string[]} [fields]       Fields to save
+     * @return {object}                 Returns serialized object
+     */
+    _serialize(fields) {
+        if (!fields) {
+            fields = Array.from(this._fields.keys())
+                .filter(field => {
+                    return field !== 'id' && field !== 'acting_as';
+                });
+        }
+
+        return this.prototype._serialize(fields);
     }
 }
 

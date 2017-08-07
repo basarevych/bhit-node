@@ -3,7 +3,7 @@
  * @module models/user
  */
 const moment = require('moment-timezone');
-const BaseModel = require('./base');
+const BaseModel = require('arpen/src/models/base');
 
 /**
  * User model class
