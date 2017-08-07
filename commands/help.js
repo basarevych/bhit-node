@@ -115,8 +115,10 @@ class Help {
      */
     helpCreateDb(argv) {
         return this._app.info(
-            'Usage:\tbhitctl create-db\n\n' +
-            '\tDrop if present and recreate all the database tables'
+            'Usage:\tbhitctl create-db [-u <user>]\n\n' +
+            '\tCreate the database and user (using configuration in bhit.conf)\n' +
+            '\tOptional -u sets the login for Postgres user able to create users\n' +
+            '\tand databases.'
             )
             .then(() => {
                 process.exit(0);

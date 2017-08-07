@@ -53,6 +53,11 @@ class CreateDb {
                 short: 'h',
                 type: 'boolean',
             })
+            .option({
+                name: 'user',
+                short: 'u',
+                type: 'string',
+            })
             .run(argv);
 
         const instance = 'main';
@@ -89,14 +94,14 @@ class CreateDb {
                 let suOptions;
                 if (os.platform() === 'freebsd') {
                     suOptions = [
-                        '-m', 'pgsql',
+                        '-m', args.options.user || 'pgsql',
                         '-c', `psql -h ${get(`postgres.host`)} -d postgres -f -`
                     ];
                 } else {
                     suOptions = [
                         '-c',
                         `psql -h ${get(`postgres.host`)} -d postgres -f -`,
-                        'postgres'
+                        args.options.user || 'postgres'
                     ];
                 }
 

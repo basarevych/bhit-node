@@ -128,6 +128,12 @@ class Migrate {
             );
     }
 
+    /**
+     * Run psql
+     * @param {string} filename
+     * @param {string} instance
+     * @return {Promise}
+     */
     psqlExec(filename, instance) {
         let expect = new Map();
         expect.set(/assword.*:/, this._config.get(`postgres.${instance}.password`));

@@ -16,12 +16,14 @@ class Install {
      * @param {App} app                 The application
      * @param {object} config           Configuration
      * @param {Runner} runner           Runner service
+     * @param {Util} util               Util service
      * @param {Help} help               Help command
      */
-    constructor(app, config, runner, help) {
+    constructor(app, config, runner, util, help) {
         this._app = app;
         this._config = config;
         this._runner = runner;
+        this._util = util;
         this._help = help;
     }
 
@@ -38,7 +40,7 @@ class Install {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'runner', 'commands.help' ];
+        return [ 'app', 'config', 'runner', 'util', 'commands.help' ];
     }
 
     /**
@@ -114,7 +116,7 @@ class Install {
                 } catch (error) {
                     try {
                         let config = fs.readFileSync(path.join(__dirname, '..', 'bhit.conf'), { encoding: 'utf8'});
-                        config = config.replace(/NAME/g, hostname);
+                        config = config.replace(/HOSTNAME/g, hostname).replace(/DB_PASSWORD/g, this._util.getRandomString(32));
                         fs.writeFileSync(path.join(configDir, 'bhit.conf'), config, { mode: 0o640 });
                     } catch (error) {
                         throw new Error(`Could not create bhit.conf`);
