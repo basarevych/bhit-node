@@ -14,13 +14,11 @@ class Stop {
      * @param {App} app                 The application
      * @param {object} config           Configuration
      * @param {Runner} runner           Runner service
-     * @param {Start} start             Start command
      */
-    constructor(app, config, runner, start) {
+    constructor(app, config, runner) {
         this._app = app;
         this._config = config;
         this._runner = runner;
-        this._start = start;
     }
 
     /**
@@ -36,7 +34,7 @@ class Stop {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'runner', 'commands.start' ];
+        return [ 'app', 'config', 'runner' ];
     }
 
     /**
@@ -68,8 +66,13 @@ class Stop {
     terminate() {
         return this._runner.exec(path.join(__dirname, '..', 'bin', 'status'), [ '/var/run/bhit/daemon.pid' ])
             .then(result => {
-                if (result.code === 0)
-                    return this._start.exec('kill', [ '/var/run/bhit/daemon.pid', 'SIGTERM' ]);
+                if (result.code === 0) {
+                    return this._runner.exec(
+                        'kill',
+                        [ '/var/run/bhit/daemon.pid', 'SIGTERM' ],
+                        { pipe: process }
+                    );
+                }
 
                 return new Promise((resolve, reject) => {
                     let tries = 0;

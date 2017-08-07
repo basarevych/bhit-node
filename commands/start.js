@@ -3,7 +3,6 @@
  * @module commands/start
  */
 const path = require('path');
-const execFile = require('child_process').execFile;
 const argvParser = require('argv');
 
 /**
@@ -14,10 +13,12 @@ class Start {
      * Create the service
      * @param {App} app                 The application
      * @param {object} config           Configuration
+     * @param {Runner} runner           Runner service
      */
-    constructor(app, config) {
+    constructor(app, config, runner) {
         this._app = app;
         this._config = config;
+        this._runner = runner;
     }
 
     /**
@@ -33,7 +34,7 @@ class Start {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config' ];
+        return [ 'app', 'config', 'runner' ];
     }
 
     /**
@@ -63,38 +64,14 @@ class Start {
      * Launch the daemon
      */
     launch() {
-        return this.exec('daemon')
+        return this._runner.exec(
+                path.join(__dirname, '..', 'bin', 'daemon'),
+                [],
+                { pipe: process }
+            )
             .then(result => {
                 return result.code;
             });
-    }
-    /**
-     * Execute command echoing output
-     * @param {string} command          Path to command
-     * @param {string[]} [params]       Parameters
-     * @return {Promise}
-     */
-    exec(command, params = []) {
-        return new Promise((resolve, reject) => {
-            try {
-                let proc = execFile(
-                    path.join(__dirname, '..', 'bin', command),
-                    params,
-                    (error, stdout, stderr) => {
-                        resolve({
-                            code: error ? error.code : 0,
-                            stdout: stdout,
-                            stderr: stderr,
-                        });
-                    }
-                );
-                proc.stdout.pipe(process.stdout);
-                proc.stderr.pipe(process.stderr);
-                process.stdin.pipe(proc.stdin);
-            } catch (error) {
-                reject(error);
-            }
-        });
     }
 
     /**

@@ -13,12 +13,12 @@ class Status {
      * Create the service
      * @param {App} app                 The application
      * @param {object} config           Configuration
-     * @param {Start} start             Start command
+     * @param {Runner} runner           Runner service
      */
-    constructor(app, config, start) {
+    constructor(app, config, runner) {
         this._app = app;
         this._config = config;
-        this._start = start;
+        this._runner = runner;
     }
 
     /**
@@ -34,7 +34,7 @@ class Status {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'commands.start' ];
+        return [ 'app', 'config', 'runner' ];
     }
 
     /**
@@ -51,7 +51,11 @@ class Status {
             })
             .run(argv);
 
-        return this._start.exec('status', [ '/var/run/bhit/daemon.pid' ])
+        return this._runner.exec(
+                path.join(__dirname, '..', 'bin', 'status'),
+                [ '/var/run/bhit/daemon.pid' ],
+                { pipe: process }
+            )
             .then(result => {
                 process.exit(result.code);
             })

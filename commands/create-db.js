@@ -4,7 +4,7 @@
  */
 const path = require('path');
 const fs = require('fs');
-const read = require('read');
+const os = require('os');
 const argvParser = require('argv');
 
 /**
@@ -16,11 +16,13 @@ class CreateDb {
      * @param {App} app                 The application
      * @param {object} config           Configuration
      * @param {Runner} runner           Runner service
+     * @param {Ini} ini                 Ini service
      */
-    constructor(app, config, runner) {
+    constructor(app, config, runner, ini) {
         this._app = app;
         this._config = config;
         this._runner = runner;
+        this._ini = ini;
     }
 
     /**
@@ -36,7 +38,7 @@ class CreateDb {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'runner' ];
+        return [ 'app', 'config', 'runner', 'ini' ];
     }
 
     /**
@@ -53,44 +55,62 @@ class CreateDb {
             })
             .run(argv);
 
-        return new Promise((resolve, reject) => {
-                read({ prompt: 'Destroy the data and recreate the schema? (yes/no): ' }, (error, answer) => {
-                    if (error)
-                        return this.error(error.message);
+        const instance = 'main';
 
-                    if (answer.toLowerCase() !== 'yes' && answer.toLowerCase() !== 'y')
-                        process.exit(0);
-
-                    let expect = new Map();
-                    expect.set(/assword.*:/, this._config.get('postgres.main.password'));
-
-                    let proc = this._runner.spawn(
-                        'psql',
-                        [
-                            '-U', this._config.get('postgres.main.user'),
-                            '-d', this._config.get('postgres.main.db_name'),
-                            '-h', this._config.get('postgres.main.host'),
-                            '-p', this._config.get('postgres.main.port'),
-                            '-W',
-                            '-f', path.join(__dirname, '..', 'database', 'schema.sql'),
-                        ],
-                        {},
-                        expect
-                    );
-                    proc.cmd.on('data', data => {
-                        process.stdout.write(data);
-                    });
-                    proc.promise
-                        .then(() => {
-                            resolve();
-                        })
-                        .catch(error => {
-                            reject(error);
-                        });
-                });
+        return Promise.resolve()
+            .then(() => {
+                if (process.getuid())
+                    throw new Error('Run this command as root');
             })
             .then(() => {
-                process.exit(0);
+                let configDir, config;
+                if (os.platform() === 'freebsd') {
+                    configDir = '/usr/local/etc/bhit';
+                    this._app.debug(`Platform: FreeBSD`);
+                } else {
+                    configDir = '/etc/bhit';
+                    this._app.debug(`Platform: Linux`);
+                }
+
+                try {
+                    config = this._ini.parse(fs.readFileSync(path.join(configDir, 'bhit.conf'), 'utf8'));
+                } catch (error) {
+                    throw new Error(`Could not read bhit.conf`);
+                }
+
+                function get(key) {
+                    return key.split('.').reduce((prev, cur) => {
+                        if (!prev)
+                            return prev;
+                        return prev[cur];
+                    }, config);
+                }
+
+                let suOptions;
+                if (os.platform() === 'freebsd') {
+                    suOptions = [
+                        '-m', 'pgsql',
+                        '-c', `psql -h ${get(`postgres.host`)} -d postgres -f -`
+                    ];
+                } else {
+                    suOptions = [
+                        '-c',
+                        `psql -h ${get(`postgres.host`)} -d postgres -f -`,
+                        'postgres'
+                    ];
+                }
+
+                let sql = `create user ${get(`postgres.user`)} with password '${get(`postgres.password`)}';
+                           create database ${get(`postgres.db_name`)};
+                           grant all privileges on database ${get(`postgres.db_name`)} to ${get(`postgres.user`)};
+                           \\q`;
+
+                let promise = this._runner.exec('su', suOptions, { pipe: process });
+                process.stdin.emit('data', sql + '\n');
+                return promise;
+            })
+            .then(result => {
+                process.exit(result.code);
             })
             .catch(error => {
                 return this.error(error);
