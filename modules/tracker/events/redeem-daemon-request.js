@@ -11,15 +11,16 @@ const NError = require('nerror');
 class RedeemDaemonRequest {
     /**
      * Create service
-     * @param {App} app                         The application
-     * @param {object} config                   Configuration
-     * @param {Logger} logger                   Logger service
-     * @param {Util} util                       Util service
-     * @param {Registry} registry               Registry service
-     * @param {UserRepository} userRepo         User repository
-     * @param {DaemonRepository} daemonRepo     Daemon repository
+     * @param {App} app                                         The application
+     * @param {object} config                                   Configuration
+     * @param {Logger} logger                                   Logger service
+     * @param {Util} util                                       Util service
+     * @param {Registry} registry                               Registry service
+     * @param {UserRepository} userRepo                         User repository
+     * @param {DaemonRepository} daemonRepo                     Daemon repository
+     * @param {RegisterDaemonRequest} registerDaemonRequest     RegisterDaemonRequest event
      */
-    constructor(app, config, logger, util, registry, userRepo, daemonRepo) {
+    constructor(app, config, logger, util, registry, userRepo, daemonRepo, registerDaemonRequest) {
         this._app = app;
         this._config = config;
         this._logger = logger;
@@ -27,6 +28,7 @@ class RedeemDaemonRequest {
         this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
+        this._registerDaemonRequest = registerDaemonRequest;
     }
 
     /**
@@ -42,7 +44,16 @@ class RedeemDaemonRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'util', 'registry', 'repositories.user', 'repositories.daemon' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'util',
+            'registry',
+            'repositories.user',
+            'repositories.daemon',
+            'modules.tracker.events.registerDaemonRequest'
+        ];
     }
 
     /**
@@ -92,8 +103,29 @@ class RedeemDaemonRequest {
 
                         daemon.token = this._daemonRepo.generateToken();
 
+                        let info = this._registry.daemons.get(daemon.id);
+                        let clients = info ? Array.from(info.clients) : [];
+
                         return this._daemonRepo.save(daemon)
                             .then(() => {
+                                return clients.reduce(
+                                    (prev, cur) => {
+                                        return prev.then(() => {
+                                            return this._registerDaemonRequest.sendConnectionsList(cur, true);
+                                        });
+                                    },
+                                    Promise.resolve()
+                                );
+                            })
+                            .then(() => {
+                                for (let clientId of clients) {
+                                    let info = this.tracker.clients.get(clientId);
+                                    if (info) {
+                                        info.socket.end();
+                                        info.wrapper.detach();
+                                    }
+                                }
+
                                 let response = this.tracker.RedeemDaemonResponse.create({
                                     response: this.tracker.RedeemDaemonResponse.Result.ACCEPTED,
                                     token: daemon.token,

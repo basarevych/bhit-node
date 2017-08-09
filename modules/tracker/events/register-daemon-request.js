@@ -148,26 +148,33 @@ class RegisterDaemonRequest {
     /**
      * Send connections list to a client
      * @param {string} clientId
+     * @param {boolean} [sendEmptyList=false]
      * @return {Promise}
      */
-    sendConnectionsList(clientId) {
+    sendConnectionsList(clientId, sendEmptyList = false) {
         let client = this._registry.clients.get(clientId);
         if (!client || !client.daemonId)
             return Promise.resolve();
 
-        return this._daemonRepo.getConnectionsList(client.daemonId)
-            .then(list => {
-                if (!list)
-                    return Promise.resolve();
+        return Promise.resolve()
+            .then(() => {
+                if (sendEmptyList)
+                    return [];
 
+                return this._daemonRepo.getConnectionsList(client.daemonId);
+            })
+            .then(list => {
                 let prepared = this.tracker.ConnectionsList.create({
                     serverConnections: [],
                     clientConnections: [],
                 });
-                for (let item of list.serverConnections)
-                    prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
-                for (let item of list.clientConnections)
-                    prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+
+                if (list) {
+                    for (let item of list.serverConnections)
+                        prepared.serverConnections.push(this.tracker.ServerConnection.create(item));
+                    for (let item of list.clientConnections)
+                        prepared.clientConnections.push(this.tracker.ClientConnection.create(item));
+                }
 
                 let reply = this.tracker.ServerMessage.create({
                     type: this.tracker.ServerMessage.Type.CONNECTIONS_LIST,

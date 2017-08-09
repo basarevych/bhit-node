@@ -11,20 +11,22 @@ const NError = require('nerror');
 class DeleteDaemonRequest {
     /**
      * Create service
-     * @param {App} app                         The application
-     * @param {object} config                   Configuration
-     * @param {Logger} logger                   Logger service
-     * @param {Registry} registry               Registry service
-     * @param {UserRepository} userRepo         User repository
-     * @param {DaemonRepository} daemonRepo     Daemon repository
+     * @param {App} app                                         The application
+     * @param {object} config                                   Configuration
+     * @param {Logger} logger                                   Logger service
+     * @param {Registry} registry                               Registry service
+     * @param {UserRepository} userRepo                         User repository
+     * @param {DaemonRepository} daemonRepo                     Daemon repository
+     * @param {RegisterDaemonRequest} registerDaemonRequest     RegisterDaemonRequest event
      */
-    constructor(app, config, logger, registry, userRepo, daemonRepo) {
+    constructor(app, config, logger, registry, userRepo, daemonRepo, registerDaemonRequest) {
         this._app = app;
         this._config = config;
         this._logger = logger;
         this._registry = registry;
         this._userRepo = userRepo;
         this._daemonRepo = daemonRepo;
+        this._registerDaemonRequest = registerDaemonRequest;
     }
 
     /**
@@ -40,7 +42,15 @@ class DeleteDaemonRequest {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'config', 'logger', 'registry', 'repositories.user', 'repositories.daemon' ];
+        return [
+            'app',
+            'config',
+            'logger',
+            'registry',
+            'repositories.user',
+            'repositories.daemon',
+            'modules.tracker.events.registerDaemonRequest'
+        ];
     }
 
     /**
@@ -93,6 +103,16 @@ class DeleteDaemonRequest {
 
                         this._registry.removeDaemon(daemon.id);
                         return this._daemonRepo.delete(daemon)
+                            .then(() => {
+                                return clients.reduce(
+                                    (prev, cur) => {
+                                        return prev.then(() => {
+                                            return this._registerDaemonRequest.sendConnectionsList(cur, true);
+                                        });
+                                    },
+                                    Promise.resolve()
+                                );
+                            })
                             .then(() => {
                                 for (let clientId of clients) {
                                     let info = this.tracker.clients.get(clientId);
