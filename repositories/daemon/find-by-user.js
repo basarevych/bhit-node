@@ -24,9 +24,9 @@ module.exports = function (user, pg) {
         })
         .then(client => {
             return client.query(
-                    'SELECT * ' +
-                    '  FROM daemons ' +
-                    ' WHERE user_id = $1 ',
+                    `SELECT *
+                       FROM daemons
+                      WHERE user_id = $1`,
                     [ typeof user === 'object' ? user.id : user ]
                 )
                 .then(result => {

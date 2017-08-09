@@ -31,11 +31,11 @@ module.exports = function (user, pg) {
                 })
                 .then(client => {
                     return client.query(
-                            '  SELECT * ' +
-                            '    FROM paths ' +
-                            '   WHERE user_id = $1 ' +
-                            '     AND parent_id IS NULL ' +
-                            'ORDER BY name ASC ',
+                            `  SELECT *
+                                 FROM paths
+                                WHERE user_id = $1
+                                  AND parent_id IS NULL
+                             ORDER BY name ASC`,
                             [
                                 typeof user === 'object' ? user.id : user,
                             ]

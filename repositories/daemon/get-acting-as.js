@@ -26,10 +26,10 @@ module.exports = function (daemon, connection, pg) {
         .then(client => {
             return client.transaction({ name: 'daemon_connect' }, rollback => {
                     return client.query(
-                            'SELECT * ' +
-                            '  FROM daemon_connections ' +
-                            ' WHERE daemon_id = $1 ' +
-                            '   AND connection_id = $2 ',
+                            `SELECT *
+                               FROM daemon_connections
+                              WHERE daemon_id = $1
+                                AND connection_id = $2`,
                             [
                                 typeof daemon === 'object' ? daemon.id : daemon,
                                 typeof connection === 'object' ? connection.id : connection,

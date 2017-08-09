@@ -24,12 +24,12 @@ module.exports = function (connection, pg) {
         })
         .then(client => {
             return client.query(
-                    '    SELECT COUNT(d.*) AS count ' +
-                    '      FROM daemons d ' +
-                    'INNER JOIN daemon_connections dc ' +
-                    '        ON d.id = dc.daemon_id ' +
-                    '     WHERE dc.connection_id = $1 ' +
-                    '       AND dc.acting_as = $2 ',
+                    `    SELECT COUNT(d.*) AS count
+                           FROM daemons d 
+                     INNER JOIN daemon_connections dc
+                             ON d.id = dc.daemon_id
+                          WHERE dc.connection_id = $1
+                            AND dc.acting_as = $2`,
                     [
                         typeof connection === 'object' ? connection.id : connection,
                         'server',

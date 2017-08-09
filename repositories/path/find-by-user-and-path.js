@@ -32,9 +32,9 @@ module.exports = function (user, path, pg) {
                 })
                 .then(client => {
                     return client.query(
-                            'SELECT * ' +
-                            '  FROM paths ' +
-                            ' WHERE user_id = $1 AND path = $2 ',
+                            `SELECT *
+                               FROM paths
+                              WHERE user_id = $1 AND path = $2`,
                             [
                                 typeof user === 'object' ? user.id : user,
                                 path

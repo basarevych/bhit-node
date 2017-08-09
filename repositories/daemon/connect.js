@@ -29,10 +29,10 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
         .then(client => {
             return client.transaction({ name: 'daemon_connect' }, rollback => {
                     return client.query(
-                            'SELECT * ' +
-                            '  FROM daemon_connections ' +
-                            ' WHERE daemon_id = $1 ' +
-                            '   AND connection_id = $2 ',
+                            `SELECT * 
+                               FROM daemon_connections 
+                              WHERE daemon_id = $1 
+                                AND connection_id = $2`,
                             [
                                 typeof daemon === 'object' ? daemon.id : daemon,
                                 typeof connection === 'object' ? connection.id : connection,
@@ -48,10 +48,10 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                                         return true;
 
                                     return client.query(
-                                            'SELECT * ' +
-                                            '  FROM daemon_connections ' +
-                                            ' WHERE connection_id = $1 ' +
-                                            '   AND acting_as = $2 ',
+                                            `SELECT * 
+                                               FROM daemon_connections 
+                                              WHERE connection_id = $1
+                                                AND acting_as = $2`,
                                             [
                                                 typeof connection === 'object' ? connection.id : connection,
                                                 'server',
@@ -66,9 +66,9 @@ module.exports = function (daemon, connection, actingAs, addressOverride, portOv
                                         return 0;
 
                                     return client.query(
-                                            'INSERT ' +
-                                            '  INTO daemon_connections(daemon_id, connection_id, acting_as, address_override, port_override) ' +
-                                            'VALUES ($1, $2, $3, $4, $5) ',
+                                            `INSERT
+                                               INTO daemon_connections(daemon_id, connection_id, acting_as, address_override, port_override)
+                                             VALUES ($1, $2, $3, $4, $5)`,
                                             [
                                                 typeof daemon === 'object' ? daemon.id : daemon,
                                                 typeof connection === 'object' ? connection.id : connection,

@@ -27,9 +27,9 @@ module.exports = function (path, pg) {
             let load = path => {
                 let found = [];
                 return client.query(
-                        'SELECT * ' +
-                        '  FROM connections ' +
-                        ' WHERE path_id = $1 ',
+                        `SELECT * 
+                           FROM connections 
+                          WHERE path_id = $1`,
                         [ typeof path === 'object' ? path.id : path ]
                     )
                     .then(result => {

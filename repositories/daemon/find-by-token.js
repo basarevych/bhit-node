@@ -31,9 +31,9 @@ module.exports = function (token, pg) {
                 })
                 .then(client => {
                     return client.query(
-                            'SELECT * ' +
-                            '  FROM daemons ' +
-                            ' WHERE token = $1 ',
+                            `SELECT *
+                               FROM daemons
+                              WHERE token = $1`,
                             [ token ]
                         )
                         .then(result => {

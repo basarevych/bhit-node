@@ -37,9 +37,9 @@ module.exports = function (path, pg) {
                             return rollback(0);
 
                         return client.query(
-                                'DELETE ' +
-                                '  FROM paths ' +
-                                ' WHERE id = $1 ',
+                                `DELETE
+                                   FROM paths
+                                  WHERE id = $1`,
                                 [ path.id ]
                             )
                             .then(result => {

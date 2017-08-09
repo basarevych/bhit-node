@@ -31,9 +31,9 @@ module.exports = function (email, pg) {
                 })
                 .then(client => {
                     return client.query(
-                            'SELECT * ' +
-                            '  FROM users ' +
-                            ' WHERE email = $1 ',
+                            `SELECT *
+                               FROM users
+                              WHERE email = $1`,
                             [ email ]
                         )
                         .then(result => {

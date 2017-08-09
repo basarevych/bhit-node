@@ -25,10 +25,10 @@ module.exports = function (daemon, connection, pg) {
         })
         .then(client => {
             return client.query(
-                    'DELETE ' +
-                    '  FROM daemon_connections ' +
-                    ' WHERE daemon_id = $1 ' +
-                    '   AND connection_id = $2 ',
+                    `DELETE
+                       FROM daemon_connections
+                      WHERE daemon_id = $1
+                        AND connection_id = $2`,
                     [
                         typeof daemon === 'object' ? daemon.id : daemon,
                         typeof connection === 'object' ? connection.id : connection,

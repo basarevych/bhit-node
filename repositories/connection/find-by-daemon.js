@@ -31,11 +31,11 @@ module.exports = function (daemon, pg) {
                 })
                 .then(client => {
                     return client.query(
-                            '    SELECT c.*, dc.acting_as, dc.address_override, dc.port_override ' +
-                            '      FROM connections c ' +
-                            'INNER JOIN daemon_connections dc ' +
-                            '        ON c.id = dc.connection_id ' +
-                            '     WHERE dc.daemon_id = $1 ',
+                            `    SELECT c.*, dc.acting_as, dc.address_override, dc.port_override 
+                                   FROM connections c 
+                             INNER JOIN daemon_connections dc 
+                                     ON c.id = dc.connection_id 
+                                  WHERE dc.daemon_id = $1`,
                             [ typeof daemon === 'object' ? daemon.id : daemon ]
                         )
                         .then(result => {
