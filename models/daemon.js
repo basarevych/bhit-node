@@ -167,7 +167,7 @@ class DaemonModel extends BaseModel {
                 });
         }
 
-        return this.prototype._serialize(fields);
+        return super._serialize(fields);
     }
 }
 
