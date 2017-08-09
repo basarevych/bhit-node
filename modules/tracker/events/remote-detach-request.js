@@ -161,7 +161,7 @@ class RemoteDetachRequest {
                                         }
 
                                         return this._connectionRepo.findByPath(path)
-                                            .then(() => {
+                                            .then(connections => {
                                                 let connection = connections.length && connections[0];
                                                 if (!connection) {
                                                     let response = this.tracker.RemoteDetachResponse.create({
