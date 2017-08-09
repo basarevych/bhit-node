@@ -52,6 +52,7 @@ module.exports = {
                 cert: userConfig.tracker && userConfig.tracker.cert_file,
                 ca: userConfig.tracker && userConfig.tracker.ca_file,
             },
+            allow_users: (userConfig.tracker && userConfig.tracker.allow_users) || [],
         },
     },
 

@@ -11,9 +11,10 @@ class Registry {
     /**
      * Create the service
      * @param {App} app                     The application
+     * @param {object} config               Configuration
      * @param {Logger} logger               Logger service
      */
-    constructor(app, logger) {
+    constructor(app, config, logger) {
         // open sockets
         this.clients = new Map();           // socketId -> RegistryClient(socketId)
                                             // id is the same as with TrackerClient
@@ -31,6 +32,7 @@ class Registry {
         this.pairs = new Map();             // serverRequestId and clientRequestId -> the same RegistryPair(serverRequestId, clientRequestId)
 
         this._app = app;
+        this._config = config;
         this._logger = logger;
         this._timer = setInterval(this._checkTimeout.bind(this), 1000);
     }
@@ -48,7 +50,7 @@ class Registry {
      * @type {string[]}
      */
     static get requires() {
-        return [ 'app', 'logger' ];
+        return [ 'app', 'config', 'logger' ];
     }
 
     /**
@@ -79,6 +81,11 @@ class Registry {
         return /^[-._0-9a-zA-Z]+$/.test(name);
     }
 
+    /**
+     * Validate email checking allow_users in the config
+     * @param {string} email                Email to check
+     * @return {boolean}
+     */
     validateEmail(email) {
         if (email.indexOf('@') === -1)
             return false;
@@ -87,7 +94,23 @@ class Registry {
         if (parts.length !== 2)
             return false;
 
-        return parts[0].length > 0 && parts[1].length > 0;
+        if (!parts[0].length && !parts[1].length)
+            return false;
+
+        let whiteList = config.get('servers.tracker.allow_users');
+        if (!whiteList || !whiteList.length)
+            return true;
+
+        for (let entry of whiteList) {
+            if (entry.indexOf('@') === -1) {
+                if (parts[1] === entry)
+                    return true;
+            } else {
+                if (email === entry)
+                    return true;
+            }
+        }
+        return false;
     }
 
     /**
