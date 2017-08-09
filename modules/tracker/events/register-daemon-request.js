@@ -159,7 +159,7 @@ class RegisterDaemonRequest {
         return Promise.resolve()
             .then(() => {
                 if (sendEmptyList)
-                    return [];
+                    return null;
 
                 return this._daemonRepo.getConnectionsList(client.daemonId);
             })
