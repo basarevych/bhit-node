@@ -126,6 +126,19 @@ class AttachRequest {
                     this._logger.debug('attach-request', `Sending INVALID_PATH ATTACH RESPONSE to ${id}`);
                     return this.tracker.send(id, data);
                 }
+                if (message.attachRequest.portOverride && message.attachRequest.portOverride[0] === '/' && message.attachRequest.addressOverride) {
+                    let response = this.tracker.AttachResponse.create({
+                        response: this.tracker.AttachResponse.Result.INVALID_ADDRESS,
+                    });
+                    let reply = this.tracker.ServerMessage.create({
+                        type: this.tracker.ServerMessage.Type.ATTACH_RESPONSE,
+                        messageId: message.messageId,
+                        attachResponse: response,
+                    });
+                    let data = this.tracker.ServerMessage.encode(reply).finish();
+                    this._logger.debug('attach-request', `Sending INVALID_ADDRESS ATTACH RESPONSE to ${id}`);
+                    return this.tracker.send(id, data);
+                }
 
                 let userId;
                 return Promise.all([
@@ -160,6 +173,19 @@ class AttachRequest {
                             });
                             let data = this.tracker.ServerMessage.encode(reply).finish();
                             this._logger.debug('attach-request', `Sending PATH_NOT_FOUND ATTACH RESPONSE to ${id}`);
+                            return this.tracker.send(id, data);
+                        }
+                        if (actingAs === 'server' && (message.attachRequest.portOverride === '*' || message.attachRequest.addressOverride === '*')) {
+                            let response = this.tracker.AttachResponse.create({
+                                response: this.tracker.AttachResponse.Result.INVALID_ADDRESS,
+                            });
+                            let reply = this.tracker.ServerMessage.create({
+                                type: this.tracker.ServerMessage.Type.ATTACH_RESPONSE,
+                                messageId: message.messageId,
+                                attachResponse: response,
+                            });
+                            let data = this.tracker.ServerMessage.encode(reply).finish();
+                            this._logger.debug('attach-request', `Sending INVALID_ADDRESS ATTACH RESPONSE to ${id}`);
                             return this.tracker.send(id, data);
                         }
 

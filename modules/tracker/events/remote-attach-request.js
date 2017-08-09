@@ -168,6 +168,21 @@ class RemoteAttachRequest {
                                         }
 
                                         let actingAs = message.remoteAttachRequest.server ? 'server' : 'client';
+                                        if (message.remoteAttachRequest.portOverride && message.remoteAttachRequest.portOverride[0] === '/' && message.remoteAttachRequest.addressOverride ||
+                                            (actingAs === 'server' && (message.remoteAttachRequest.portOverride === '*' || message.remoteAttachRequest.addressOverride === '*'))) {
+                                            let response = this.tracker.RemoteAttachResponse.create({
+                                                response: this.tracker.RemoteAttachResponse.Result.INVALID_ADDRESS,
+                                            });
+                                            let reply = this.tracker.ServerMessage.create({
+                                                type: this.tracker.ServerMessage.Type.REMOTE_ATTACH_RESPONSE,
+                                                messageId: message.messageId,
+                                                remoteAttachResponse: response,
+                                            });
+                                            let data = this.tracker.ServerMessage.encode(reply).finish();
+                                            this._logger.debug('remote-attach-request', `Sending INVALID_ADDRESS REMOTE ATTACH RESPONSE to ${id}`);
+                                            return this.tracker.send(id, data);
+                                        }
+
                                         return this._detachRequest.disconnect(daemon, connection)
                                             .then(count => {
                                                 if (!count)
