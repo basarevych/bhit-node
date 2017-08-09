@@ -330,7 +330,7 @@ class Registry {
         if (!serverDaemon)
             return null;
 
-        let result = this._app.get('entities.registryWaitingResult', waiting, serverDaemon.name);
+        let result = this._app.get('entities.registryWaitingResult', waiting, serverDaemon);
         waiting.clients.clear();
 
         return result;

@@ -10,11 +10,11 @@ class RegistryWaitingResult {
     /**
      * Create entity
      * @param {RegistryWaiting} waiting
-     * @param {string} daemonName
+     * @param {RegistryDaemon} daemon
      */
-    constructor(waiting, daemonName) {
+    constructor(waiting, daemon) {
         this._connectionName = waiting.name;
-        this._daemonName = daemonName;
+        this._daemonName = daemon.userEmail + '?' + daemon.name;
         this._internalAddresses = waiting.internalAddresses.slice();
         this._targets = Array.from(waiting.clients).slice();
     }
