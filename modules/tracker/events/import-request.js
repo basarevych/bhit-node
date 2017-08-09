@@ -194,10 +194,17 @@ class ImportRequest {
 
                                                                     return Promise.all(clientPromises)
                                                                         .then(() => {
+                                                                            let { address, port } = this._registry.addressOverride(
+                                                                                connection.connectAddress,
+                                                                                connection.connectPort,
+                                                                                connection.addressOverride,
+                                                                                connection.portOverride
+                                                                            );
+
                                                                             serverConnections.push(this.tracker.ServerConnection.create({
                                                                                 name: user.email + path.path,
-                                                                                connectAddress: connection.connectAddress,
-                                                                                connectPort: connection.connectPort,
+                                                                                connectAddress: address,
+                                                                                connectPort: port,
                                                                                 encrypted: connection.encrypted,
                                                                                 fixed: connection.fixed,
                                                                                 clients: clients,
@@ -230,10 +237,17 @@ class ImportRequest {
                                                                         .then(serverUsers => {
                                                                             let serverUser = serverUsers.length && serverUsers[0];
 
+                                                                            let { address, port } = this._registry.addressOverride(
+                                                                                connection.listenAddress,
+                                                                                connection.listenPort,
+                                                                                connection.addressOverride,
+                                                                                connection.portOverride
+                                                                            );
+
                                                                             clientConnections.push(this.tracker.ClientConnection.create({
                                                                                 name: user.email + path.path,
-                                                                                listenAddress: connection.listenAddress || '',
-                                                                                listenPort: connection.listenPort || '',
+                                                                                listenAddress: address,
+                                                                                listenPort: port,
                                                                                 encrypted: connection.encrypted,
                                                                                 fixed: connection.fixed,
                                                                                 server: (serverDaemon && serverUser) ? serverUser.email + '?' + serverDaemon.name : '',

@@ -161,6 +161,32 @@ class Registry {
     }
 
     /**
+     * Calculate overridden host:port pair
+     * @param {string} defaultHost
+     * @param {string} defaultPort
+     * @param {string} overrideHost
+     * @param {string} overridePort
+     * @return {object}
+     */
+    addressOverride(defaultHost, defaultPort, overrideHost, overridePort) {
+        let host = (defaultHost || ''), port = (defaultPort || '');
+        if (port && port[0] === '/')
+            host = '';
+
+        if (overridePort && overridePort[0] === '/') {
+            host = '';
+            port = overridePort;
+        } else {
+            if (overrideHost)
+                host = overrideHost;
+            if (overridePort)
+                port = overridePort
+        }
+        
+        return { address: host, port: port };
+    }
+
+    /**
      * Register new client
      * @param {string} id
      */

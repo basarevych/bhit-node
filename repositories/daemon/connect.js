@@ -12,8 +12,8 @@ const NError = require('nerror');
  * @param {DaemonModel} daemon              Daemon model
  * @param {ConnectionModel} connection      Connection model
  * @param {string} actingAs                 'server' or 'client'
- * @param {string} addressOverride          Override address
- * @param {string} portOverride             Override port
+ * @param {string} [addressOverride]        Override address
+ * @param {string} [portOverride]           Override port
  * @param {PostgresClient|string} [pg]      Will reuse the Postgres client provided, or if it is a string then will
  *                                          connect to this instance of Postgres.
  * @return {Promise}                        Resolves to a number of connections made

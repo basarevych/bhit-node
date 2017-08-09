@@ -15,9 +15,11 @@ class DaemonRepository extends BaseRepository {
      * @param {Postgres} postgres                   Postgres service
      * @param {Cacher} cacher                       Cacher service
      * @param {Util} util                           Util service
+     * @param {Registry} registry                   Registry service
      */
-    constructor(app, postgres, cacher, util) {
+    constructor(app, postgres, cacher, util, registry) {
         super(app, postgres, cacher, util);
+        this._registry = registry;
         this._loadMethods(path.join(__dirname, 'daemon'));
     }
 
@@ -27,6 +29,14 @@ class DaemonRepository extends BaseRepository {
      */
     static get provides() {
         return 'repositories.daemon';
+    }
+
+    /**
+     * Dependencies as constructor arguments
+     * @type {string[]}
+     */
+    static get requires() {
+        return [ 'app', 'postgres', 'cacher', 'util', 'registry' ];
     }
 
     /**

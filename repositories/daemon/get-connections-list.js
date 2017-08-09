@@ -75,10 +75,17 @@ module.exports = function (daemon, pg) {
                                                                 if (!path)
                                                                     return null;
 
+                                                                let { address, port } = this._registry.addressOverride(
+                                                                    connection.connectAddress,
+                                                                    connection.connectPort,
+                                                                    connection.addressOverride,
+                                                                    connection.portOverride
+                                                                );
+
                                                                 let info = {
                                                                     name: user.email + path.path,
-                                                                    connectAddress: connection.addressOverride || connection.connectAddress || '',
-                                                                    connectPort: connection.portOverride || connection.connectPort || '',
+                                                                    connectAddress: address,
+                                                                    connectPort: port,
                                                                     encrypted: connection.encrypted,
                                                                     fixed: connection.fixed,
                                                                     clients: [],
@@ -134,10 +141,17 @@ module.exports = function (daemon, pg) {
                                                                         if (!path)
                                                                             return;
 
+                                                                        let { address, port } = this._registry.addressOverride(
+                                                                            connection.listenAddress,
+                                                                            connection.listenPort,
+                                                                            connection.addressOverride,
+                                                                            connection.portOverride
+                                                                        );
+
                                                                         list.clientConnections.push({
                                                                             name: user.email + path.path,
-                                                                            listenAddress: connection.addressOverride || connection.listenAddress || '',
-                                                                            listenPort: connection.addressOverride || connection.listenPort || '',
+                                                                            listenAddress: address,
+                                                                            listenPort: port,
                                                                             encrypted: connection.encrypted,
                                                                             fixed: connection.fixed,
                                                                             server: name || '',
