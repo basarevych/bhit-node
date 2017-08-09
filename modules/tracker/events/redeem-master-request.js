@@ -88,24 +88,22 @@ class RedeemMasterRequest {
                                 subject: 'Interconnect master token regeneration',
                                 text: emailText,
                             })
-                            .then(
-                                () => {
-                                    let response = this.tracker.RedeemMasterResponse.create({
-                                        response: this.tracker.RedeemMasterResponse.Result.ACCEPTED,
-                                    });
-                                    let reply = this.tracker.ServerMessage.create({
-                                        type: this.tracker.ServerMessage.Type.REDEEM_MASTER_RESPONSE,
-                                        messageId: message.messageId,
-                                        redeemMasterResponse: response,
-                                    });
-                                    let data = this.tracker.ServerMessage.encode(reply).finish();
-                                    this._logger.debug('redeem-master-request', `Sending ACCEPTED REDEEM MASTER RESPONSE to ${id}`);
-                                    this.tracker.send(id, data);
-                                },
-                                error => {
-                                    this._logger.error(`Could not send mail: ${error.message}`);
-                                }
-                            );
+                            .catch(error => {
+                                this._logger.error(`Could not send mail: ${error.messages || error.message}`);
+                            })
+                            .then(() => {
+                                let response = this.tracker.RedeemMasterResponse.create({
+                                    response: this.tracker.RedeemMasterResponse.Result.ACCEPTED,
+                                });
+                                let reply = this.tracker.ServerMessage.create({
+                                    type: this.tracker.ServerMessage.Type.REDEEM_MASTER_RESPONSE,
+                                    messageId: message.messageId,
+                                    redeemMasterResponse: response,
+                                });
+                                let data = this.tracker.ServerMessage.encode(reply).finish();
+                                this._logger.debug('redeem-master-request', `Sending ACCEPTED REDEEM MASTER RESPONSE to ${id}`);
+                                this.tracker.send(id, data);
+                            });
                     });
             })
             .catch(error => {

@@ -111,24 +111,22 @@ class InitRequest {
                                         subject: 'Interconnect account creation',
                                         text: emailText,
                                     })
-                                    .then(
-                                        () => {
-                                            let response = this.tracker.InitResponse.create({
-                                                response: this.tracker.InitResponse.Result.ACCEPTED,
-                                            });
-                                            let reply = this.tracker.ServerMessage.create({
-                                                type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
-                                                messageId: message.messageId,
-                                                initResponse: response,
-                                            });
-                                            let data = this.tracker.ServerMessage.encode(reply).finish();
-                                            this._logger.debug('init-request', `Sending ACCEPTED INIT RESPONSE to ${id}`);
-                                            this.tracker.send(id, data);
-                                        },
-                                        error => {
-                                            this._logger.error(`Could not send mail: ${error.message}`);
-                                        }
-                                    );
+                                    .catch(error => {
+                                        this._logger.error(`Could not send mail: ${error.messages || error.message}`);
+                                    })
+                                    .then(() => {
+                                        let response = this.tracker.InitResponse.create({
+                                            response: this.tracker.InitResponse.Result.ACCEPTED,
+                                        });
+                                        let reply = this.tracker.ServerMessage.create({
+                                            type: this.tracker.ServerMessage.Type.INIT_RESPONSE,
+                                            messageId: message.messageId,
+                                            initResponse: response,
+                                        });
+                                        let data = this.tracker.ServerMessage.encode(reply).finish();
+                                        this._logger.debug('init-request', `Sending ACCEPTED INIT RESPONSE to ${id}`);
+                                        this.tracker.send(id, data);
+                                    });
                             });
                     });
             })
