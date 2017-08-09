@@ -15,7 +15,7 @@ const NError = require('nerror');
  * @return {Promise}                        Resolves to array of models
  */
 module.exports = function (user, pg) {
-    let key = `sql:${this.constructor.table}-roots-by-user-id:${typeof user === 'object' ? user.id : user}:/`;
+    let key = `sql:${this.constructor.table}-roots-by-user-id:${typeof user === 'object' ? user.id : user}`;
 
     return this._cacher.get(key)
         .then(value => {

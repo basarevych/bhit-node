@@ -182,7 +182,8 @@ BEGIN
             array[
                 'paths-by-id:' || NEW.id,
                 'paths-by-token:' || NEW.token,
-                'paths-by-user-id-and-path:' || NEW.user_id || ':' || NEW.path
+                'paths-by-user-id-and-path:' || NEW.user_id || ':' || NEW.path,
+                'paths-roots-by-user-id:' || NEW.user_id
             ]
         );
     END IF;
@@ -192,7 +193,8 @@ BEGIN
             array[
                 'paths-by-id:' || OLD.id,
                 'paths-by-token:' || OLD.token,
-                'paths-by-user-id-and-path:' || OLD.user_id || ':' || OLD.path
+                'paths-by-user-id-and-path:' || OLD.user_id || ':' || OLD.path,
+                'paths-roots-by-user-id:' || OLD.user_id
             ]
         );
     END IF;
