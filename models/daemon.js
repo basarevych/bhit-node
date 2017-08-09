@@ -163,7 +163,7 @@ class DaemonModel extends BaseModel {
         if (!fields) {
             fields = Array.from(this._fields.keys())
                 .filter(field => {
-                    return field !== 'id' && field !== 'acting_as';
+                    return field !== 'acting_as';
                 });
         }
 

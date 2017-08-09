@@ -264,7 +264,7 @@ class ConnectionModel extends BaseModel {
         if (!fields) {
             fields = Array.from(this._fields.keys())
                 .filter(field => {
-                    return [ 'id', 'acting_as', 'address_override', 'port_override' ].indexOf(field) === -1;
+                    return [ 'acting_as', 'address_override', 'port_override' ].indexOf(field) === -1;
                 });
         }
 
