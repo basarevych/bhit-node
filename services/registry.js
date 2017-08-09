@@ -97,7 +97,7 @@ class Registry {
         if (!parts[0].length && !parts[1].length)
             return false;
 
-        let whiteList = config.get('servers.tracker.allow_users');
+        let whiteList = this._config.get('servers.tracker.allow_users');
         if (!whiteList || !whiteList.length)
             return true;
 
