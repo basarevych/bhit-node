@@ -94,6 +94,9 @@ class RegisterDaemonRequest {
                         if (!daemon || !user) {
                             success = false;
                         } else {
+                            if (client.daemonId && client.daemonId !== daemon.id)
+                                this._registry.removeClient(id);
+
                             success = this._registry.registerDaemon({
                                 clientId: id,
                                 daemonId: daemon.id,
