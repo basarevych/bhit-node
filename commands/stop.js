@@ -68,7 +68,7 @@ class Stop {
             .then(result => {
                 if (result.code === 0) {
                     return this._runner.exec(
-                        'kill',
+                        path.join(__dirname, '..', 'bin', 'kill'),
                         [ '/var/run/bhit/daemon.pid', 'SIGTERM' ],
                         { pipe: process }
                     );
