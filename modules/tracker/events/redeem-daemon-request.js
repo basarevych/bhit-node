@@ -108,6 +108,19 @@ class RedeemDaemonRequest {
 
                         return this._daemonRepo.save(daemon)
                             .then(() => {
+                                let response = this.tracker.RedeemDaemonResponse.create({
+                                    response: this.tracker.RedeemDaemonResponse.Result.ACCEPTED,
+                                    token: daemon.token,
+                                });
+                                let reply = this.tracker.ServerMessage.create({
+                                    type: this.tracker.ServerMessage.Type.REDEEM_DAEMON_RESPONSE,
+                                    messageId: message.messageId,
+                                    redeemDaemonResponse: response,
+                                });
+                                let data = this.tracker.ServerMessage.encode(reply).finish();
+                                this._logger.debug('redeem-daemon-request', `Sending ACCEPTED REDEEM DAEMON RESPONSE to ${id}`);
+                                this.tracker.send(id, data);
+
                                 return clients.reduce(
                                     (prev, cur) => {
                                         return prev.then(() => {
@@ -125,19 +138,6 @@ class RedeemDaemonRequest {
                                         info.wrapper.detach();
                                     }
                                 }
-
-                                let response = this.tracker.RedeemDaemonResponse.create({
-                                    response: this.tracker.RedeemDaemonResponse.Result.ACCEPTED,
-                                    token: daemon.token,
-                                });
-                                let reply = this.tracker.ServerMessage.create({
-                                    type: this.tracker.ServerMessage.Type.REDEEM_DAEMON_RESPONSE,
-                                    messageId: message.messageId,
-                                    redeemDaemonResponse: response,
-                                });
-                                let data = this.tracker.ServerMessage.encode(reply).finish();
-                                this._logger.debug('redeem-daemon-request', `Sending ACCEPTED REDEEM DAEMON RESPONSE to ${id}`);
-                                this.tracker.send(id, data);
                             });
                     });
             })
