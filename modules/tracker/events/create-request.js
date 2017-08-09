@@ -107,6 +107,25 @@ class CreateRequest {
                         }
                         path = path.path;
 
+                        if (!message.createRequest.connectPort ||
+                            message.createRequest.connectAddress === '*' || message.createRequest.connectPort === '*' ||
+                            (!message.createRequest.connectAddress && message.createRequest.connectPort[0] !== '/') ||
+                            (message.createRequest.connectAddress && message.createRequest.connectPort[0] === '/') ||
+                            (message.createRequest.listenPort && message.createRequest.listenPort[0] === '/' && message.createRequest.listenAddress))
+                        {
+                            let response = this.tracker.CreateResponse.create({
+                                response: this.tracker.CreateResponse.Result.INVALID_ADDRESS,
+                            });
+                            let reply = this.tracker.ServerMessage.create({
+                                type: this.tracker.ServerMessage.Type.CREATE_RESPONSE,
+                                messageId: message.messageId,
+                                createResponse: response,
+                            });
+                            let data = this.tracker.ServerMessage.encode(reply).finish();
+                            this._logger.debug('create-request', `Sending INVALID_ADDRESS CREATE RESPONSE to ${id}`);
+                            return this.tracker.send(id, data);
+                        }
+
                         let connection = this._connectionRepo.getModel('connection');
                         connection.userId = user.id;
                         connection.token = this._connectionRepo.generateToken();
