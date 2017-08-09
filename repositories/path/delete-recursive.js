@@ -43,13 +43,32 @@ module.exports = function (path, pg) {
                                 [ path.id ]
                             )
                             .then(result => {
-                                if (!path.parentId)
-                                    return result.rowCount;
+                                let count = result.rowCount;
+                                let deleteEmptyParent = parentId => {
+                                    if (!parentId)
+                                        return count;
 
-                                return this.delete(path.parentId, client)
-                                    .then(count => {
-                                        return result.rowCount + count;
-                                    });
+                                    return this.findByParent(parentId, client)
+                                        .then(paths => {
+                                            if (paths.length)
+                                                return count;
+
+                                            return this.find(parentId, client)
+                                                .then(paths => {
+                                                    let parent = paths.length && paths[0];
+                                                    if (!parent)
+                                                        return count;
+
+                                                    return this.delete(parent, client)
+                                                        .then(deleted => {
+                                                            count += deleted;
+                                                            return deleteEmptyParent(parent.parentId);
+                                                        });
+                                                });
+                                        });
+                                };
+
+                                return deleteEmptyParent(path.parentId);
                             });
                     });
                 })
