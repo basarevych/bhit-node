@@ -180,7 +180,7 @@ class Registry {
             if (overrideHost)
                 host = overrideHost;
             if (overridePort)
-                port = overridePort
+                port = overridePort;
         }
         
         return { address: host, port: port };
