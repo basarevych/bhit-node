@@ -265,13 +265,13 @@ class Tracker extends EventEmitter {
             if (this._udpListening)
                 goal++;
 
-            function done() {
+            let done = () => {
                 if (++counter >= goal) {
                     if (goal)
                         this._logger.info('Tracker TCP/UDP servers are no longer listening');
                     resolve();
                 }
-            }
+            };
 
             if (!goal)
                 return done();

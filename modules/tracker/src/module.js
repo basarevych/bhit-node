@@ -45,7 +45,8 @@ class Tracker {
         if (server.constructor.provides !== 'servers.tracker')
             return;
 
-        for (let event of this._app.get(/^tracker\.events\..+$/))
+        this.events = this._app.get(/^tracker\.events\..+$/);
+        for (let event of this.events.values())
             server.on(event.name, event.handle.bind(event));
     }
 }

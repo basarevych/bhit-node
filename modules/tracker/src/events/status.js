@@ -56,6 +56,14 @@ class Status {
     }
 
     /**
+     * Event name
+     * @type {string}
+     */
+    get name() {
+        return 'status';
+    }
+
+    /**
      * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message

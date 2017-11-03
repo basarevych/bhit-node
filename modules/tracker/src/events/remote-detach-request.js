@@ -62,6 +62,14 @@ class RemoteDetachRequest {
     }
 
     /**
+     * Event name
+     * @type {string}
+     */
+    get name() {
+        return 'remote_detach_request';
+    }
+
+    /**
      * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message

@@ -46,6 +46,14 @@ class CreateDaemonRequest {
     }
 
     /**
+     * Event name
+     * @type {string}
+     */
+    get name() {
+        return 'create_daemon_request';
+    }
+
+    /**
      * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message

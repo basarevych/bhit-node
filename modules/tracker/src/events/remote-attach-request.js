@@ -65,6 +65,14 @@ class RemoteAttachRequest {
     }
 
     /**
+     * Event name
+     * @type {string}
+     */
+    get name() {
+        return 'remote_attach_request';
+    }
+
+    /**
      * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
@@ -108,7 +116,6 @@ class RemoteAttachRequest {
                 this._logger.debug('remote-attach-request', `Sending REJECTED REMOTE ATTACH RESPONSE to ${id}`);
                 return this.tracker.send(id, data);
             }
-            userEmail = user.email;
 
             let daemons = await this._daemonRepo.findByUserAndName(user, message.remoteAttachRequest.daemonName);
             let daemon = daemons.length && daemons[0];

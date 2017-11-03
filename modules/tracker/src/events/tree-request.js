@@ -53,6 +53,14 @@ class TreeRequest {
     }
 
     /**
+     * Event name
+     * @type {string}
+     */
+    get name() {
+        return 'tree_request';
+    }
+
+    /**
      * Event handler
      * @param {string} id           ID of the client
      * @param {object} message      The message
