@@ -114,7 +114,7 @@ class Install {
                 fs.accessSync(path.join(configDir, 'bhit.conf'), fs.constants.F_OK);
             } catch (error) {
                 try {
-                    let config = fs.readFileSync(path.join(__dirname, '..', 'bhit.conf'), {encoding: 'utf8'});
+                    let config = fs.readFileSync(path.join(__dirname, '..', '..', 'bhit.conf'), {encoding: 'utf8'});
                     config = config.replace(/HOSTNAME/g, hostname).replace(/DB_PASSWORD/g, this._util.getRandomString(32));
                     fs.writeFileSync(path.join(configDir, 'bhit.conf'), config, {mode: 0o640});
                 } catch (error) {
@@ -124,7 +124,7 @@ class Install {
             try {
                 fs.accessSync('/etc/systemd/system', fs.constants.F_OK);
                 await this._app.debug('Creating systemd service');
-                let service = fs.readFileSync(path.join(__dirname, '..', 'systemd.service'), {encoding: 'utf8'});
+                let service = fs.readFileSync(path.join(__dirname, '..', '..', 'systemd.service'), {encoding: 'utf8'});
                 fs.writeFileSync('/etc/systemd/system/bhit.service', service, {mode: 0o644});
             } catch (error) {
                 // do nothing
@@ -132,7 +132,7 @@ class Install {
             try {
                 fs.accessSync('/etc/init.d', fs.constants.F_OK);
                 await this._app.debug('Creating sysvinit service');
-                let service = fs.readFileSync(path.join(__dirname, '..', 'sysvinit.service'), {encoding: 'utf8'});
+                let service = fs.readFileSync(path.join(__dirname, '..', '..', 'sysvinit.service'), {encoding: 'utf8'});
                 fs.writeFileSync('/etc/init.d/bhit', service, {mode: 0o755});
             } catch (error) {
                 // do nothing
