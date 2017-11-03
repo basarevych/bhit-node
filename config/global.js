@@ -25,15 +25,8 @@ module.exports = {
 
     // Load base classes and services, path names
     autoload: [
-        '!arpen/src/services',
-        '!arpen/src/models',
-        '!arpen/src/repositories',
-        'entities',
-        'servers',
-        'services',
-        'models',
-        'repositories',
-        'commands',
+        '~arpen/src',
+        'src',
     ],
 
     // Loaded modules
@@ -74,7 +67,7 @@ module.exports = {
             port: userConfig.postgres && userConfig.postgres.port,
             user: userConfig.postgres && userConfig.postgres.user,
             password: userConfig.postgres && userConfig.postgres.password,
-            db_name: userConfig.postgres && userConfig.postgres.db_name,
+            database: userConfig.postgres && userConfig.postgres.db_name,
             min_pool: 10,
             max_pool: 100,
         },
@@ -82,10 +75,11 @@ module.exports = {
 
     // Redis servers
     redis: {
-        main: {
+        cache: {
             host: userConfig.redis && userConfig.redis.host,
             port: userConfig.redis && userConfig.redis.port,
             password: userConfig.redis && userConfig.redis.password,
+            database: 1,
         },
     },
 
@@ -104,7 +98,10 @@ module.exports = {
 
     cache: {
         enable: true,
-        redis: 'main',                      // Name of Redis configuration to use
+        subscribe: [
+            { postgres: 'main' },           // Invalidate cache pubsub provider
+        ],
+        redis: 'cache',                     // Name of Redis configuration to use
         expire_min: 3 * 60,                 // seconds, minimum time to cache values for (random)
         expire_max: 5 * 60,                 // seconds, maximum time to cache values for (random)
     },
@@ -117,15 +114,15 @@ module.exports = {
             path: '/var/log/bhit',
             interval: '1d',
             mode: 0o640,
-            maxFiles: 3,
+            max_files: 3,
             history: '/var/log/bhit/bhit.log.history',
         },
     },
 
 /*
      user: { // Drop privileges, otherwise comment out this section
-     uid: 'www',
-     gid: 'www',
+        uid: 'www',
+        gid: 'www',
      },
 */
 };
