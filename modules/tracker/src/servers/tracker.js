@@ -191,10 +191,10 @@ class Tracker extends EventEmitter {
      * @return {Promise}
      */
     async start(name) {
-        try {
-            if (name !== this._name)
-                throw new Error(`Server ${name} was not properly initialized`);
+        if (name !== this._name)
+            throw new Error(`Server ${name} was not properly initialized`);
 
+        try {
             await Array.from(this._app.get('modules')).reduce(
                 async (prev, [curName, curModule]) => {
                     await prev;
@@ -269,8 +269,9 @@ class Tracker extends EventEmitter {
                 let done = () => {
                     if (++counter >= goal) {
                         if (goal)
-                            this._logger.info('Tracker TCP/UDP servers are no longer listening');
-                        resolve();
+                            this._logger.info('Tracker TCP/UDP servers are no longer listening', () => { resolve(); });
+                        else
+                            resolve();
                     }
                 };
 
