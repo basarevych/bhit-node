@@ -3,11 +3,12 @@
  * @module commands/create-db
  */
 const argvParser = require('argv');
+const Base = require('./base');
 
 /**
  * Command class
  */
-class CreateDb {
+class CreateDb extends Base {
     /**
      * Create the service
      * @param {App} app                 The application
@@ -17,7 +18,7 @@ class CreateDb {
      * @param {Util} util               Util service
      */
     constructor(app, config, filer, postgres, util) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._filer = filer;
         this._postgres = postgres;
@@ -77,26 +78,6 @@ class CreateDb {
         } catch (error) {
             await this.error(error);
         }
-    }
-
-    /**
-     * Log error and terminate
-     * @param {...*} args
-     * @return {Promise}
-     */
-    async error(...args) {
-        try {
-            await args.reduce(
-                async (prev, cur) => {
-                    await prev;
-                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
-                },
-                Promise.resolve()
-            );
-        } catch (error) {
-            // do nothing
-        }
-        process.exit(1);
     }
 }
 

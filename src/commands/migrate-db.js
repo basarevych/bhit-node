@@ -5,11 +5,12 @@
 const path = require('path');
 const fs = require('fs');
 const argvParser = require('argv');
+const Base = require('./base');
 
 /**
  * Command class
  */
-class MigrateDb {
+class MigrateDb extends Base {
     /**
      * Create the service
      * @param {App} app                 The application
@@ -17,7 +18,7 @@ class MigrateDb {
      * @param {Postgres} postgres       Postgres service
      */
     constructor(app, config, postgres) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._postgres = postgres;
     }
@@ -95,26 +96,6 @@ class MigrateDb {
         } catch (error) {
             await this.error(error);
         }
-    }
-
-    /**
-     * Log error and terminate
-     * @param {...*} args
-     * @return {Promise}
-     */
-    async error(...args) {
-        try {
-            await args.reduce(
-                async (prev, cur) => {
-                    await prev;
-                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
-                },
-                Promise.resolve()
-            );
-        } catch (error) {
-            // do nothing
-        }
-        process.exit(1);
     }
 }
 

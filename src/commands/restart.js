@@ -3,11 +3,12 @@
  * @module commands/restart
  */
 const argvParser = require('argv');
+const Base = require('./base');
 
 /**
  * Command class
  */
-class Restart {
+class Restart extends Base {
     /**
      * Create the service
      * @param {App} app                 The application
@@ -16,7 +17,7 @@ class Restart {
      * @param {Stop} stop               Stop command
      */
     constructor(app, config, start, stop) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._start = start;
         this._stop = stop;
@@ -58,26 +59,6 @@ class Restart {
         } catch (error) {
             await this.error(error);
         }
-    }
-
-    /**
-     * Log error and terminate
-     * @param {...*} args
-     * @return {Promise}
-     */
-    async error(...args) {
-        try {
-            await args.reduce(
-                async (prev, cur) => {
-                    await prev;
-                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
-                },
-                Promise.resolve()
-            );
-        } catch (error) {
-            // do nothing
-        }
-        process.exit(1);
     }
 }
 

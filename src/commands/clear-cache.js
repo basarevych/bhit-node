@@ -3,11 +3,12 @@
  * @module commands/clear-cache
  */
 const argvParser = require('argv');
+const Base = require('./base');
 
 /**
  * Command class
  */
-class ClearCache {
+class ClearCache extends Base {
     /**
      * Create the service
      * @param {App} app                 The application
@@ -15,7 +16,7 @@ class ClearCache {
      * @param {Redis} redis             Redis service
      */
     constructor(app, config, redis) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._redis = redis;
     }
@@ -58,26 +59,6 @@ class ClearCache {
         } catch (error) {
             await this.error(error);
         }
-    }
-
-    /**
-     * Log error and terminate
-     * @param {...*} args
-     * @return {Promise}
-     */
-    async error(...args) {
-        try {
-            await args.reduce(
-                async (prev, cur) => {
-                    await prev;
-                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
-                },
-                Promise.resolve()
-            );
-        } catch (error) {
-            // do nothing
-        }
-        process.exit(1);
     }
 }
 

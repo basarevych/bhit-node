@@ -4,11 +4,12 @@
  */
 const path = require('path');
 const argvParser = require('argv');
+const Base = require('./base');
 
 /**
  * Command class
  */
-class Status {
+class Status extends Base {
     /**
      * Create the service
      * @param {App} app                 The application
@@ -16,7 +17,7 @@ class Status {
      * @param {Runner} runner           Runner service
      */
     constructor(app, config, runner) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._runner = runner;
     }
@@ -52,34 +53,15 @@ class Status {
             .run(argv);
 
         try {
-            return await this._runner.exec(
+            let result = await this._runner.exec(
                 path.join(__dirname, '..', 'bin', 'status'),
                 [],
                 { pipe: process }
             );
+            return result.code;
         } catch (error) {
             await this.error(error);
         }
-    }
-
-    /**
-     * Log error and terminate
-     * @param {...*} args
-     * @return {Promise}
-     */
-    async error(...args) {
-        try {
-            await args.reduce(
-                async (prev, cur) => {
-                    await prev;
-                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
-                },
-                Promise.resolve()
-            );
-        } catch (error) {
-            // do nothing
-        }
-        process.exit(1);
     }
 }
 

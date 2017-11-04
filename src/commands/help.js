@@ -3,11 +3,12 @@
  * @module commands/help
  */
 const argvParser = require('argv');
+const Base = require('./base');
 
 /**
  * Command class
  */
-class Help {
+class Help extends Base {
     /**
      * Create the service
      * @param {App} app                 The application
@@ -15,7 +16,7 @@ class Help {
      * @param {Util} util               Utility service
      */
     constructor(app, config, util) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._util = util;
     }
@@ -189,26 +190,6 @@ class Help {
             '\tThis command will print tracker status'
         );
         process.exit(0);
-    }
-
-    /**
-     * Log error and terminate
-     * @param {...*} args
-     * @return {Promise}
-     */
-    async error(...args) {
-        try {
-            await args.reduce(
-                async (prev, cur) => {
-                    await prev;
-                    return this._app.error(cur.fullStack || cur.stack || cur.message || cur);
-                },
-                Promise.resolve()
-            );
-        } catch (error) {
-            // do nothing
-        }
-        process.exit(1);
     }
 }
 
