@@ -3,11 +3,12 @@
  * @module tracker/events/redeem-daemon-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Redeem Daemon Request event class
  */
-class RedeemDaemonRequest {
+class RedeemDaemonRequest extends Base {
     /**
      * Create service
      * @param {App} app                                         The application
@@ -20,7 +21,7 @@ class RedeemDaemonRequest {
      * @param {RegisterDaemonRequest} registerDaemonRequest     RegisterDaemonRequest event
      */
     constructor(app, config, logger, util, registry, userRepo, daemonRepo, registerDaemonRequest) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._util = util;
@@ -141,17 +142,6 @@ class RedeemDaemonRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'RedeemDaemonRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

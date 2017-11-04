@@ -3,11 +3,12 @@
  * @module tracker/events/attach-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Attach Request event class
  */
-class AttachRequest {
+class AttachRequest extends Base {
     /**
      * Create service
      * @param {App} app                                         The application
@@ -22,7 +23,7 @@ class AttachRequest {
      * @param {ConnectionRepository} connectionRepo             Connection repository
      */
     constructor(app, config, logger, registry, registerDaemonRequest, detachRequest, userRepo, daemonRepo, pathRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -358,17 +359,6 @@ class AttachRequest {
      */
     async connect(daemon, connection, actingAs, addressOverride, portOverride) {
         return this._daemonRepo.connect(daemon, connection, actingAs, addressOverride, portOverride);
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

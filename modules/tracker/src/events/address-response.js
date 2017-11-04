@@ -3,11 +3,12 @@
  * @module tracker/events/address-response
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Address Response event class
  */
-class AddressResponse {
+class AddressResponse extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -16,7 +17,7 @@ class AddressResponse {
      * @param {Registry} registry                       Registry service
      */
     constructor(app, config, logger, registry) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -89,17 +90,6 @@ class AddressResponse {
         } catch (error) {
             this._logger.error(new NError(error, 'AddressResponse.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

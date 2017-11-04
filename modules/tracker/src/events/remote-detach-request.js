@@ -3,11 +3,12 @@
  * @module tracker/events/remote-detach-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Remote Detach Request event class
  */
-class RemoteDetachRequest {
+class RemoteDetachRequest extends Base {
     /**
      * Create service
      * @param {App} app                                         The application
@@ -22,7 +23,7 @@ class RemoteDetachRequest {
      * @param {ConnectionRepository} connectionRepo             Connection repository
      */
     constructor(app, config, logger, registry, registerDaemonRequest, detachRequest, userRepo, daemonRepo, pathRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -208,17 +209,6 @@ class RemoteDetachRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'RemoteDetachRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

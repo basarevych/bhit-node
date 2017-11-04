@@ -3,11 +3,12 @@
  * @module tracker/events/redeem-master-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Redeem Master Request event class
  */
-class RedeemMasterRequest {
+class RedeemMasterRequest extends Base {
     /**
      * Create service
      * @param {App} app                         The application
@@ -19,7 +20,7 @@ class RedeemMasterRequest {
      * @param {UserRepository} userRepo         User repository
      */
     constructor(app, config, logger, emailer, util, registry, userRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._emailer = emailer;
@@ -113,17 +114,6 @@ class RedeemMasterRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'RedeemMasterRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

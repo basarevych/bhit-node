@@ -4,11 +4,12 @@
  */
 const moment = require('moment-timezone');
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Init Request event class
  */
-class InitRequest {
+class InitRequest extends Base {
     /**
      * Create service
      * @param {App} app                         The application
@@ -20,7 +21,7 @@ class InitRequest {
      * @param {UserRepository} userRepo         User repository
      */
     constructor(app, config, logger, emailer, util, registry, userRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._emailer = emailer;
@@ -135,17 +136,6 @@ class InitRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'InitRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

@@ -3,11 +3,12 @@
  * @module tracker/events/lookup-identity-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Lookup Identity Request event class
  */
-class LookupIdentityRequest {
+class LookupIdentityRequest extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -16,7 +17,7 @@ class LookupIdentityRequest {
      * @param {Registry} registry                       Registry service
      */
     constructor(app, config, logger, registry) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -112,17 +113,6 @@ class LookupIdentityRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'LookupIdentityRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

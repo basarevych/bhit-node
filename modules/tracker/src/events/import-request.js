@@ -3,11 +3,12 @@
  * @module tracker/events/import-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Import Request event class
  */
-class ImportRequest {
+class ImportRequest extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -20,7 +21,7 @@ class ImportRequest {
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
     constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -241,17 +242,6 @@ class ImportRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'ImportRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

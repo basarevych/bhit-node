@@ -3,11 +3,12 @@
  * @module tracker/events/register-daemon-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Register Daemon Request event class
  */
-class RegisterDaemonRequest {
+class RegisterDaemonRequest extends Base {
     /**
      * Create service
      * @param {App} app                         The application
@@ -18,7 +19,7 @@ class RegisterDaemonRequest {
      * @param {DaemonRepository} daemonRepo     Daemon repository
      */
     constructor(app, config, logger, registry, userRepo, daemonRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -180,17 +181,6 @@ class RegisterDaemonRequest {
         let data = this.tracker.ServerMessage.encode(reply).finish();
         this._logger.debug('status', `Sending CONNECTIONS LIST to ${clientId}`);
         this.tracker.send(clientId, data);
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

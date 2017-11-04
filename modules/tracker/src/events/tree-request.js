@@ -3,11 +3,12 @@
  * @module tracker/events/tree-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Tree Request event class
  */
-class TreeRequest {
+class TreeRequest extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -19,7 +20,7 @@ class TreeRequest {
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
     constructor(app, config, logger, registry, daemonRepo, pathRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -211,17 +212,6 @@ class TreeRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'TreeRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

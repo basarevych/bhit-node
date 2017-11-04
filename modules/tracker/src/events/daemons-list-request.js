@@ -3,11 +3,12 @@
  * @module tracker/events/daemons-list-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Daemons List Request event class
  */
-class DaemonsListRequest {
+class DaemonsListRequest extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -20,7 +21,7 @@ class DaemonsListRequest {
      * @param {ConnectionRepository} connRepo           Connection repository
      */
     constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -252,17 +253,6 @@ class DaemonsListRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'DaemonsListRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

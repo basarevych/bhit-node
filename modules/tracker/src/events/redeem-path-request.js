@@ -3,11 +3,12 @@
  * @module tracker/events/redeem-path-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Redeem Path Request event class
  */
-class RedeemPathRequest {
+class RedeemPathRequest extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -20,7 +21,7 @@ class RedeemPathRequest {
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
     constructor(app, config, logger, util, registry, userRepo, pathRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._util = util;
@@ -144,17 +145,6 @@ class RedeemPathRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'RedeemPathRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

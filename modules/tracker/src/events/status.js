@@ -3,11 +3,12 @@
  * @module tracker/events/status
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Status event class
  */
-class Status {
+class Status extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -20,7 +21,7 @@ class Status {
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
     constructor(app, config, logger, registry, userRepo, daemonRepo, pathRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -137,17 +138,6 @@ class Status {
         } catch (error) {
             this._logger.error(new NError(error, 'Status.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 

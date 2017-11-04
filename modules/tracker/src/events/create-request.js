@@ -3,11 +3,12 @@
  * @module tracker/events/create-request
  */
 const NError = require('nerror');
+const Base = require('./base');
 
 /**
  * Create Request event class
  */
-class CreateRequest {
+class CreateRequest extends Base {
     /**
      * Create service
      * @param {App} app                                 The application
@@ -19,7 +20,7 @@ class CreateRequest {
      * @param {ConnectionRepository} connectionRepo     Connection repository
      */
     constructor(app, config, logger, registry, userRepo, daemonRepo, connectionRepo) {
-        this._app = app;
+        super(app);
         this._config = config;
         this._logger = logger;
         this._registry = registry;
@@ -216,17 +217,6 @@ class CreateRequest {
         } catch (error) {
             this._logger.error(new NError(error, 'CreateRequest.handle()'));
         }
-    }
-
-    /**
-     * Retrieve server
-     * @return {Tracker}
-     */
-    get tracker() {
-        if (this._tracker)
-            return this._tracker;
-        this._tracker = this._app.get('servers').get('tracker');
-        return this._tracker;
     }
 }
 
