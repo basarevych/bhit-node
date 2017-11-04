@@ -248,48 +248,58 @@ class Tracker extends EventEmitter {
      * @param {string} name                     Config section name
      * @return {Promise}
      */
-    stop(name) {
+    async stop(name) {
         if (name !== this._name)
-            return Promise.reject(new Error(`Server ${name} was not properly initialized`));
+            throw new Error(`Server ${name} was not properly initialized`);
 
-        if (this._timeoutTimer) {
-            clearInterval(this._timeoutTimer);
-            this._timeoutTimer = null;
-        }
+        try {
+            if (this._timeoutTimer) {
+                clearInterval(this._timeoutTimer);
+                this._timeoutTimer = null;
+            }
 
-        return new Promise((resolve, reject) => {
-            let counter = 0;
-            let goal = 0;
-            if (this._tcpListening)
-                goal++;
-            if (this._udpListening)
-                goal++;
+            await new Promise(resolve => {
+                let counter = 0;
+                let goal = 0;
+                if (this._tcpListening)
+                    goal++;
+                if (this._udpListening)
+                    goal++;
 
-            let done = () => {
-                if (++counter >= goal) {
-                    if (goal)
-                        this._logger.info('Tracker TCP/UDP servers are no longer listening');
-                    resolve();
-                }
-            };
+                let done = () => {
+                    if (++counter >= goal) {
+                        if (goal)
+                            this._logger.info('Tracker TCP/UDP servers are no longer listening');
+                        resolve();
+                    }
+                };
 
-            if (!goal)
-                return done();
+                if (!goal)
+                    return done();
 
-            try {
                 if (this._udpListening) {
-                    this.udp.once('close', () => { this._udpListening = false; done(); });
+                    this.udp.once('close', () => {
+                        this._udpListening = false;
+                        done();
+                    });
                     this.udp.close();
                 }
 
                 if (this._tcpListening) {
-                    this.tcp.once('close', () => { this._udpListening = false; done(); });
+                    this.tcp.once('close', () => {
+                        this._udpListening = false;
+                        done();
+                    });
                     this.tcp.close();
                 }
-            } catch (error) {
-                reject(error);
-            }
-        });
+            });
+        } catch (error) {
+            return this._app.exit(
+                this._app.constructor.fatalExitCode,
+                error.messages || error.message,
+                this._app.constructor.gracefulTimeout
+            );
+        }
     }
 
     /**
