@@ -7,7 +7,7 @@ DECLARE
     row record;
 BEGIN
     FOR row IN SELECT DISTINCT unnest(cache_keys) AS name LOOP
-        PERFORM pg_notify('invalidate_cache', '{ "key": "' || row.name || '" }');
+        PERFORM pg_notify('invalidate_cache', '{ "key": "sql:' || row.name || '" }');
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
