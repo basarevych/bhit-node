@@ -24,7 +24,7 @@ module.exports = async function (daemon, connection, actingAs, addressOverride, 
     try {
         client = typeof pg === 'object' ? pg : await this._postgres.connect(pg || this.constructor.instance);
         let value = await client.transaction({ name: 'daemon_connect' }, async rollback => {
-            let result = client.query(
+            let result = await client.query(
                 `SELECT * 
                    FROM daemon_connections 
                   WHERE daemon_id = $1 

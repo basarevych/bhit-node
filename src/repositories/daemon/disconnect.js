@@ -20,7 +20,7 @@ module.exports = async function (daemon, connection, pg) {
 
     try {
         client = typeof pg === 'object' ? pg : await this._postgres.connect(pg || this.constructor.instance);
-        let result = client.query(
+        let result = await client.query(
             `DELETE
                FROM daemon_connections
               WHERE daemon_id = $1
