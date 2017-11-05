@@ -68,7 +68,7 @@ class Stop extends Base {
         let result = await this._runner.exec(path.join(__dirname, '..', '..', 'bin', 'status'));
         if (result.code === 0) {
             return this._runner.exec(
-                path.join(__dirname, '..', 'bin', 'kill'),
+                path.join(__dirname, '..', '..', 'bin', 'kill'),
                 ['SIGTERM'],
                 { pipe: process }
             );
