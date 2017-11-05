@@ -65,7 +65,7 @@ class Start extends Base {
      */
     async launch() {
         let result = await this._runner.exec(
-            path.join(__dirname, '..', 'bin', 'daemon'),
+            path.join(__dirname, '..', '..', 'bin', 'daemon'),
             [],
             { pipe: process }
         );
