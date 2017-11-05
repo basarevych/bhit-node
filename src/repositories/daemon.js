@@ -21,6 +21,7 @@ class DaemonRepository extends BaseRepository {
         super(app, postgres, cacher, util);
         this._registry = registry;
         this._loadMethods(path.join(__dirname, 'daemon'));
+        this._enableCache = true;
     }
 
     /**

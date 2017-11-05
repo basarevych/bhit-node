@@ -19,6 +19,7 @@ class UserRepository extends BaseRepository {
     constructor(app, postgres, cacher, util) {
         super(app, postgres, cacher, util);
         this._loadMethods(path.join(__dirname, 'user'));
+        this._enableCache = true;
     }
 
     /**

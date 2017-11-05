@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "argv": "~0.0.2",
-    "arpen": "~0.2.31",
+    "arpen": "~0.2.32",
     "bcrypt": "~1.0.3",
     "daemon": "~1.1.0",
     "emailjs": "~1.0.12",
@@ -23,7 +23,7 @@
     "merge": "~1.2.0",
     "moment-timezone": "~0.5.14",
     "nerror": "~1.0.0",
-    "pg": "~7.3.0",
+    "pg": "~7.4.0",
     "pg-format": "~1.0.4",
     "protobufjs": "~6.8.0",
     "pty.js": "~0.3.1",
