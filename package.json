@@ -8,13 +8,18 @@
     "type": "git",
     "url": "git+https://github.com/breedhub/bhit-node.git"
   },
+  "keywords": [
+    "nat",
+    "hole punching",
+    "proxy"
+  ],
   "bin": {
     "bhitd": "bin/daemon",
     "bhitctl": "bin/cmd"
   },
   "dependencies": {
     "argv": "~0.0.2",
-    "arpen": "~0.2.32",
+    "arpen": "~1.0.0",
     "bcrypt": "~1.0.3",
     "daemon": "~1.1.0",
     "emailjs": "~1.0.12",
