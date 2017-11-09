@@ -77,7 +77,7 @@ class Install extends Base {
                 fs.accessSync(configDir, fs.constants.F_OK);
             } catch (error) {
                 try {
-                    fs.mkdirSync(configDir, 0o750);
+                    fs.mkdirSync(configDir, 0o755);
                 } catch (error) {
                     throw new Error(`Could not create ${configDir}`);
                 }
@@ -117,7 +117,7 @@ class Install extends Base {
                 try {
                     let config = fs.readFileSync(path.join(__dirname, '..', '..', 'bhit.conf'), {encoding: 'utf8'});
                     config = config.replace(/HOSTNAME/g, hostname).replace(/DB_PASSWORD/g, this._util.getRandomString(32));
-                    fs.writeFileSync(path.join(configDir, 'bhit.conf'), config, {mode: 0o640});
+                    fs.writeFileSync(path.join(configDir, 'bhit.conf'), config, {mode: 0o644});
                 } catch (error) {
                     throw new Error(`Could not create bhit.conf`);
                 }
