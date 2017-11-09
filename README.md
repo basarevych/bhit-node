@@ -53,3 +53,14 @@ will be known to daemons by this address or name.
 # systemctl enable bhit
 # systemctl start bhit
 ```
+
+## Private tracker
+
+You can limit who can use your tracker by whitelisting their emails:
+
+```
+[tracker]
+allow_users[] = user1@example.com
+allow_users[] = user2@example.com
+allow_users[] = user3@example.com
+```
