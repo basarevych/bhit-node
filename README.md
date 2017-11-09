@@ -1,4 +1,6 @@
-# Work in progress
+# Interconnect Tracker
+
+See https://github.com/breedhub/interconnect
 
 # Installation
 
