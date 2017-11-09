@@ -67,8 +67,6 @@ class CreateDb extends Base {
             await this._postgres.exec(
                 filename,
                 {
-                    host: this._config.get(`postgres.${instance}.host`),
-                    port: this._config.get(`postgres.${instance}.port`),
                     database: 'postgres',
                 }
             );
